@@ -29,10 +29,9 @@ def test_getParams():
     processDummy = None
     projSplit.addData(A,y,2,processDummy)
 
-    nvar,nobs,nblocks = projSplit.getParams()
-    assert (nvar==d) ,"test failed, nvar!=d"
-    assert (nobs == m), "test failed, nobs != m"
-    assert (nblocks == 10), "test failed, blocks != 10"
+    nvar,nobs = projSplit.getParams()
+    assert (nvar==d+1) ,"test failed, nvar!=d"
+    assert (nobs == m), "test failed, nobs != m"    
         
 
 def test_L1():
@@ -48,13 +47,14 @@ def test_L1():
     assert regObj.getScaling()==1.0
     
     scale = 11.5
-    regObj = ps.L1(scale)
+    rho = 3.0
+    regObj = ps.L1(scale,rho)
     lenx = 10
     x = np.ones(lenx)
     assert regObj.evaluate(x) == lenx*scale 
     
-    rho = 3.0
-    toTest = regObj.getProx(x,rho)
+    
+    toTest = regObj.getProx(x)
     assert toTest.shape == (lenx,)
     diff = toTest - np.zeros(lenx)
     assert (diff == 0.0).all()
