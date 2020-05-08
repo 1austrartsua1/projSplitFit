@@ -41,7 +41,7 @@ class ProjSplitFit(object):
     def getDualScaling(self):
         return self.gamma 
                             
-    def addData(self,observations,responses,lossFunction,process,interceptTerm=True,
+    def addData(self,observations,responses,loss,process,intercept=True,
                 normalize=True): 
         '''
         XX insert comments here 
@@ -81,7 +81,7 @@ class ProjSplitFit(object):
             self.A = observations
             self.normalize = False 
         
-        self.loss = Loss(lossFunction)
+        self.loss = Loss(loss)
                
         self.process = process
         
@@ -91,7 +91,7 @@ class ProjSplitFit(object):
         
                                                                 
         
-        self.intercept = interceptTerm        
+        self.intercept = intercept        
                 
         self.dataAdded = True
         self.resetIterate = True
@@ -147,7 +147,7 @@ class ProjSplitFit(object):
         #self.loss 
         #self.allRegularizers
         #reg.linearOp
-        #reg.interceptTerm
+        #reg.intercept
         if self.z is None :
             print("Method not run yet, no objective to return. Call run() first.")
             return None
@@ -168,21 +168,26 @@ class ProjSplitFit(object):
         
     
     def getSolution(self):
-        #self.normalize
-        #self.scale 
+        #z is always of length d+1 as even if there is no intercept
+        # I just don't update the intercept
+        
         if self.z is None:
             print("Method not run yet, no solution to return. Call run() first.")
             return None
+                
+        out = np.zeros(self.z.shape)
         
         if self.normalize:
-            out = self.z[1:len(self.z)]*self.scaling             
+            out[1:len(self.z)] = self.z[1:len(self.z)]/self.scaling
         else:
-            out =  self.z[1:len(self.z)]  
+            out[1:len(self.z)] = self.z[1:len(self.z)]
 
         if self.intercept:
-            return [self.z[0],out]
-        else:
+            out[0] = self.z[0]
             return out
+        else:
+            return out[1:len(self.z)]
+        
         
     
     def getPrimalViolation(self):
@@ -515,7 +520,7 @@ class Loss(object):
                     
             else:
                 print("Error, lossFunction is not >= 1")
-        elif(p == 'logistic'):
+        elif(p == 'logistic'):  
             self.value = lambda yhat,y: LR_loss(yhat,y)
             self.derivative = lambda yhat,y: LR_derivative(yhat,y)
             
@@ -553,7 +558,8 @@ class LossPlugIn(object):
 
 #-----------------------------------------------------------------------------
 class ProjSplitLossProcessor(object):
-    def getAGrad(self,psObj,point,thisSlice,block):
+    @staticmethod
+    def getAGrad(psObj,point,thisSlice,block):
         yhat = point[0]+psObj.A[thisSlice].dot(point[1:len(point)])
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
         grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)
@@ -571,10 +577,10 @@ class Forward2Fixed(ProjSplitLossProcessor):
         self.step = step
         
     def update(self,psObj,thisSlice,block):        
-        gradz = ProjSplitLossProcessor.getAGrad(ProjSplitLossProcessor,psObj,psObj.z,thisSlice,block)
+        gradz = ProjSplitLossProcessor.getAGrad(psObj,psObj.z,thisSlice,block)
         
         psObj.x[block] = psObj.z - self.step*(gradz - psObj.w[block])        
-        gradx = ProjSplitLossProcessor.getAGrad(ProjSplitLossProcessor,psObj,psObj.x[block],thisSlice,block)        
+        gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.x[block],thisSlice,block)        
         psObj.y[block] = gradx        
         
 class Forward2Backtrack(ProjSplitLossProcessor):
