@@ -239,7 +239,22 @@ def test_lr_norm_intercept():
     
 
 def test_lasso():
-    pass
+    projSplit = ps.ProjSplitFit()
+    m = 20
+    d = 10
+    lam = 2.0
+    A = np.random.normal(0,1,[m,d])
+    y = np.random.normal(0,1,m)
+    stepsize = 5e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e-1
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=False)
+    stepL1 = stepsize
+    regObj = ps.L1(lam,stepL1)
+    projSplit.addRegularizer(regObj)
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)    
+    
 
 if __name__ == "__main__":    
     test_lr()

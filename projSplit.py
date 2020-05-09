@@ -479,8 +479,19 @@ class Regularizer(object):
             print("Error: scaling must be float>=0, setting it to 1.0")
             self.nu = 1.0 
 
-    def getScaling(self):
-        return self.nu 
+    def setStep(self,step):
+        if type(step)==float:
+            if step>=0:
+                self.step = step    
+            else:
+                print("Error: stepsize must be >=0, keeping it set to 1.0")
+                self.step = 1.0 
+        else:
+            print("Error: stepsize must be float>=0, setting it to 1.0")
+            self.step = 1.0 
+            
+    def getScalingAndStepsize(self):
+        return self.nu,self.step  
     
     def evaluate(self,x):
         return self.value(x,self.nu)
