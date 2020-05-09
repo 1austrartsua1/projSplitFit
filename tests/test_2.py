@@ -6,7 +6,6 @@ Created on Wed Apr 29 16:16:24 2020
 """
 import sys
 sys.path.append('/home/pj222/gitFolders/projSplitFit')
-sys.path.append('/home/pj222/gitFolders/proj_split_v2.0/group_logistic_regression')
 import projSplit as ps 
 import numpy as np
 import pytest 
@@ -26,6 +25,68 @@ def test_ls_fixed():
     projSplit.addData(A,y,2,processor)
     projSplit.run(maxIterations = 100,keepHistory = True)
     
+def test_cyclic():
+    projSplit = ps.ProjSplitFit()
+    m = 20
+    d = 10
+    A = np.random.normal(0,1,[m,d])
+    y = np.random.normal(0,1,m)
+    
+    result = np.linalg.lstsq(A,y,rcond=None)
+    xhat = result[0]
+    LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
+    
+    stepsize = 5e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e-1
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+
+    #projSplit.addRegularizer(regObj)
+    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,blockActivation="cyclic")     
+    
+    ps_opt = projSplit.getObjective()
+    
+    assert abs(ps_opt - LSval)<1e-3
+    
+    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,
+                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=2)
+
+    ps_opt = projSplit.getObjective()
+    assert abs(ps_opt - LSval)<1e-3
+    
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
+                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=3)
+    
+    ps_opt = projSplit.getObjective()
+    assert abs(ps_opt - LSval)<1e-3
+    
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
+                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=4)
+    
+    ps_opt = projSplit.getObjective()
+    assert abs(ps_opt - LSval)<1e-3
+            
+    projSplit.run(maxIterations=20,keepHistory = True, nblocks = 5,
+                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=5)
+    
+    ps_opt = projSplit.getObjective()
+    assert abs(ps_opt - LSval)<1e-3
+    
+    projSplit.run(maxIterations=20,keepHistory = True, nblocks = 5,
+                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=6)
+    
+    ps_opt = projSplit.getObjective()
+    assert abs(ps_opt - LSval)<1e-3
+
+    
+    
+
+    
+    
+     
+        
+
 
 def test_ls_noIntercept_noNormalize():
     projSplit = ps.ProjSplitFit()
@@ -44,11 +105,12 @@ def test_ls_noIntercept_noNormalize():
     result = np.linalg.lstsq(A,y,rcond=None)
     xhat = result[0]
     
+    
     assert(np.linalg.norm(xhat-ps_sol)<1e-5)
     
     psSolVal = projSplit.getObjective()
     LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
-    assert(psSolVal - LSval < 1e-5)
+    assert(abs(psSolVal - LSval) < 1e-5)
     
 def test_ls_noIntercept_Normalize():
     projSplit = ps.ProjSplitFit()
@@ -62,7 +124,7 @@ def test_ls_noIntercept_Normalize():
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=False)    
     projSplit.run(maxIterations = 3000,keepHistory = True,nblocks = 10)
-    ps_sol = projSplit.getSolution()
+    #ps_sol = projSplit.getSolution()
     
     
     result = np.linalg.lstsq(A,y,rcond=None)
@@ -238,26 +300,11 @@ def test_lr_norm_intercept():
     assert abs(opt - ps_opt_val)<1e-3
     
 
-def test_lasso():
-    projSplit = ps.ProjSplitFit()
-    m = 20
-    d = 10
-    lam = 2.0
-    A = np.random.normal(0,1,[m,d])
-    y = np.random.normal(0,1,m)
-    stepsize = 5e-1
-    processor = ps.Forward2Fixed(stepsize)
-    gamma = 1e-1
-    projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,2,processor,normalize=False)
-    stepL1 = stepsize
-    regObj = ps.L1(lam,stepL1)
-    projSplit.addRegularizer(regObj)
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)    
+  
     
 
 if __name__ == "__main__":    
-    test_lr()
+    test_cyclic()
     
     
     

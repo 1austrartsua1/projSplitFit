@@ -157,12 +157,15 @@ class ProjSplitFit(object):
             Az += self.z[0]
         currentLoss = (1.0/self.nobs)*sum(self.loss.value(Az,self.yresponse))        
         for reg in self.allRegularizers:
-            Hiz = reg.linearOp(self.z)            
-            currentLoss += reg.evaluate(Hiz)
+            if reg.linearOp is not None:
+                Hiz = reg.linearOp(self.z)  
+                currentLoss += reg.evaluate(Hiz)
+                
         if self.embedded != None:
             reg = self.embedded 
-            Hiz = reg.linearOp(self.z)
-            currentLoss += reg.evaluate(Hiz)
+            if reg.linearOp is not None:
+                Hiz = reg.linearOp(self.z)
+                currentLoss += reg.evaluate(Hiz)
         
         return currentLoss
         
@@ -323,7 +326,7 @@ class ProjSplitFit(object):
         # BEGIN MAIN ALGORITHM LOOP
         ################################
         while(k < maxIterations):  
-
+            #print('iteration = {}'.format(k))
             t0 = time.time()
             self.updateLossBlocks(blockActivation,blocksPerIteration)        # update all blocks (xi,yi) from (xi,yi,z,wi)
             self.updateRegularizerBlocks()            
@@ -353,10 +356,11 @@ class ProjSplitFit(object):
             self.historyArray.append(dualErrs)
             self.historyArray = np.array(self.historyArray)        
             
-    def updateLossBlocks(self,blockActivation,blocksPerIteration):
+    def updateLossBlocks(self,blockActivation,blocksPerIteration):        
+        
         if blockActivation == "greedy":            
             phis = np.sum((self.z - self.x)*(self.y - self.w),axis=1)
-            
+            phis = phis[0:self.nDataBlocks]
             
             if phis.min() >= 0:
                 activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
@@ -364,17 +368,23 @@ class ProjSplitFit(object):
                 activeBlocks = phis.argsort()[0:blocksPerIteration]
         elif blockActivation == "random":
             activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
-        
         elif blockActivation == "cyclic":
             endPoint = (self.cyclicPoint + blocksPerIteration)%self.nDataBlocks
-            if endPoint>self.cyclicPoint:
-                activeBlocks = range(self.cyclicPoint,endPoint+1)
-                self.cyclicPoint = (endPoint+1)%self.nDataBlocks
-            else:
-                activeBlocks= list(range(self.cyclicPoint,self.nDataBlocks+1))
-                activeBlocks.extend(range(0,endPoint+1))
-                self.cyclicPoint = endPoint+1
-                
+            activeBlocks = []
+            i = 0
+            currentPoint = self.cyclicPoint
+            while(i<blocksPerIteration):
+                activeBlocks.append(currentPoint)
+                currentPoint += 1
+                i += 1
+                if currentPoint == self.nDataBlocks:
+                    currentPoint = 0
+            self.cyclicPoint = currentPoint     
+            
+            
+        
+        
+        
         for i in activeBlocks:
             # update this block
             self.process.update(self,self.partition[i],i)
@@ -382,8 +392,8 @@ class ProjSplitFit(object):
     def updateRegularizerBlocks(self):
         i = 0
         for reg in self.allRegularizers: 
-            blockInd = self.nDataBlocks + i
-            if not (reg.linearOp is None):
+            blockInd = self.nDataBlocks + i            
+            if (reg.linearOp is None):
                 Giz = self.z
             else:
                 Giz = reg.linearOp.matvec(self.z)
@@ -423,13 +433,17 @@ class ProjSplitFit(object):
             phi -= np.sum(self.x*self.y)            
             # compute tau 
             tau = phi/pi
+            # update z and w         
         
-        # update z and w         
+            self.z = self.z - self.gamma**(-1)*tau*v
+            if len(self.w) > 1:              
+                self.w[0:(len(self.w)-1)] = self.w[0:(len(self.w)-1)] - tau*self.u
+                self.w[-1] = -np.sum(self.w[0:(len(self.w)-1)],axis=0)
+            
+        else:
+            print("Gradient of the hyperplane is 0, converged")
         
-        self.z = self.z - self.gamma**(-1)*tau*v
-        if len(self.w) > 1:              
-            self.w[0:(len(self.w)-1)] = self.w[0:(len(self.w)-1)] - tau*self.u
-            self.w[-1] = -np.sum(self.w[0:(len(self.w)-1)],axis=0)
+        
         
         
         
