@@ -37,5 +37,14 @@ def runCVX_lasso(A,y,lam):
     xopt = np.squeeze(np.array(xopt))
 
     return [opt, xopt]
+
+def getLSdata(m,d):    
+    
+    A = np.random.normal(0,1,[m,d])
+    y = np.random.normal(0,1,m)
+    return A,y
+    
+    
+    
     
     

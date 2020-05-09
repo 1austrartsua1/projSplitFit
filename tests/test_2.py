@@ -300,7 +300,35 @@ def test_lr_norm_intercept():
     assert abs(opt - ps_opt_val)<1e-3
     
 
-  
+def test_blockIs1bug():
+    m = 40
+    d = 10
+    A,y = getLSdata(m,d)    
+    projSplit = ps.ProjSplitFit()
+    
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e1
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+    
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,blockActivation="random")     
+    
+    ps_opt = projSplit.getObjective()
+    print('ps func opt = {}'.format(ps_opt))
+    
+    result = np.linalg.lstsq(A,y,rcond=None)
+    xhat = result[0]
+    LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
+    print('LSval = {}'.format(LSval))
+    
+    #xps = projSplit.getSolution()
+    #plt.plot(xhat - xps)
+    #plt.show()
+    
+    #ps_func_vals = projSplit.getHistory()[0]
+    #plt.plot(ps_func_vals)
+    #plt.show()
     
 
 if __name__ == "__main__":    

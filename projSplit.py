@@ -25,6 +25,7 @@ class ProjSplitFit(object):
         self.dataAdded = False
         self.numRegs = 0
         self.z = None
+        self.nDataBlocks = None
     
     def setDualScaling(self,dualScaling):
         try:    
@@ -119,15 +120,16 @@ class ProjSplitFit(object):
         #self.allRegularizers
         #reg.linearOp        
         if embed == True:
-            if not (linearOp is None):            
+            if  (linearOp is not None):            
                 print("embedded regularizer cannot use linearOp != None")                
                 print("Aborting without adding regularizer")
                 return -1
             
             
-            if self.process != None:
+            if self.process is not None:
                 # test that processOp is of the right type
                 pass
+            
             self.embedded = regObj            
         else:            
             self.allRegularizers.append(regObj)
@@ -158,14 +160,18 @@ class ProjSplitFit(object):
         currentLoss = (1.0/self.nobs)*sum(self.loss.value(Az,self.yresponse))        
         for reg in self.allRegularizers:
             if reg.linearOp is not None:
-                Hiz = reg.linearOp(self.z)  
-                currentLoss += reg.evaluate(Hiz)
+                Hiz = reg.linearOp(self.z[1:len(self.z)])  
+            else:
+                Hiz = self.z[1:len(self.z)] 
+            currentLoss += reg.evaluate(Hiz)
                 
         if self.embedded != None:
             reg = self.embedded 
             if reg.linearOp is not None:
-                Hiz = reg.linearOp(self.z)
-                currentLoss += reg.evaluate(Hiz)
+                Hiz = reg.linearOp(self.z[1:len(self.z)])
+            else:
+                Hiz = self.z[1:len(self.z)] 
+            currentLoss += reg.evaluate(Hiz)
         
         return currentLoss
         
@@ -246,29 +252,39 @@ class ProjSplitFit(object):
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
             nblocks = 1, blockActivation="greedy", blocksPerIteration=1, resetIterate=False):
         
+        
+        
         if type(nblocks) == int:
             if nblocks >= 1:
                 if nblocks > self.nobs:
                     print("more blocks than num rows. Setting nblocks equal to nrows")
-                    self.nDataBlocks = self.nobs 
+                    numBlocks = self.nobs 
                 else:
-                    self.nDataBlocks = nblocks
+                    numBlocks = nblocks
             else:
                 print("Error: nblocks must be greater than 1, setting nblocks to 1")
-                self.nDataBlocks = 1
+                numBlocks = 1
         else:
             print("Error: nblocks must INT be greater than 1, setting nblocks to 1")
-            self.nDataBlocks = 1
+            numBlocks = 1
+                    
+            
+        if self.nDataBlocks is not None:
+            if(self.nDataBlocks != numBlocks):
+                print("change of the number of blocks, resetting iterates automatically")
+                self.resetIterate = True
+        
+        self.nDataBlocks = numBlocks
                                         
         self.partition = createApartition(self.nobs,self.nDataBlocks)
         
         if self.dataAdded == False:
             print("Must add data before calling run(). Aborting...")
             return -1
-        
+                
         if blocksPerIteration >= self.nDataBlocks:
             blocksPerIteration = self.nDataBlocks
-                
+            
         self.cyclicPoint = 0
         
         if self.numRegs == 0:
@@ -301,9 +317,7 @@ class ProjSplitFit(object):
         numPSvars = self.nvar + 1
             
         if (resetIterate == True) | (self.resetIterate == True):
-            
-                
-            
+                                       
             self.x = np.zeros((self.numPSblocks,numPSvars))            
             self.y = np.zeros((self.numPSblocks,numPSvars))
             self.w = np.zeros((self.numPSblocks,numPSvars))
@@ -311,7 +325,6 @@ class ProjSplitFit(object):
             
             self.u = np.zeros((self.numPSblocks-1,numPSvars))
             self.resetIterate = False 
-            
         
         if maxIterations is None:
             maxIterations = float('Inf')
@@ -369,7 +382,7 @@ class ProjSplitFit(object):
         elif blockActivation == "random":
             activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
         elif blockActivation == "cyclic":
-            endPoint = (self.cyclicPoint + blocksPerIteration)%self.nDataBlocks
+            
             activeBlocks = []
             i = 0
             currentPoint = self.cyclicPoint
@@ -394,30 +407,39 @@ class ProjSplitFit(object):
         for reg in self.allRegularizers: 
             blockInd = self.nDataBlocks + i            
             if (reg.linearOp is None):
-                Giz = self.z
+                Giz = self.z[1:len(self.z)]
             else:
-                Giz = reg.linearOp.matvec(self.z)
-            t = Giz + reg.step*self.w[blockInd]
-            self.x[blockInd] = reg.getProx(t)
-            self.y[blockInd] = reg.step**(-1)*(t - self.x[blockInd])
+                Giz = reg.linearOp.matvec(self.z[1:len(self.z)])
+            t = Giz + reg.step*self.w[blockInd][1:len(self.z)]
+            self.x[blockInd][1:len(self.z)] = reg.getProx(t)
+            self.y[blockInd][1:len(self.z)] = reg.step**(-1)*(t - self.x[blockInd][1:len(self.z)])
+            i += 1
             
     
     def projectToHyperplane(self):
-        # compute u and v
+        # compute u and v for data blocks
         if self.nDataBlocks == self.numPSblocks:
             self.u[0:(self.nDataBlocks-1)] = self.x[0:(self.nDataBlocks-1)]-self.x[-1]
         else:
             self.u[0:self.nDataBlocks] = self.x[0:self.nDataBlocks]-self.x[-1]
         v = sum(self.y[0:self.nDataBlocks])
         
-        
-        for i in range(self.numPSblocks - self.nDataBlocks - 1):
-            if not (self.allRegularizers[i].linearOp is None):
-                self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - self.x[-1]
+        # compute u and v for regularizer blocks except the final regularizer 
+        for i in range(len(self.allRegularizers)-1):
+            if  (self.allRegularizers[i].linearOp is None):
+                self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - self.x[-1]                
                 v += self.y[i+self.nDataBlocks]
             else:
                 Gxn = self.allRegularizers[i].linearOp.matvec(self.x[-1])
                 self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - Gxn
+                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks])
+        
+        # compute v for final regularizer block
+        i = len(self.allRegularizers) - 1  
+        if i >= 0:
+            if  (self.allRegularizers[i].linearOp is None):                
+                v += self.y[i+self.nDataBlocks]
+            else:
                 v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks])
                         
         # compute pi
