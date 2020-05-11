@@ -27,7 +27,7 @@ def test_l1_lasso():
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
-    lam = 1.0
+    lam = 0.01
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
@@ -38,6 +38,11 @@ def test_l1_lasso():
     #print('cvx opt val = {}'.format(opt))
     #print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-3
+    
+    xps = projSplit.getSolution()
+    #plt.plot(xps)
+    #plt.plot(xopt)
+    #plt.show()
     
     #ps_vals = projSplit.getHistory()[0]
     #plt.plot(ps_vals)
@@ -61,7 +66,7 @@ def test_l1_normalized():
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=False)
-    lam = 5.0
+    lam = 0.03
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
@@ -88,7 +93,7 @@ def test_l1_intercept():
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
-    lam = 2.0
+    lam = 1e-3
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
@@ -121,10 +126,10 @@ def test_l1_intercept_and_normalize():
     projSplit = ps.ProjSplitFit()
     stepsize = 5e-1
     processor = ps.Forward2Fixed(stepsize)
-    gamma = 1e2
+    gamma = 1e-2
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
-    lam = 2.0
+    lam = 2e-4
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
@@ -157,7 +162,7 @@ def test_l1_intercept_and_normalize():
     
     
 if __name__ == '__main__':
-    test_l1_intercept()
+    test_l1_intercept_and_normalize()
     
     
     

@@ -27,7 +27,7 @@ def test_L1LR():
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,'logistic',processor,normalize=False,intercept=False)
-    lam = 5.0
+    lam = 5e-2
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
@@ -36,11 +36,12 @@ def test_L1LR():
     
     opt, xopt = runCVX_LR(A,y,lam)
     
-    #print('cvx opt val = {}'.format(opt))
-    #print('ps opt val = {}'.format(ps_val))
+    print('cvx opt val = {}'.format(opt))
+    print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-3
     
     projSplit.addData(A,y,'logistic',processor,normalize=True,intercept=False)
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()
     
     Anorm = np.copy(A)            
@@ -49,17 +50,21 @@ def test_L1LR():
     Anorm = Anorm/scaling
     opt, xopt = runCVX_LR(Anorm,y,lam)
     
-    #print('cvx opt val = {}'.format(opt))
-    #print('ps opt val = {}'.format(ps_val))
+    print('cvx opt val = {}'.format(opt))
+    print('ps opt val = {}'.format(ps_val))
+    #ps_vals = projSplit.getHistory()[0]
+    #plt.plot(ps_vals)
+    #plt.show()
     assert abs(ps_val-opt)<1e-3
     
     projSplit.addData(A,y,'logistic',processor,normalize=False,intercept=True)
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()
     
     AwithIntercept = np.zeros((m,d+1))
     AwithIntercept[:,0] = np.ones(m)
     AwithIntercept[:,1:(d+1)] = A
-    opt, xopt = runCVX_LR(AwithIntercept,y,lam)
+    opt, xopt = runCVX_LR(AwithIntercept,y,lam,True)
     
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
