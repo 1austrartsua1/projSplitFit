@@ -5,13 +5,13 @@ Created on Wed Apr 29 16:16:24 2020
 @author: pjohn
 """
 import sys
-sys.path.append('/home/pj222/gitFolders/projSplitFit')
+sys.path.append('../')
 import projSplit as ps 
 import numpy as np
 import pytest 
 from matplotlib import pyplot as plt
 from utils import runCVX_LR
-
+from utils import getLSdata
 
 
 def test_ls_fixed():
@@ -149,12 +149,12 @@ def test_Intercept_noNormalize():
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    stepsize = 5e-1
+    stepsize = 1e-1
     processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-2
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)  
-    projSplit.run(maxIterations = 1000,keepHistory = True,nblocks = 10)
+    projSplit.run(maxIterations = 2000,keepHistory = True,nblocks = 1)
     ps_sol = projSplit.getSolution()
     
     AwithIntercept = np.zeros((m,d+1))
@@ -332,7 +332,7 @@ def test_blockIs1bug():
     
 
 if __name__ == "__main__":    
-    test_cyclic()
+    test_Intercept_noNormalize()
     
     
     

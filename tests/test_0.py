@@ -8,7 +8,7 @@ Created on Fri Apr 17 12:12:34 2020
 # testing projSplit
 # test-0
 import sys
-sys.path.append('/home/pj222/gitFolders/projSplitFit')
+sys.path.append('../')
 import projSplit as ps 
 import pytest 
 #--------------------------------------------------------------------

@@ -11,11 +11,16 @@ import cvxpy as cvx
 import numpy as np
 
 
-def runCVX_LR(A,y,lam):
+def runCVX_LR(A,y,lam,intercept=False):
     (m,d) = A.shape
     x_cvx = cvx.Variable(d)
     f = (1/m)*cvx.sum(cvx.logistic(-cvx.multiply(y,A @ x_cvx)))
-    f += lam * cvx.norm(x_cvx, 1)
+    
+    if intercept:
+        # the intercept term is assumed to be the first coefficient
+        f += lam * cvx.norm(x_cvx[1:d], 1)
+    else:
+        f += lam * cvx.norm(x_cvx, 1)
     
     prob = cvx.Problem(cvx.Minimize(f))
     prob.solve(verbose=True)
@@ -23,13 +28,18 @@ def runCVX_LR(A,y,lam):
     xopt = x_cvx.value
     xopt = np.squeeze(np.array(xopt))
 
-    return [opt, xopt]
+    return opt, xopt
 
-def runCVX_lasso(A,y,lam):
+def runCVX_lasso(A,y,lam,intercept = False):
     (m,d) = A.shape
     x_cvx = cvx.Variable(d)
     f = (1/(2*m))*cvx.sum_squares(A@x_cvx - y)
-    f += lam * cvx.norm(x_cvx, 1)
+    if intercept:
+        # the intercept term is assumed to be the first coefficient
+        f += lam * cvx.norm(x_cvx[1:d], 1)
+    else:
+        f += lam * cvx.norm(x_cvx, 1)
+        
     prob = cvx.Problem(cvx.Minimize(f))
     prob.solve(verbose=True)
     opt = prob.value
@@ -43,6 +53,15 @@ def getLSdata(m,d):
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
     return A,y
+
+def getLRdata(m,d):
+    A = np.random.normal(0,1,[m,d])
+    y = 2.0*(np.random.normal(0,1,m)>0)-1.0
+    return A,y
+
+
+
+    
     
     
     

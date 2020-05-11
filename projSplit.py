@@ -403,16 +403,27 @@ class ProjSplitFit(object):
             self.process.update(self,self.partition[i],i)
                 
     def updateRegularizerBlocks(self):
-        i = 0
+        i = 0        
         for reg in self.allRegularizers: 
             blockInd = self.nDataBlocks + i            
             if (reg.linearOp is None):
-                Giz = self.z[1:len(self.z)]
+                Giz = self.z[1:len(self.z)]                
             else:
                 Giz = reg.linearOp.matvec(self.z[1:len(self.z)])
             t = Giz + reg.step*self.w[blockInd][1:len(self.z)]
             self.x[blockInd][1:len(self.z)] = reg.getProx(t)
             self.y[blockInd][1:len(self.z)] = reg.step**(-1)*(t - self.x[blockInd][1:len(self.z)])
+            
+            # update coefficients corresponding to the intercept term
+            if self.intercept:
+                t_intercept = self.z[0] + reg.step*self.w[blockInd][0]
+                self.x[blockInd][0] = t_intercept                
+            else:
+                self.x[blockInd][0] = 0.0
+                
+            self.y[blockInd][0] = 0.0
+                
+            
             i += 1
             
     
@@ -430,9 +441,10 @@ class ProjSplitFit(object):
                 self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - self.x[-1]                
                 v += self.y[i+self.nDataBlocks]
             else:
-                Gxn = self.allRegularizers[i].linearOp.matvec(self.x[-1])
+                Gxn = self.allRegularizers[i].linearOp.matvec(self.x[-1][1:len(self.z)])
                 self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - Gxn
-                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks])
+                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks][1:len(self.z)])
+                
         
         # compute v for final regularizer block
         i = len(self.allRegularizers) - 1  
@@ -440,7 +452,7 @@ class ProjSplitFit(object):
             if  (self.allRegularizers[i].linearOp is None):                
                 v += self.y[i+self.nDataBlocks]
             else:
-                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks])
+                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks][1:len(self.z)])
                         
         # compute pi
         pi = np.linalg.norm(self.u,'fro')**2 + self.gamma**(-1)*np.linalg.norm(v,2)**2
@@ -466,14 +478,6 @@ class ProjSplitFit(object):
             print("Gradient of the hyperplane is 0, converged")
         
         
-        
-        
-        
-        
-        
-            
-        
-    
 #-----------------------------------------------------------------------------
 class Regularizer(object):
     def __init__(self,value,prox,nu=1.0,step=1.0):

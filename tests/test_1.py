@@ -6,7 +6,7 @@ Created on Fri Apr 17 14:51:55 2020
 """
 
 import sys
-sys.path.append('/home/pj222/gitFolders/projSplitFit')
+sys.path.append('../')
 import projSplit as ps 
 import numpy as np
 import pytest 
