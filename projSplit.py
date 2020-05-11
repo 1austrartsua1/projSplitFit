@@ -68,6 +68,21 @@ class ProjSplitFit(object):
             self.yresponse = None
             return -1 
         
+        # check that all of the regularizers added so far have linear ops 
+        # which are consistent with the added data
+        for reg in self.allRegularizers:
+            if reg.linearOp is not None:
+                if reg.linearOp.shape[1] != self.nvar:
+                    print("ERROR: linear operator added with a regularizer")
+                    print("has number of columns which is inconsistent with the added data")
+                    print("Added data has {} columns".format(self.nvar))
+                    print("A linear operator has {} columns".format(reg.linearOp.shape[1]))
+                    print("These must be equal, aborting add data")
+                    self.A = None
+                    self.yresponse = None
+                    self.nvar = None
+                    return -1
+        
         self.yresponse = responses
         
         if normalize == True:
@@ -89,10 +104,11 @@ class ProjSplitFit(object):
         if(self.embedded != None):
             # check that process is the right type
             pass
-        
-                                                                
-        
+                
         self.intercept = intercept        
+        
+        
+                    
                 
         self.dataAdded = True
         self.resetIterate = True
@@ -119,6 +135,16 @@ class ProjSplitFit(object):
     def addRegularizer(self,regObj, linearOp=None, embed = False):
         #self.allRegularizers
         #reg.linearOp        
+        if (linearOp is not None) & (self.dataAdded):
+            #check the dimensions make sense            
+            if linearOp.shape[1] != self.nvar:
+                print("ERROR: linear operator added with this regularizer")
+                print("has number of columns which is inconsistent with the added data")
+                print("Added data has {} columns".format(self.nvar))
+                print("This linear operator has {} columns".format(linearOp.shape[1]))
+                print("These must be equal, aborting addRegularizer")
+                return -1 
+            
         if embed == True:
             if  (linearOp is not None):            
                 print("embedded regularizer cannot use linearOp != None")                
@@ -134,6 +160,8 @@ class ProjSplitFit(object):
         else:            
             self.allRegularizers.append(regObj)
             
+        
+                
         regObj.addLinear(linearOp)
         self.numRegs += 1
         self.resetIterate = True # Ensures we reset the variables if we add another regularizer 
