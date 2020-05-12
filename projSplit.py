@@ -280,7 +280,9 @@ class ProjSplitFit(object):
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
             nblocks = 1, blockActivation="greedy", blocksPerIteration=1, resetIterate=False):
         
-        
+        if self.dataAdded == False:
+            print("Must add data before calling run(). Aborting...")
+            return -1        
         
         if type(nblocks) == int:
             if nblocks >= 1:
@@ -305,10 +307,7 @@ class ProjSplitFit(object):
         self.nDataBlocks = numBlocks
                                         
         self.partition = createApartition(self.nobs,self.nDataBlocks)
-        
-        if self.dataAdded == False:
-            print("Must add data before calling run(). Aborting...")
-            return -1
+                
                 
         if blocksPerIteration >= self.nDataBlocks:
             blocksPerIteration = self.nDataBlocks
@@ -327,7 +326,7 @@ class ProjSplitFit(object):
                 if reg.linearOp is None:                                        
                     allRegsHaveLinOps = False
                     lastReg = self.allRegularizers[-1]
-                    if not (lastReg.linearOp is None):      
+                    if (lastReg.linearOp is not None):      
                         #swap the two regularizers to ensure 
                         #the last block corresponds to no linear op
                         self.allRegularizers[i] = lastReg
@@ -336,22 +335,47 @@ class ProjSplitFit(object):
                 i += 1
                     
             if allRegsHaveLinOps == True:
-                self.numPSblocks = self.nDataBlocks + self.numRegs + 1
-            else:
-                self.numPSblocks = self.nDataBlocks + self.numRegs
-
+                self.addRegularizer(Regularizer(lambda x,nu: 0, lambda x,nu,step: x))                
+                            
+            self.numPSblocks = self.nDataBlocks + self.numRegs
+                                    
+        nDataVars = self.nvar + 1
         
-            
-        numPSvars = self.nvar + 1
-            
         if (resetIterate == True) | (self.resetIterate == True):
-                                       
-            self.x = np.zeros((self.numPSblocks,numPSvars))            
-            self.y = np.zeros((self.numPSblocks,numPSvars))
-            self.w = np.zeros((self.numPSblocks,numPSvars))
-            self.z = np.zeros(numPSvars)
             
-            self.u = np.zeros((self.numPSblocks-1,numPSvars))
+            self.z = np.zeros(nDataVars)
+            self.xdata = np.zeros((self.nDataBlocks,nDataVars))            
+            self.ydata = np.zeros((self.nDataBlocks,nDataVars))
+            self.wdata = np.zeros((self.nDataBlocks,nDataVars))
+
+            if self.numRegs > 0:                        
+                self.udata = np.zeros((self.nDataBlocks,nDataVars))
+            else:
+                self.udata = np.zeros((self.nDataBlocks - 1,nDataVars))
+            
+            self.xreg = []
+            self.yreg = []
+            self.wreg = []
+            self.ureg = []
+            
+            i = 0
+            for reg in self.allRegularizers:
+                if reg.linearOp is None:
+                    if i == self.numRegs - 1:
+                        regVars = nDataVars
+                    else:
+                        regVars = nDataVars - 1                    
+                else:
+                    regVars = reg.linearOp.shape[0]
+                    
+                self.xreg.append(np.zeros(regVars))    
+                self.yreg.append(np.zeros(regVars))    
+                self.wreg.append(np.zeros(regVars))    
+                i += 1
+                if i != self.numRegs:
+                    self.ureg.append(np.zeros(regVars))    
+                
+
             self.resetIterate = False 
         
         if maxIterations is None:
@@ -400,8 +424,7 @@ class ProjSplitFit(object):
     def updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
         if blockActivation == "greedy":            
-            phis = np.sum((self.z - self.x)*(self.y - self.w),axis=1)
-            phis = phis[0:self.nDataBlocks]
+            phis = np.sum((self.z - self.xdata)*(self.ydata - self.wdata),axis=1)            
             
             if phis.min() >= 0:
                 activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
@@ -421,86 +444,111 @@ class ProjSplitFit(object):
                 if currentPoint == self.nDataBlocks:
                     currentPoint = 0
             self.cyclicPoint = currentPoint     
-            
-            
-        
-        
-        
+                                            
         for i in activeBlocks:
             # update this block
             self.process.update(self,self.partition[i],i)
                 
     def updateRegularizerBlocks(self):
         i = 0        
-        for reg in self.allRegularizers: 
-            blockInd = self.nDataBlocks + i            
+        for i in range(self.numRegs-1):             
+            reg = self.allRegularizers[i]
             if (reg.linearOp is None):
                 Giz = self.z[1:len(self.z)]                
             else:
                 Giz = reg.linearOp.matvec(self.z[1:len(self.z)])
-            t = Giz + reg.step*self.w[blockInd][1:len(self.z)]
-            self.x[blockInd][1:len(self.z)] = reg.getProx(t)
-            self.y[blockInd][1:len(self.z)] = reg.step**(-1)*(t - self.x[blockInd][1:len(self.z)])
-            
-            # update coefficients corresponding to the intercept term
-            if self.intercept:
-                t_intercept = self.z[0] + reg.step*self.w[blockInd][0]
-                self.x[blockInd][0] = t_intercept                
-            else:
-                self.x[blockInd][0] = 0.0
-                
-            self.y[blockInd][0] = 0.0
-                
-            
+            t = Giz + reg.step*self.wreg[i]
+            self.xreg[i] = reg.getProx(t)
+            self.yreg[i] = reg.step**(-1)*(t - self.xreg[i])
             i += 1
             
-    
+        # update coefficients corresponding to the last block
+        # including the intercept term
+        if self.numRegs > 0:
+            reg = self.allRegularizers[-1]
+            t = self.z[1:len(self.z)] + reg.step*self.wreg[-1][1:len(self.z)]
+            self.xreg[-1][1:len(self.z)] = reg.getProx(t)
+            self.yreg[-1][1:len(self.z)] = reg.step**(-1)*(t - self.xreg[i][1:len(self.z)])
+            
+            if self.intercept:
+                t_intercept = self.z[0] + reg.step*self.wreg[-1][0]
+                self.xreg[-1][0] = t_intercept                
+            else:
+                self.xreg[-1][0] = 0.0
+                
+            self.yreg[-1][0] = 0.0
+                
+                                    
     def projectToHyperplane(self):
+                            
         # compute u and v for data blocks
-        if self.nDataBlocks == self.numPSblocks:
-            self.u[0:(self.nDataBlocks-1)] = self.x[0:(self.nDataBlocks-1)]-self.x[-1]
+        if self.numRegs > 0:
+            self.udata = self.xdata - self.xreg[-1]            
         else:
-            self.u[0:self.nDataBlocks] = self.x[0:self.nDataBlocks]-self.x[-1]
-        v = sum(self.y[0:self.nDataBlocks])
+            self.udata = self.xdata[0:(self.nDataBlocks-1)] - self.xdata[-1]
+            
+        v = sum(self.ydata)
         
         # compute u and v for regularizer blocks except the final regularizer 
-        for i in range(len(self.allRegularizers)-1):
+        for i in range(self.numRegs - 1):
             if  (self.allRegularizers[i].linearOp is None):
-                self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - self.x[-1]                
-                v += self.y[i+self.nDataBlocks]
+                self.ureg[i] = self.xreg[i] - self.xreg[-1][1:len(self.z)]                
+                v += np.concatenate((np.array([0.0]),self.yreg[i]))
             else:
-                Gxn = self.allRegularizers[i].linearOp.matvec(self.x[-1][1:len(self.z)])
-                self.u[i+self.nDataBlocks] = self.x[i+self.nDataBlocks] - Gxn
-                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks][1:len(self.z)])
-                
-        
-        # compute v for final regularizer block
-        i = len(self.allRegularizers) - 1  
-        if i >= 0:
-            if  (self.allRegularizers[i].linearOp is None):                
-                v += self.y[i+self.nDataBlocks]
-            else:
-                v += self.allRegularizers[i].linearOp.rmatvec(self.y[i+self.nDataBlocks][1:len(self.z)])
+                Gxn = self.allRegularizers[i].linearOp.matvec(self.xreg[-1][1:len(self.z)])
+                self.ureg[i] = self.xreg[i] - Gxn
+                Gstary = self.allRegularizers[i].linearOp.rmatvec(self.yreg[i])
+                v += np.concatenate((np.array([0.0]),Gstary))
                         
+        # compute v for final regularizer block        
+        if self.numRegs>0:            
+            v += self.yreg[-1]
+                                    
         # compute pi
-        pi = np.linalg.norm(self.u,'fro')**2 + self.gamma**(-1)*np.linalg.norm(v,2)**2
-        
+        pi = np.linalg.norm(self.udata,'fro')**2 + self.gamma**(-1)*np.linalg.norm(v,2)**2
+        for i in range(self.numRegs - 1):
+            pi += np.linalg.norm(self.ureg[i],2)**2
+                
         # compute phi 
         if pi > 0:
             phi = self.z.dot(v)            
             
-            if len(self.w)>1:               
-                phi += np.sum(self.u*self.w[0:(self.numPSblocks-1)])
+            if (len(self.wdata) > 1) | (self.numRegs > 0):       
+                if self.numRegs == 0:
+                    phi += np.sum(self.udata*self.wdata[0:(self.numPSblocks-1)])
+                else:
+                    phi += np.sum(self.udata*self.wdata)
+                
+                for i in range(self.numRegs - 1):
+                    phi += self.ureg[i].dot(self.wreg[i])
             
-            phi -= np.sum(self.x*self.y)            
+            phi -= np.sum(self.xdata*self.ydata)
+            
+            for i in range(self.numRegs):     
+                phi -= self.xreg[i].dot(self.yreg[i])
+                
             # compute tau 
             tau = phi/pi
             # update z and w         
         
             self.z = self.z - self.gamma**(-1)*tau*v
-            if len(self.w) > 1:              
-                self.w[0:(len(self.w)-1)] = self.w[0:(len(self.w)-1)] - tau*self.u
-                self.w[-1] = -np.sum(self.w[0:(len(self.w)-1)],axis=0)
+            if (len(self.wdata) > 1) | (self.numRegs > 0):              
+                if self.numRegs == 0:                    
+                    self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
+                    self.wdata[-1] = -np.sum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
+                else:
+                    self.wdata = self.wdata - tau*self.udata
+                    negsumw = -np.sum(self.wdata,axis=0)
+                    for i in range(self.numRegs - 1):
+                        self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
+                        if self.allRegularizers[i].linearOp is None:
+                            negsumw -= np.concatenate((np.array([0.0]),self.wreg[i]))
+                        else:
+                            Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
+                            negsumw -= np.concatenate((np.array([0.0]),Gstarw))
+                    
+                    self.wreg[-1] = negsumw
+                    
             
         else:
             print("Gradient of the hyperplane is 0, converged")
@@ -658,9 +706,9 @@ class Forward2Fixed(ProjSplitLossProcessor):
     def update(self,psObj,thisSlice,block):        
         gradz = ProjSplitLossProcessor.getAGrad(psObj,psObj.z,thisSlice,block)
         
-        psObj.x[block] = psObj.z - self.step*(gradz - psObj.w[block])        
-        gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.x[block],thisSlice,block)        
-        psObj.y[block] = gradx        
+        psObj.xdata[block] = psObj.z - self.step*(gradz - psObj.wdata[block])        
+        gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice,block)        
+        psObj.ydata[block] = gradx        
         
 class Forward2Backtrack(ProjSplitLossProcessor):
     def __init__(self,initialStep,acceptThreshold,backtrackFactor,

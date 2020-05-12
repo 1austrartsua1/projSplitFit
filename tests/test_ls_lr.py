@@ -47,37 +47,37 @@ def test_cyclic():
     
     ps_opt = projSplit.getObjective()
     
-    assert abs(ps_opt - LSval)<1e-3
+    assert abs(ps_opt - LSval)<1e-2
     
     projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,
                   blockActivation="cyclic",resetIterate=True, blocksPerIteration=2)
 
     ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-3
+    assert abs(ps_opt - LSval)<1e-2
     
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
                   blockActivation="cyclic",resetIterate=True, blocksPerIteration=3)
     
     ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-3
+    assert abs(ps_opt - LSval)<1e-2
     
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
                   blockActivation="cyclic",resetIterate=True, blocksPerIteration=4)
     
     ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-3
+    assert abs(ps_opt - LSval)<1e-2
             
     projSplit.run(maxIterations=20,keepHistory = True, nblocks = 5,
                   blockActivation="cyclic",resetIterate=True, blocksPerIteration=5)
     
     ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-3
+    assert abs(ps_opt - LSval)<1e-2
     
     projSplit.run(maxIterations=20,keepHistory = True, nblocks = 5,
                   blockActivation="cyclic",resetIterate=True, blocksPerIteration=6)
     
     ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-3
+    assert abs(ps_opt - LSval)<1e-2
 
     
     
@@ -140,8 +140,8 @@ def test_ls_noIntercept_Normalize():
     #plt.plot(psvals)
     #plt.show()
     
-    #assert np.linalg.norm(xhat - ps_sol)<1e-3
-    assert(abs(psSolVal - LSval) < 1e-3)
+    #assert np.linalg.norm(xhat - ps_sol)<1e-2
+    assert(abs(psSolVal - LSval) < 1e-2)
  
 def test_Intercept_noNormalize():
     projSplit = ps.ProjSplitFit()
@@ -169,7 +169,7 @@ def test_Intercept_noNormalize():
     print('PS val = {}'.format(ps_val))
     
     
-    assert(abs(ps_val - LSval) < 1e-3)
+    assert(abs(ps_val - LSval) < 1e-2)
     assert np.linalg.norm(xhat-ps_sol)<1e-1
     
     
@@ -259,7 +259,7 @@ def test_lr_normalize():
     #plt.plot(func_val)
     #plt.show()
         
-    assert abs(opt - ps_opt_val)<1e-3
+    assert abs(opt - ps_opt_val)<1e-2
     
 def test_lr_norm_intercept():
     projSplit = ps.ProjSplitFit()
@@ -289,7 +289,7 @@ def test_lr_norm_intercept():
     print("ps opt is {}".format(ps_opt_val))
     print("cvx opt is {}".format(opt))
     
-    assert abs(opt - ps_opt_val)<1e-3
+    assert abs(opt - ps_opt_val)<1e-2
     assert np.linalg.norm(xps - xopt)<1e-1
     
     
@@ -297,7 +297,7 @@ def test_lr_norm_intercept():
     projSplit.run(maxIterations = 2000,keepHistory = True,nblocks = 10)    
     
     ps_opt_val = projSplit.getObjective()
-    assert abs(opt - ps_opt_val)<1e-3
+    assert abs(opt - ps_opt_val)<1e-2
     
 
 def test_blockIs1bug():

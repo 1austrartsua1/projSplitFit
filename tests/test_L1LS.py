@@ -35,8 +35,8 @@ def test_l1_lasso():
     ps_val = projSplit.getObjective()
     
     opt,xopt = runCVX_lasso(A,y,lam)
-    #print('cvx opt val = {}'.format(opt))
-    #print('ps opt val = {}'.format(ps_val))
+    print('cvx opt val = {}'.format(opt))
+    print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-3
     
     xps = projSplit.getSolution()
@@ -44,7 +44,7 @@ def test_l1_lasso():
     #plt.plot(xopt)
     #plt.show()
     
-    #ps_vals = projSplit.getHistory()[0]
+    ps_vals = projSplit.getHistory()[0]
     #plt.plot(ps_vals)
     #plt.show()
     
@@ -162,7 +162,7 @@ def test_l1_intercept_and_normalize():
     
     
 if __name__ == '__main__':
-    test_l1_intercept_and_normalize()
+    test_l1_lasso()
     
     
     
