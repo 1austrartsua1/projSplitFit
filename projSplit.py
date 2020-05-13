@@ -101,9 +101,15 @@ class ProjSplitFit(object):
                
         self.process = process
         
-        if(self.embedded != None):
-            # check that process is the right type
-            pass
+        if (self.embedded is not None) &(self.process.embedOK == False):
+            print("WARNING: A regularizer was added with embedded = True")
+            print("But embedding is not possible with this process object")
+            print("Moving embedded regularizer to be an ordinary regularizer")
+            regObj = self.embedded 
+            self.allRegularizers.append(regObj)
+            self.embedded = None
+            self.numRegs += 1
+            
                 
         self.intercept = intercept        
         
@@ -146,24 +152,36 @@ class ProjSplitFit(object):
                 return -1 
             
         if embed == True:
-            if  (linearOp is not None):            
-                print("embedded regularizer cannot use linearOp != None")                
-                print("Aborting without adding regularizer")
-                return -1
-            
-            
-            if self.process is not None:
-                # test that processOp is of the right type
-                pass
-            
-            self.embedded = regObj            
+                                    
+            if (self.process is not None): 
+                if(self.process.embedOK == False):
+                
+                    print("WARNING: This regularizer was added with embedded = True")
+                    print("But embedding is not possible with the process object used in addData()")
+                    print("Moving embedded regularizer to be an ordinary regularizer")
+                    self.allRegularizers.append(regObj)
+                    self.numRegs += 1
+                elif(linearOp is not None):                                
+                    print("embedded regularizer cannot use linearOp != None")                
+                    print("Aborting without adding regularizer")
+                    return -1
+                else:
+                    self.embedded = regObj            
+                    
+            elif(linearOp is not None):                                
+                    print("embedded regularizer cannot use linearOp != None")                
+                    print("Aborting without adding regularizer")
+                    return -1
+                else:
+                    self.embedded = regObj            
+                
         else:            
             self.allRegularizers.append(regObj)
-            
+            self.numRegs += 1
         
                 
         regObj.addLinear(linearOp)
-        self.numRegs += 1
+        
         self.resetIterate = True # Ensures we reset the variables if we add another regularizer 
     
     def getObjective(self):
@@ -719,6 +737,7 @@ class ProjSplitLossProcessor(object):
 class Forward2Fixed(ProjSplitLossProcessor):
     def __init__(self,step=1.0):
         self.step = step
+        self.embedOK = True
         
     def update(self,psObj,thisSlice,block):        
         gradz = ProjSplitLossProcessor.getAGrad(psObj,psObj.z,thisSlice,block)

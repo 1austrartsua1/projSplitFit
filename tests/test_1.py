@@ -118,8 +118,53 @@ def test_add_linear_ops_v2():
     assert(projSplit.addData(A,y,2,processDummy)==-1)
     
 
+def test_good_embed():
+    projSplit = ps.ProjSplitFit()
+    m = 10
+    d = 20
+    A = np.random.normal(0,1,[m,d])
+    y = np.random.normal(0,1,m)
+    class ProcessDummy():
+        def __init__(self):
+            self.embedOK = True
+    processDummy = ProcessDummy()    
+    regObj = ps.L1()
+    projSplit.addRegularizer(regObj,embed = True)
+    projSplit.addData(A,y,2,processDummy)
+    assert projSplit.numRegs == 0
+    
+    
+    projSplit = ps.ProjSplitFit()    
+    class ProcessDummy():
+        def __init__(self):
+            self.embedOK = True
+    projSplit.addData(A,y,2,processDummy)
+    projSplit.addRegularizer(regObj,embed = True)
+    assert projSplit.numRegs == 0
+            
+
+def test_bad_embed():
+    projSplit = ps.ProjSplitFit()
+    m = 10
+    d = 20
+    A = np.random.normal(0,1,[m,d])
+    y = np.random.normal(0,1,m)
+    class ProcessDummy():
+        def __init__(self):
+            self.embedOK = False
+    processDummy = ProcessDummy()    
+    regObj = ps.L1()
+    projSplit.addRegularizer(regObj,embed = True)
+    projSplit.addData(A,y,2,processDummy)
+    assert (projSplit.numRegs == 1)
+    
+    projSplit = ps.ProjSplitFit()
+    projSplit.addData(A,y,2,processDummy)
+    projSplit.addRegularizer(regObj,embed = True)
+    assert (projSplit.numRegs == 1)
+
 if __name__ == '__main__':
-    test_add_linear_ops_v2()
+    test_bad_embed()
     
     
 
