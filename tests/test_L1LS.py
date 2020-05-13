@@ -12,8 +12,133 @@ import pytest
 from matplotlib import pyplot as plt
 from utils import runCVX_lasso
 from utils import getLSdata
+import cvxpy as cvx
 
+def test_user_defined():
+    
+    def val1(x,nu):
+        return 0.5*nu*np.linalg.norm(x,2)**2
+    
+    def prox1(x,nu,step):
+        return(1+step*nu)**(-1)*x
+        
+    def val2(x,nu):
+        return nu*np.linalg.norm(x,2)
+    
+    def prox2(x,nu,step):
+        normx = np.linalg.norm(x,2)
+        if normx <= step*nu:
+            return 0*x
+        else:
+            return (normx - step*nu)*x/normx 
 
+    tau = 0.2
+    def val3(x,nu):        
+        if((x<=tau)&(x>=-tau)).all():            
+            return 0
+        else:
+            return float('inf')
+        
+    def prox3(x,nu,step):
+        ones = np.ones(x.shape)        
+        return tau*(x>=tau)*ones - tau*(x<=-tau)*ones + ((x<=tau)&(x>=-tau))*x 
+    
+    funcList = [(val3,prox3),(val1,prox1),(val2,prox2)]
+    
+    i = 0
+    for (val,prox) in funcList:
+        m = 40
+        d = 10
+        A,y = getLSdata(m,d)    
+        
+        projSplit = ps.ProjSplitFit()
+        stepsize = 1e-1
+        processor = ps.Forward2Fixed(stepsize)        
+
+        gamma = 1e0        
+        projSplit.setDualScaling(gamma)
+        projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+        nu = 5.5
+        step = 1e0
+        regObj = ps.Regularizer(val,prox,nu = nu,step=step)
+        projSplit.addRegularizer(regObj)        
+        projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
+                      resetIterate=True)
+        ps_val = projSplit.getObjective()
+        
+        (m,d) = A.shape
+        x_cvx = cvx.Variable(d)
+        f = (1/(2*m))*cvx.sum_squares(A@x_cvx - y)
+        
+        if i == 0:                        
+            constraints = [-tau <= x_cvx, x_cvx <= tau]
+        elif i ==1:
+            f += 0.5*nu*cvx.norm(x_cvx,2)**2
+            constraints = []
+        elif i == 2:
+            f += nu*cvx.norm(x_cvx,2)
+            constraints = []
+        
+            
+            
+        obj =  cvx.Minimize(f)
+        prob = cvx.Problem(obj,constraints)
+        prob.solve(verbose=True)
+        opt = prob.value
+        xopt = x_cvx.value
+        xopt = np.squeeze(np.array(xopt))
+        
+        if i == 0:
+            assert(np.linalg.norm(xopt-projSplit.getSolution(),2)<1e-2)    
+        else:
+            print('cvx opt val = {}'.format(opt))
+            print('ps opt val = {}'.format(ps_val))        
+            assert abs(ps_val-opt)<1e-2
+        i += 1
+    
+    # test combined 
+    m = 40
+    d = 10
+    A,y = getLSdata(m,d)    
+    
+    projSplit = ps.ProjSplitFit()
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)        
+
+    gamma = 1e0        
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+    nu1 = 0.01
+    step = 1e0
+    regObj = ps.Regularizer(val1,prox1,nu = nu1,step=step)
+    projSplit.addRegularizer(regObj)        
+    nu2 = 0.05
+    step = 1e0
+    regObj = ps.Regularizer(val2,prox2,nu = nu2,step=step)
+    projSplit.addRegularizer(regObj)            
+    step = 1e0
+    regObj = ps.Regularizer(val3,prox3,step=step)
+    projSplit.addRegularizer(regObj)        
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
+                  resetIterate=True)
+    ps_val = projSplit.getObjective()
+    
+    x_cvx = cvx.Variable(d)
+    f = (1/(2*m))*cvx.sum_squares(A@x_cvx - y)
+    
+    
+    constraints = [-tau <= x_cvx, x_cvx <= tau]
+    
+    f += 0.5*nu1*cvx.norm(x_cvx,2)**2            
+    f += nu2*cvx.norm(x_cvx,2)
+    
+    obj =  cvx.Minimize(f)
+    prob = cvx.Problem(obj,constraints)
+    prob.solve(verbose=True)
+    opt = prob.value
+    xopt = x_cvx.value
+    xopt = np.squeeze(np.array(xopt))    
+    assert(np.linalg.norm(xopt-projSplit.getSolution(),2)<1e-2)  
     
     
 def test_l1_lasso():
@@ -162,7 +287,7 @@ def test_l1_intercept_and_normalize():
     
     
 if __name__ == '__main__':
-    test_l1_lasso()
+    test_user_defined()
     
     
     

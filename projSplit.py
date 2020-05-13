@@ -387,6 +387,7 @@ class ProjSplitFit(object):
         times = [0]
         primalErrs = []
         dualErrs = []
+        phis = []
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################
@@ -395,7 +396,7 @@ class ProjSplitFit(object):
             t0 = time.time()
             self.updateLossBlocks(blockActivation,blocksPerIteration)        # update all blocks (xi,yi) from (xi,yi,z,wi)
             self.updateRegularizerBlocks()            
-            self.projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
+            phi = self.projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
             t1 = time.time()
             self.primalErr = 1.0
             self.dualErr = 1.0
@@ -404,6 +405,7 @@ class ProjSplitFit(object):
                 times.append(times[-1]+t1-t0)
                 primalErrs.append(self.primalErr)
                 dualErrs.append(self.dualErr)
+                phis.append(phi)
                 
             if self.primalErr < primalTol:
                 print("Less than primal tol, finishing run")
@@ -419,6 +421,7 @@ class ProjSplitFit(object):
             self.historyArray.append(times)
             self.historyArray.append(primalErrs)
             self.historyArray.append(dualErrs)
+            self.historyArray.append(phis)
             self.historyArray = np.array(self.historyArray)        
             
     def updateLossBlocks(self,blockActivation,blocksPerIteration):        
@@ -468,7 +471,7 @@ class ProjSplitFit(object):
             reg = self.allRegularizers[-1]
             t = self.z[1:len(self.z)] + reg.step*self.wreg[-1][1:len(self.z)]
             self.xreg[-1][1:len(self.z)] = reg.getProx(t)
-            self.yreg[-1][1:len(self.z)] = reg.step**(-1)*(t - self.xreg[i][1:len(self.z)])
+            self.yreg[-1][1:len(self.z)] = reg.step**(-1)*(t - self.xreg[-1][1:len(self.z)])
             
             if self.intercept:
                 t_intercept = self.z[0] + reg.step*self.wreg[-1][0]
@@ -511,49 +514,63 @@ class ProjSplitFit(object):
                 
         # compute phi 
         if pi > 0:
-            phi = self.z.dot(v)            
+            phi = self.getPhi(v)
             
-            if (len(self.wdata) > 1) | (self.numRegs > 0):       
-                if self.numRegs == 0:
-                    phi += np.sum(self.udata*self.wdata[0:(self.numPSblocks-1)])
-                else:
-                    phi += np.sum(self.udata*self.wdata)
-                
-                for i in range(self.numRegs - 1):
-                    phi += self.ureg[i].dot(self.wreg[i])
             
-            phi -= np.sum(self.xdata*self.ydata)
             
-            for i in range(self.numRegs):     
-                phi -= self.xreg[i].dot(self.yreg[i])
-                
-            # compute tau 
-            tau = phi/pi
-            # update z and w         
-        
-            self.z = self.z - self.gamma**(-1)*tau*v
-            if (len(self.wdata) > 1) | (self.numRegs > 0):              
-                if self.numRegs == 0:                    
-                    self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
-                    self.wdata[-1] = -np.sum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
-                else:
-                    self.wdata = self.wdata - tau*self.udata
-                    negsumw = -np.sum(self.wdata,axis=0)
-                    for i in range(self.numRegs - 1):
-                        self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
-                        if self.allRegularizers[i].linearOp is None:
-                            negsumw -= np.concatenate((np.array([0.0]),self.wreg[i]))
-                        else:
-                            Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
-                            negsumw -= np.concatenate((np.array([0.0]),Gstarw))
-                    
-                    self.wreg[-1] = negsumw
-                    
+            if phi > 0:               
+                # compute tau 
+                tau = phi/pi
+                # update z and w         
+            
+                self.z = self.z - self.gamma**(-1)*tau*v
+                if (len(self.wdata) > 1) | (self.numRegs > 0):              
+                    if self.numRegs == 0:                    
+                        self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
+                        self.wdata[-1] = -np.sum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
+                    else:
+                        self.wdata = self.wdata - tau*self.udata
+                        negsumw = -np.sum(self.wdata,axis=0)
+                        for i in range(self.numRegs - 1):
+                            self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
+                            if self.allRegularizers[i].linearOp is None:
+                                negsumw -= np.concatenate((np.array([0.0]),self.wreg[i]))
+                            else:
+                                Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
+                                negsumw -= np.concatenate((np.array([0.0]),Gstarw))
+                        
+                        self.wreg[-1] = negsumw
+            
+            
+            #phiAfter = self.getPhi(v)
+            #if abs(phiAfter)>1e-10:
+            #    print(phiAfter)
             
         else:
             print("Gradient of the hyperplane is 0, converged")
+            phi = None
         
+        return phi
+    
+    def getPhi(self,v):
+        phi = self.z.dot(v)            
+            
+        if (len(self.wdata) > 1) | (self.numRegs > 0):       
+            if self.numRegs == 0:
+                phi += np.sum(self.udata*self.wdata[0:(self.numPSblocks-1)])
+            else:
+                phi += np.sum(self.udata*self.wdata)
+            
+            for i in range(self.numRegs - 1):
+                phi += self.ureg[i].dot(self.wreg[i])
         
+        phi -= np.sum(self.xdata*self.ydata)
+        
+        for i in range(self.numRegs):     
+            phi -= self.xreg[i].dot(self.yreg[i])
+            
+        return phi
+                
 #-----------------------------------------------------------------------------
 class Regularizer(object):
     def __init__(self,value,prox,nu=1.0,step=1.0):

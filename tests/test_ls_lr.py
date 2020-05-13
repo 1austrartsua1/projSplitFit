@@ -13,7 +13,6 @@ from matplotlib import pyplot as plt
 from utils import runCVX_LR
 from utils import getLSdata
 
-
 def test_ls_fixed():
     projSplit = ps.ProjSplitFit()
     m = 10
