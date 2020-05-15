@@ -14,7 +14,71 @@ from matplotlib import pyplot as plt
 from utils import runCVX_lasso
 from utils import getLSdata
 
-
+def test_embedded():
+    m = 40
+    d = 10
+    A,y = getLSdata(m,d)        
+    projSplit = ps.ProjSplitFit()
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e0
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+    lam = 0.01
+    step = 1.0
+    regObj = ps.L1(lam,step)
+    projSplit.addRegularizer(regObj,embed=True)
+    
+    for nblocks in range(1,11,3):
+        projSplit.run(maxIterations=1000,keepHistory = True, nblocks = nblocks)
+        ps_val = projSplit.getObjective()
+        
+        opt,xopt = runCVX_lasso(A,y,lam)
+        
+        print('cvx opt val = {}'.format(opt))
+        print('ps opt val = {}'.format(ps_val))
+        assert abs(ps_val-opt)<1e-3
+        
+    
+    projSplit.addRegularizer(regObj,embed=True)
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5)
+    ps_val = projSplit.getObjective()
+    
+    opt,xopt = runCVX_lasso(A,y,2*lam)
+    
+    print('cvx opt val = {}'.format(opt))
+    print('ps opt val = {}'.format(ps_val))
+    assert abs(ps_val-opt)<1e-3
+    
+    
+    
+    projSplit = ps.ProjSplitFit()
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e-2
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
+    lam = 0.01
+    step = 1.0
+    regObj = ps.L1(lam,step)
+    projSplit.addRegularizer(regObj,embed=True)    
+    regObj = ps.L1(lam,step)
+    projSplit.addRegularizer(regObj,embed=True)            
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5)
+    ps_val = projSplit.getObjective()
+    
+    AwithIntercept = np.zeros((m,d+1))
+    AwithIntercept[:,0] = np.ones(m)
+    AwithIntercept[:,1:(d+1)] = A
+    
+    opt,xopt = runCVX_lasso(AwithIntercept,y,2*lam,True,True)
+    print('cvx opt val = {}'.format(opt))
+    print('ps opt val = {}'.format(ps_val))    
+    assert abs(ps_val-opt)<1e-3
+    
+    
+    
+    
 
 def test_l1_multi_lasso():
     m = 40
@@ -75,7 +139,7 @@ def test_l1_multi_lasso():
     
 
 if __name__ == '__main__':
-    test_l1_multi_lasso()
+    test_embedded()
     
     
     

@@ -21,12 +21,13 @@ class ProjSplitFit(object):
         
         self.setDualScaling(dualScaling)                
         self.allRegularizers = []
-        self.embedded = None         
+        self.embeddedFlag = False
         self.process = None 
         self.dataAdded = False
         self.numRegs = 0
         self.z = None
         self.nDataBlocks = None
+        
     
     def setDualScaling(self,dualScaling):
         try:    
@@ -102,13 +103,14 @@ class ProjSplitFit(object):
                
         self.process = process
         
-        if (self.embedded is not None) & (self.process.embedOK == False):
+        if (self.embeddedFlag == True) & (self.process.embedOK == False):
             print("WARNING: A regularizer was added with embedded = True")
             print("But embedding is not possible with this process object")
             print("Moving embedded regularizer to be an ordinary regularizer")
             regObj = self.embedded 
             self.allRegularizers.append(regObj)
             self.embedded = None
+            self.embeddedFlag = False
             self.numRegs += 1
             
                 
@@ -153,44 +155,34 @@ class ProjSplitFit(object):
                 return -1 
             
         if embed == True:
-                                    
+            OK2Embed = True
             if (self.process is not None): 
-                if(self.process.embedOK == False):
-                
+                if(self.process.embedOK == False):                
                     print("WARNING: This regularizer was added with embedded = True")
                     print("But embedding is not possible with the process object used in addData()")
                     print("Moving embedded regularizer to be an ordinary regularizer")
                     self.allRegularizers.append(regObj)
                     self.numRegs += 1
-                elif(linearOp is not None):                                
-                    print("embedded regularizer cannot use linearOp != None")                
-                    print("Aborting without adding regularizer")
-                    return -1
-                else:
-                    if self.embedded is not None:
-                        print("Warning: Regularizer embed option set to True")
-                        print("But an earlier regularizer is already embedded")
-                        print("Can only embed one regularizer")
-                        print("Moving old regularizer to be non-embedded, this new regularizer will be embedded")
-                        self.allRegularizers.append(self.embedded)
-                        self.numRegs += 1
-                        
-                    self.embedded = regObj            
+                    OK2Embed = False                
                     
-            elif(linearOp is not None):                                
-                    print("embedded regularizer cannot use linearOp != None")                
-                    print("Aborting without adding regularizer")
-                    return -1
-            else:
-                if self.embedded is not None:
-                        print("Warning: Regularizer embed option set to True")
-                        print("But an earlier regularizer is already embedded")
-                        print("Can only embed one regularizer")
-                        print("Moving old regularizer to be non-embedded, this new regularizer will be embedded")
-                        self.allRegularizers.append(self.embedded)
-                        self.numRegs += 1
+            if OK2Embed & (linearOp is not None):                                
+                print("WARNING: embedded regularizer cannot use linearOp != None")                
+                print("Moving embedded regularizer to be an ordinary regularizer")
+                self.allRegularizers.append(regObj)
+                self.numRegs += 1  
+                OK2Embed = False
+            
+            if OK2Embed:
+                if self.embeddedFlag == True:
+                    print("Warning: Regularizer embed option set to True")
+                    print("But an earlier regularizer is already embedded")
+                    print("Can only embed one regularizer")
+                    print("Moving old regularizer to be non-embedded, the new regularizer will be embedded")
+                    self.allRegularizers.append(self.embedded)
+                    self.numRegs += 1
                         
-                self.embedded = regObj            
+                self.embedded = regObj 
+                self.embeddedFlag = True                 
                 
         else:            
             self.allRegularizers.append(regObj)
@@ -229,10 +221,10 @@ class ProjSplitFit(object):
             Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])              
             currentLoss += reg.evaluate(Hiz)
                 
-        if self.embedded != None:
+        if self.embeddedFlag == True:
             reg = self.embedded 
-            Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])            
-            currentLoss += reg.evaluate(Hiz)
+            Hiz = self.z[1:len(self.z)]
+            currentLoss += self.embeddedScaling*reg.evaluate(Hiz)/reg.getScalingAndStepsize()[0]
         
         return currentLoss
         
@@ -347,6 +339,21 @@ class ProjSplitFit(object):
             
         self.cyclicPoint = 0
         
+        if self.embeddedFlag == False:
+            # if no embedded reg added, create an artificial embedded reg
+            # with a "pass-through prox
+            self.embedded = Regularizer(None,(lambda x,nu,step:x))
+        else:
+            if self.embedded.getScalingAndStepsize()[1] != self.process.getStep():
+                print("WARNING: embedded regularizer must use the same stepsize as the Loss update process")
+                print("Setting the embedded regularizer stepsize to be the process stepsize")
+                self.embedded.setStep(self.process.getStep())
+            
+            # the scaling used must be divided down by the number of blocks because
+            # this term is distributed equally over all loss blocks
+            self.embeddedScaling = self.embedded.getScalingAndStepsize()[0]
+            self.embedded.setScaling(self.embeddedScaling/self.nDataBlocks)
+        
         if self.numRegs == 0:
             self.numPSblocks = self.nDataBlocks
         else:
@@ -454,7 +461,12 @@ class ProjSplitFit(object):
             self.historyArray.append(primalErrs)
             self.historyArray.append(dualErrs)
             self.historyArray.append(phis)
-            self.historyArray = np.array(self.historyArray)        
+            self.historyArray = np.array(self.historyArray) 
+        
+        if self.embeddedFlag == True:
+            # we modified the embedded scaling to deal with multiple num blocks
+            # now set it back to the previous value
+            self.embedded.setScaling(self.embeddedScaling)
             
     def updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
@@ -728,8 +740,10 @@ class ProjSplitLossProcessor(object):
         else:
             grad0 = np.array([0.0])
         grad = np.concatenate((grad0,grad))
-        return grad        
-    
+        return grad  
+      
+    def getStep(self):
+        return self.step 
 
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
@@ -739,10 +753,12 @@ class Forward2Fixed(ProjSplitLossProcessor):
         
     def update(self,psObj,thisSlice,block):        
         gradz = ProjSplitLossProcessor.getAGrad(psObj,psObj.z,thisSlice,block)
-        
-        psObj.xdata[block] = psObj.z - self.step*(gradz - psObj.wdata[block])        
+        t = psObj.z - self.step*(gradz - psObj.wdata[block])        
+        psObj.xdata[block][1:len(psObj.z)] = psObj.embedded.getProx(t[1:len(psObj.z)]) 
+        psObj.xdata[block][0] = t[0]        
+        a = self.step**(-1)*(t-psObj.xdata[block])
         gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice,block)        
-        psObj.ydata[block] = gradx        
+        psObj.ydata[block] = a + gradx        
         
 class Forward2Backtrack(ProjSplitLossProcessor):
     def __init__(self,initialStep,acceptThreshold,backtrackFactor,

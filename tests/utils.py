@@ -30,7 +30,16 @@ def runCVX_LR(A,y,lam,intercept=False):
 
     return opt, xopt
 
-def runCVX_lasso(A,y,lam,intercept = False):
+def runCVX_lasso(Ain,y,lam,intercept = False,normalize = False):
+    if normalize:
+        A = np.copy(Ain)            
+        scaling = np.linalg.norm(A,axis=0)
+        scaling += 1.0*(scaling < 1e-10)
+        A = A/scaling
+    else:
+        A = Ain
+        
+    
     (m,d) = A.shape
     x_cvx = cvx.Variable(d)
     f = (1/(2*m))*cvx.sum_squares(A@x_cvx - y)

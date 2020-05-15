@@ -14,6 +14,91 @@ from utils import runCVX_lasso
 from utils import getLSdata
 import cvxpy as cvx
 
+
+def test_user_defined_embedded():
+    def val1(x,nu):
+        return 0.5*nu*np.linalg.norm(x,2)**2
+    
+    def prox1(x,nu,step):
+        return(1+step*nu)**(-1)*x
+        
+    def val2(x,nu):
+        return nu*np.linalg.norm(x,2)
+    
+    def prox2(x,nu,step):
+        normx = np.linalg.norm(x,2)
+        if normx <= step*nu:
+            return 0*x
+        else:
+            return (normx - step*nu)*x/normx 
+
+    tau = 0.2
+    def val3(x,nu):        
+        if((x<=tau)&(x>=-tau)).all():            
+            return 0
+        else:
+            return float('inf')
+        
+    def prox3(x,nu,step):
+        ones = np.ones(x.shape)        
+        return tau*(x>=tau)*ones - tau*(x<=-tau)*ones + ((x<=tau)&(x>=-tau))*x 
+    
+    m = 40
+    d = 10
+    A,y = getLSdata(m,d)    
+        
+    projSplit = ps.ProjSplitFit()
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)        
+
+    gamma = 1e0        
+    projSplit.setDualScaling(gamma)
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
+        
+    regObj = []
+    nu = [0.01,0.03,0.1]
+    step = [1.0,1.0,1.0]
+    
+    regObj.append(ps.Regularizer(val1,prox1,nu[0],step[0]))
+    regObj.append(ps.Regularizer(val2,prox2,nu[1],step[1]))
+    regObj.append(ps.Regularizer(val3,prox3,nu[2],step[2]))
+    
+    
+    projSplit.addRegularizer(regObj[0])
+    projSplit.addRegularizer(regObj[1])
+    projSplit.addRegularizer(regObj[2],embed=True)
+    
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
+                      resetIterate=True)
+    
+    
+    AwithIntercept = np.zeros((m,d+1))
+    AwithIntercept[:,0] = np.ones(m)
+    AwithIntercept[:,1:(d+1)] = A
+    
+    (m,d) = AwithIntercept.shape
+    x_cvx = cvx.Variable(d)
+    f = (1/(2*m))*cvx.sum_squares(AwithIntercept@x_cvx - y)
+    
+    constraints = [-tau <= x_cvx[1:d], x_cvx[1:d] <= tau]
+    
+    f += 0.5*nu[0]*cvx.norm(x_cvx[1:d],2)**2            
+    f += nu[1]*cvx.norm(x_cvx[1:d],2)
+    
+       
+    obj =  cvx.Minimize(f)
+    prob = cvx.Problem(obj,constraints)
+    prob.solve(verbose=False)
+    #opt = prob.value
+    xopt = x_cvx.value
+    xopt = np.squeeze(np.array(xopt))
+    
+    print("Norm error = {}".format(np.linalg.norm(xopt-projSplit.getSolution(),2)))
+    assert(np.linalg.norm(xopt-projSplit.getSolution(),2)<1e-2)
+    
+    
+    
+    
 def test_user_defined():
     
     def val1(x,nu):
@@ -287,7 +372,7 @@ def test_l1_intercept_and_normalize():
     
     
 if __name__ == '__main__':
-    test_user_defined()
+    test_user_defined_embedded()
     
     
     
