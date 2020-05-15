@@ -12,6 +12,10 @@ import numpy as np
 import pytest 
 from scipy.sparse.linalg import aslinearoperator
 
+class ProcessDummy():
+        def __init__(self):
+            self.embedOK = True
+            
 # createApartition test
 
 #print(ps.createApartition(100,10))
@@ -27,7 +31,7 @@ def test_getParams():
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    processDummy = None
+    processDummy = ProcessDummy()
     projSplit.addData(A,y,2,processDummy)
 
     nvar,nobs = projSplit.getParams()
@@ -85,7 +89,7 @@ def test_add_linear_ops():
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    processDummy = None
+    processDummy = ProcessDummy()
     projSplit.addData(A,y,2,processDummy)
     
     p = 11
@@ -106,7 +110,7 @@ def test_add_linear_ops_v2():
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    processDummy = None
+    processDummy = ProcessDummy()
     d2 = 9
     p = 15
     H = np.random.normal(0,1,[p,d2])
@@ -124,9 +128,6 @@ def test_good_embed():
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    class ProcessDummy():
-        def __init__(self):
-            self.embedOK = True
     processDummy = ProcessDummy()    
     regObj = ps.L1()
     projSplit.addRegularizer(regObj,embed = True)
@@ -134,10 +135,7 @@ def test_good_embed():
     assert projSplit.numRegs == 0
     
     
-    projSplit = ps.ProjSplitFit()    
-    class ProcessDummy():
-        def __init__(self):
-            self.embedOK = True
+    projSplit = ps.ProjSplitFit()      
     projSplit.addData(A,y,2,processDummy)
     projSplit.addRegularizer(regObj,embed = True)
     assert projSplit.numRegs == 0
@@ -148,11 +146,9 @@ def test_bad_embed():
     m = 10
     d = 20
     A = np.random.normal(0,1,[m,d])
-    y = np.random.normal(0,1,m)
-    class ProcessDummy():
-        def __init__(self):
-            self.embedOK = False
-    processDummy = ProcessDummy()    
+    y = np.random.normal(0,1,m)  
+    processDummy = ProcessDummy()
+    processDummy.embedOK = False 
     regObj = ps.L1()
     projSplit.addRegularizer(regObj,embed = True)
     projSplit.addData(A,y,2,processDummy)

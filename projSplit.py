@@ -11,7 +11,8 @@ Functions implemented here:
     - L1()
     - groupL2()
 '''
-import scipy.sparse.linalg as sp
+
+
 import numpy as np
 import time 
 
@@ -71,7 +72,7 @@ class ProjSplitFit(object):
         # check that all of the regularizers added so far have linear ops 
         # which are consistent with the added data
         for reg in self.allRegularizers:
-            if reg.linearOp is not None:
+            if reg.linearOpFlag == True:
                 if reg.linearOp.shape[1] != self.nvar:
                     print("ERROR: linear operator added with a regularizer")
                     print("has number of columns which is inconsistent with the added data")
@@ -101,7 +102,7 @@ class ProjSplitFit(object):
                
         self.process = process
         
-        if (self.embedded is not None) &(self.process.embedOK == False):
+        if (self.embedded is not None) & (self.process.embedOK == False):
             print("WARNING: A regularizer was added with embedded = True")
             print("But embedding is not possible with this process object")
             print("Moving embedded regularizer to be an ordinary regularizer")
@@ -166,21 +167,40 @@ class ProjSplitFit(object):
                     print("Aborting without adding regularizer")
                     return -1
                 else:
+                    if self.embedded is not None:
+                        print("Warning: Regularizer embed option set to True")
+                        print("But an earlier regularizer is already embedded")
+                        print("Can only embed one regularizer")
+                        print("Moving old regularizer to be non-embedded, this new regularizer will be embedded")
+                        self.allRegularizers.append(self.embedded)
+                        self.numRegs += 1
+                        
                     self.embedded = regObj            
                     
             elif(linearOp is not None):                                
                     print("embedded regularizer cannot use linearOp != None")                
                     print("Aborting without adding regularizer")
                     return -1
-                else:
-                    self.embedded = regObj            
+            else:
+                if self.embedded is not None:
+                        print("Warning: Regularizer embed option set to True")
+                        print("But an earlier regularizer is already embedded")
+                        print("Can only embed one regularizer")
+                        print("Moving old regularizer to be non-embedded, this new regularizer will be embedded")
+                        self.allRegularizers.append(self.embedded)
+                        self.numRegs += 1
+                        
+                self.embedded = regObj            
                 
         else:            
             self.allRegularizers.append(regObj)
             self.numRegs += 1
         
-                
-        regObj.addLinear(linearOp)
+        if linearOp is not None:     
+            regObj.addLinear(linearOp,True)
+        else:
+            regObj.addLinear(
+                MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x), False)
         
         self.resetIterate = True # Ensures we reset the variables if we add another regularizer 
     
@@ -203,20 +223,15 @@ class ProjSplitFit(object):
         Az = self.A.dot(self.z[1:len(self.z)])
         if self.intercept:
             Az += self.z[0]
-        currentLoss = (1.0/self.nobs)*sum(self.loss.value(Az,self.yresponse))        
+        currentLoss = (1.0/self.nobs)*sum(self.loss.value(Az,self.yresponse))     
+        
         for reg in self.allRegularizers:
-            if reg.linearOp is not None:
-                Hiz = reg.linearOp(self.z[1:len(self.z)])  
-            else:
-                Hiz = self.z[1:len(self.z)] 
+            Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])              
             currentLoss += reg.evaluate(Hiz)
                 
         if self.embedded != None:
             reg = self.embedded 
-            if reg.linearOp is not None:
-                Hiz = reg.linearOp(self.z[1:len(self.z)])
-            else:
-                Hiz = self.z[1:len(self.z)] 
+            Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])            
             currentLoss += reg.evaluate(Hiz)
         
         return currentLoss
@@ -341,10 +356,10 @@ class ProjSplitFit(object):
             allRegsHaveLinOps = True 
             i = 0
             for reg in self.allRegularizers:
-                if reg.linearOp is None:                                        
+                if reg.linearOpFlag == False:                                        
                     allRegsHaveLinOps = False
                     lastReg = self.allRegularizers[-1]
-                    if (lastReg.linearOp is not None):      
+                    if (lastReg.linearOpFlag == True):      
                         #swap the two regularizers to ensure 
                         #the last block corresponds to no linear op
                         self.allRegularizers[i] = lastReg
@@ -378,13 +393,12 @@ class ProjSplitFit(object):
             
             i = 0
             for reg in self.allRegularizers:
-                if reg.linearOp is None:
-                    if i == self.numRegs - 1:
+                if i == self.numRegs - 1:
                         regVars = nDataVars
-                    else:
-                        regVars = nDataVars - 1                    
+                elif reg.linearOpFlag == True:
+                        regVars = reg.linearOp.shape[0]                                                            
                 else:
-                    regVars = reg.linearOp.shape[0]
+                    regVars = self.nvar 
                     
                 self.xreg.append(np.zeros(regVars))    
                 self.yreg.append(np.zeros(regVars))    
@@ -474,10 +488,7 @@ class ProjSplitFit(object):
         i = 0        
         for i in range(self.numRegs-1):             
             reg = self.allRegularizers[i]
-            if (reg.linearOp is None):
-                Giz = self.z[1:len(self.z)]                
-            else:
-                Giz = reg.linearOp.matvec(self.z[1:len(self.z)])
+            Giz = reg.linearOp.matvec(self.z[1:len(self.z)])                        
             t = Giz + reg.step*self.wreg[i]
             self.xreg[i] = reg.getProx(t)
             self.yreg[i] = reg.step**(-1)*(t - self.xreg[i])
@@ -512,14 +523,10 @@ class ProjSplitFit(object):
         
         # compute u and v for regularizer blocks except the final regularizer 
         for i in range(self.numRegs - 1):
-            if  (self.allRegularizers[i].linearOp is None):
-                self.ureg[i] = self.xreg[i] - self.xreg[-1][1:len(self.z)]                
-                v += np.concatenate((np.array([0.0]),self.yreg[i]))
-            else:
-                Gxn = self.allRegularizers[i].linearOp.matvec(self.xreg[-1][1:len(self.z)])
-                self.ureg[i] = self.xreg[i] - Gxn
-                Gstary = self.allRegularizers[i].linearOp.rmatvec(self.yreg[i])
-                v += np.concatenate((np.array([0.0]),Gstary))
+            Gxn = self.allRegularizers[i].linearOp.matvec(self.xreg[-1][1:len(self.z)])
+            self.ureg[i] = self.xreg[i] - Gxn
+            Gstary = self.allRegularizers[i].linearOp.rmatvec(self.yreg[i])
+            v += np.concatenate((np.array([0.0]),Gstary))
                         
         # compute v for final regularizer block        
         if self.numRegs>0:            
@@ -533,9 +540,7 @@ class ProjSplitFit(object):
         # compute phi 
         if pi > 0:
             phi = self.getPhi(v)
-            
-            
-            
+                                    
             if phi > 0:               
                 # compute tau 
                 tau = phi/pi
@@ -551,18 +556,10 @@ class ProjSplitFit(object):
                         negsumw = -np.sum(self.wdata,axis=0)
                         for i in range(self.numRegs - 1):
                             self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
-                            if self.allRegularizers[i].linearOp is None:
-                                negsumw -= np.concatenate((np.array([0.0]),self.wreg[i]))
-                            else:
-                                Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
-                                negsumw -= np.concatenate((np.array([0.0]),Gstarw))
+                            Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
+                            negsumw -= np.concatenate((np.array([0.0]),Gstarw))
                         
-                        self.wreg[-1] = negsumw
-            
-            
-            #phiAfter = self.getPhi(v)
-            #if abs(phiAfter)>1e-10:
-            #    print(phiAfter)
+                        self.wreg[-1] = negsumw                                    
             
         else:
             print("Gradient of the hyperplane is 0, converged")
@@ -616,8 +613,9 @@ class Regularizer(object):
             print("Error: scaling must be float>=0, setting it to 1.0")
                 
     
-    def addLinear(self,linearOp):        
+    def addLinear(self,linearOp,linearOpFlag):
         self.linearOp = linearOp        
+        self.linearOpFlag = linearOpFlag        
         
     def setScaling(self,nu):
         if type(nu)==float:
@@ -795,6 +793,20 @@ def totalVariation1d(n):
 def dropFirst(n):
     pass
 
+class MyLinearOperator():
+    '''
+    Because scipy's linear operator requires passing in the shape
+    of a linear operator, we had to create my own "dumb" linear operator class.
+    This is used because a regularizer may be created with no composed linear operator,
+    and to deal with this we create an identity linear operator which just passes
+    through the input to output. But we don't necessarily know the dimensions at
+    that point, because addData() may not yet have been called. 
+    '''
+    def __init__(self,matvec,rmatvec):
+        self.matvec=matvec
+        self.rmatvec=rmatvec
+        
+        
 #-----------------------------------------------------------------------------
     
 def createApartition(nrows,n_partitions):
