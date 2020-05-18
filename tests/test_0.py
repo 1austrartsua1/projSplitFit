@@ -19,9 +19,10 @@ def test_getGamma1():
     assert gamma == 1.0, "failed, gamma != 1"
     
 #--------------------------------------------------------------------
-# Create a ProjSplitFit object with nondefault good gamma 
-def test_getGamma2():
-    gammain = 11.5    
+# Create a ProjSplitFit object with nondefault good gamma
+gamma2test = [1,10,100,1000,1e4,1e6,1e10,1e15,1e-5,1e-11]
+@pytest.mark.parametrize("gammain",gamma2test)
+def test_getGamma2(gammain):
     projSplit = ps.ProjSplitFit(gammain)
     gamma = projSplit.getDualScaling()
     assert gamma == gammain, "failed, gamma != gammain"
@@ -29,27 +30,13 @@ def test_getGamma2():
     
 #--------------------------------------------------------------------    
 # bad Gammas
-def test_bad_gamma():
-    gammain = 0.0
+gamma2test = [0.0,-10,"hello world",[1,2]]
+@pytest.mark.parametrize("gammain",gamma2test)
+def test_bad_gamma(gammain):    
     projSplit = ps.ProjSplitFit(gammain)
     gamma = projSplit.getDualScaling()
     assert gamma == 1.0,"failed, gamma != 1.0"
-    
-    gammain = -10
-    projSplit = ps.ProjSplitFit(gammain)
-    gamma = projSplit.getDualScaling()
-    assert gamma == 1.0,"failed, gamma != 1.0"
-
-    
-    gammain = "hello world"
-    projSplit = ps.ProjSplitFit(gammain)
-    gamma = projSplit.getDualScaling()
-    assert gamma == 1.0,"failed, gamma != 1.0"
-
-    gammain = [1,2]
-    projSplit = ps.ProjSplitFit(gammain)
-    gamma = projSplit.getDualScaling()
-    assert gamma == 1.0,"failed, gamma != 1.0"
+        
 
 
 #--------------------------------------------------------------------

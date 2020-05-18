@@ -331,7 +331,7 @@ def test_blockIs1bug():
     
 
 if __name__ == "__main__":    
-    test_Intercept_noNormalize()
+    test_lr_normalize()
     
     
     

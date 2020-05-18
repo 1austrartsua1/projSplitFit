@@ -65,7 +65,7 @@ def test_user_defined_embedded():
     
     
     projSplit.addRegularizer(regObj[0])
-    projSplit.addRegularizer(regObj[1])
+    projSplit.addRegularizer(regObj[1],embed=True)
     projSplit.addRegularizer(regObj[2],embed=True)
     
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,

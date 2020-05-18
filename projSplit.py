@@ -743,7 +743,10 @@ class ProjSplitLossProcessor(object):
         return grad  
       
     def getStep(self):
-        return self.step 
+        return self.step
+    
+    def setStep(self,step):
+        self.step = step
 
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
