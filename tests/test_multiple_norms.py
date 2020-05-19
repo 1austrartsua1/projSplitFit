@@ -108,10 +108,6 @@ def test_l1_multi_lasso():
     print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-3
     
-    #xps = projSplit.getSolution()
-    #plt.plot(xps)
-    #plt.plot(xopt)
-    #plt.show()
     
     # test with intercept 
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)

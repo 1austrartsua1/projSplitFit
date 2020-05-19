@@ -13,6 +13,9 @@ from matplotlib import pyplot as plt
 from utils import runCVX_LR
 from utils import getLSdata
 
+#np.random.seed(1987)
+
+
 stepsize = 1.0
 f2fixed = ps.Forward2Fixed(stepsize)
 @pytest.mark.parametrize("processor",[f2fixed])
@@ -71,7 +74,7 @@ def test_ls_noIntercept_noNormalize(processor):
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)    
     projSplit.run(maxIterations = 1000,keepHistory = True,nblocks = 10)
-    ps_sol = projSplit.getSolution()
+    ps_sol,_ = projSplit.getSolution()
     
     result = np.linalg.lstsq(A,y,rcond=None)
     xhat = result[0]
@@ -96,7 +99,7 @@ def test_ls_noIntercept_Normalize(processor):
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=False)    
     projSplit.run(maxIterations = 3000,keepHistory = True,nblocks = 10)
-    #ps_sol = projSplit.getSolution()
+    
     
     
     result = np.linalg.lstsq(A,y,rcond=None)
@@ -128,7 +131,7 @@ def test_Intercept_noNormalize(processor):
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)  
     projSplit.run(maxIterations = 2000,keepHistory = True,nblocks = 1)
-    ps_sol = projSplit.getSolution()
+    ps_sol,_ = projSplit.getSolution()
     
     AwithIntercept = np.zeros((m,d+1))
     AwithIntercept[:,0] = np.ones(m)
@@ -161,7 +164,7 @@ def test_ls_blocks(processor):
     projSplit.addData(A,y,2,processor,normalize=False)    
     projSplit.run(maxIterations = 1000,keepHistory = True,nblocks = 10)
     assert projSplit.getObjective() >= 0, "objective is not >= 0"
-    sol = projSplit.getSolution()
+    sol,_ = projSplit.getSolution()
     assert sol.shape == (d+1,)
     
     AwithIntercept = np.zeros((m,d+1))
@@ -251,7 +254,7 @@ def test_lr_norm_intercept(processor):
     
     ps_opt_val = projSplit.getObjective()
     
-    xps = projSplit.getSolution()
+    xps,_ = projSplit.getSolution()
     
     
     AwithIntercept = np.zeros((m,d+1))
@@ -295,14 +298,7 @@ def test_blockIs1bug(processor):
     xhat = result[0]
     LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
     print('LSval = {}'.format(LSval))
-    
-    #xps = projSplit.getSolution()
-    #plt.plot(xhat - xps)
-    #plt.show()
-    
-    #ps_func_vals = projSplit.getHistory()[0]
-    #plt.plot(ps_func_vals)
-    #plt.show()
+        
     
 
 if __name__ == "__main__":    

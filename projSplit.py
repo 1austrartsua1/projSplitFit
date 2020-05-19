@@ -45,13 +45,13 @@ class ProjSplitFit(object):
         return self.gamma 
                             
     def addData(self,observations,responses,loss,process,intercept=True,
-                normalize=True): 
+                normalize=True, linearOp = None): 
         '''
         XX insert comments here 
         '''
         
         try:
-            (self.nobs,self.nvar) = observations.shape
+            (self.nobs,self.ncol) = observations.shape
             ny = len(responses)
         except:
             print("Error: observations and responses should be arrays, i.e. ")
@@ -63,12 +63,30 @@ class ProjSplitFit(object):
             print("aborting. Data not added")
             return -1
         
-        if (self.nobs == 0) | (self.nvar == 0):
+        if (self.nobs == 0) | (self.ncol == 0):
             print("Error! number of observations or variables is 0! Aborting addData")
             print("Please call with valid data, i.e. numpy arrays")
             self.A = None
             self.yresponse = None
             return -1 
+        
+        if linearOp is None:
+            self.dataLinOp = MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
+            self.nvar = self.ncol
+            self.dataLinOpFlag = False
+        elif linearOp.shape[0] != self.ncol:
+            print("Error! number of columns of the data matrix is {}".format(self.ncol))
+            print("while numner of rows of the composed linear operator is {}".format(linearOp.shape[0]))
+            print("These must be equal! Aborting addData call")
+            self.A = None
+            self.yresponse = None
+            self.nvar = None
+            return -1
+        else:
+            self.dataLinOp = linearOp
+            self.nvar = linearOp.shape[1]
+            self.dataLinOpFlag = True 
+            
         
         # check that all of the regularizers added so far have linear ops 
         # which are consistent with the added data
@@ -114,11 +132,7 @@ class ProjSplitFit(object):
             self.numRegs += 1
             
                 
-        self.intercept = intercept        
-        
-        
-                    
-                
+        self.intercept = intercept                        
         self.dataAdded = True
         self.resetIterate = True
         
@@ -212,19 +226,20 @@ class ProjSplitFit(object):
             print("Method not run yet, no objective to return. Call run() first.")
             return None
         
-        Az = self.A.dot(self.z[1:len(self.z)])
+        Hz = self.dataLinOp.matvec(self.z[1:len(self.z)])
+        AHz = self.A.dot(Hz)
         if self.intercept:
-            Az += self.z[0]
-        currentLoss = (1.0/self.nobs)*sum(self.loss.value(Az,self.yresponse))     
+            #XX do I need this if statement or does z[0] just stay at 0?
+            AHz += self.z[0]
+        currentLoss = (1.0/self.nobs)*sum(self.loss.value(AHz,self.yresponse))     
         
         for reg in self.allRegularizers:
             Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])              
             currentLoss += reg.evaluate(Hiz)
                 
         if self.embeddedFlag == True:
-            reg = self.embedded 
-            Hiz = self.z[1:len(self.z)]
-            currentLoss += self.embeddedScaling*reg.evaluate(Hiz)/reg.getScalingAndStepsize()[0]
+            reg = self.embedded         
+            currentLoss += self.embeddedScaling*reg.evaluate(Hz)/reg.getScalingAndStepsize()[0]
         
         return currentLoss
         
@@ -236,19 +251,23 @@ class ProjSplitFit(object):
         if self.z is None:
             print("Method not run yet, no solution to return. Call run() first.")
             return None
-                
-        out = np.zeros(self.z.shape)
+        
+        
+        Hz = self.dataLinOp.matvec(self.z[1:len(self.z)])
+        out = np.zeros(self.ncol+1)
+        
+        
         
         if self.normalize:
-            out[1:len(self.z)] = self.z[1:len(self.z)]/self.scaling
+            out[1:(self.ncol+1)] = Hz/self.scaling
         else:
-            out[1:len(self.z)] = self.z[1:len(self.z)]
+            out[1:(self.ncol+1)] = Hz 
 
         if self.intercept:
             out[0] = self.z[0]
-            return out
+            return out,self.z 
         else:
-            return out[1:len(self.z)]
+            return out[1:(self.ncol+1)],self.z 
         
         
     
@@ -320,7 +339,7 @@ class ProjSplitFit(object):
                 print("Error: nblocks must be greater than 1, setting nblocks to 1")
                 numBlocks = 1
         else:
-            print("Error: nblocks must INT be greater than 1, setting nblocks to 1")
+            print("Error: nblocks must be of type INT greater than 1, setting nblocks to 1")
             numBlocks = 1
                     
             
@@ -355,8 +374,15 @@ class ProjSplitFit(object):
             self.embedded.setScaling(self.embeddedScaling/self.nDataBlocks)
         
         if self.numRegs == 0:
-            self.numPSblocks = self.nDataBlocks
-        else:
+            if self.dataLinOpFlag == False:
+                self.numPSblocks = self.nDataBlocks
+            else:
+                # if there are no regularizers and the data term is composed 
+                # with a linear operator, we must add a dummy regularizer
+                # which has a pass-through prox and 0 value
+                self.addRegularizer(Regularizer(lambda x,nu: 0, lambda x,nu,step: x))                 
+        
+        if self.numRegs != 0:                
             # if all nonembedded regularizers have a linear op
             # then we add an additional dummy variable to projective splitting
             # corresponding to objective function
@@ -378,20 +404,24 @@ class ProjSplitFit(object):
                 self.addRegularizer(Regularizer(lambda x,nu: 0, lambda x,nu,step: x))                
                             
             self.numPSblocks = self.nDataBlocks + self.numRegs
-                                    
-        nDataVars = self.nvar + 1
+            
+                                
+        self.nDataVars = self.ncol + 1
         
         if (resetIterate == True) | (self.resetIterate == True):
             
-            self.z = np.zeros(nDataVars)
-            self.xdata = np.zeros((self.nDataBlocks,nDataVars))            
-            self.ydata = np.zeros((self.nDataBlocks,nDataVars))
-            self.wdata = np.zeros((self.nDataBlocks,nDataVars))
+            self.z = np.zeros(self.nvar+1)
+            self.v = np.zeros(self.nvar+1)
+            self.Hz = np.zeros(self.nDataVars)
+            self.Hx = np.zeros(self.nDataVars)
+            self.xdata = np.zeros((self.nDataBlocks,self.nDataVars))            
+            self.ydata = np.zeros((self.nDataBlocks,self.nDataVars))
+            self.wdata = np.zeros((self.nDataBlocks,self.nDataVars))
 
             if self.numRegs > 0:                        
-                self.udata = np.zeros((self.nDataBlocks,nDataVars))
+                self.udata = np.zeros((self.nDataBlocks,self.nDataVars))
             else:
-                self.udata = np.zeros((self.nDataBlocks - 1,nDataVars))
+                self.udata = np.zeros((self.nDataBlocks - 1,self.nDataVars))
             
             self.xreg = []
             self.yreg = []
@@ -401,7 +431,7 @@ class ProjSplitFit(object):
             i = 0
             for reg in self.allRegularizers:
                 if i == self.numRegs - 1:
-                        regVars = nDataVars
+                        regVars = self.nvar + 1
                 elif reg.linearOpFlag == True:
                         regVars = reg.linearOp.shape[0]                                                            
                 else:
@@ -470,8 +500,10 @@ class ProjSplitFit(object):
             
     def updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
+        self.Hz[1:(self.ncol+1)] = self.dataLinOp.matvec(self.z[1:len(self.z)])
+        self.Hz[0] = self.z[0]
         if blockActivation == "greedy":            
-            phis = np.sum((self.z - self.xdata)*(self.ydata - self.wdata),axis=1)            
+            phis = np.sum((self.Hz - self.xdata)*(self.ydata - self.wdata),axis=1)            
             
             if phis.min() >= 0:
                 activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
@@ -494,7 +526,7 @@ class ProjSplitFit(object):
                                             
         for i in activeBlocks:
             # update this block
-            self.process.update(self,self.partition[i],i)
+            self.process.update(self,i)
                 
     def updateRegularizerBlocks(self):
         i = 0        
@@ -527,11 +559,17 @@ class ProjSplitFit(object):
                             
         # compute u and v for data blocks
         if self.numRegs > 0:
-            self.udata = self.xdata - self.xreg[-1]            
+            self.Hx[1:(self.ncol+1)] = self.dataLinOp.matvec(self.xreg[-1][1:len(self.z)])
+            self.Hx[0] = self.xreg[-1][0]
+            self.udata = self.xdata - self.Hx            
         else:
+            # if there are no regularizers, the last block corresponds to the 
+            # last data block. Further, dataLinOp must be the identity
             self.udata = self.xdata[0:(self.nDataBlocks-1)] - self.xdata[-1]
             
-        v = sum(self.ydata)
+        vin = sum(self.ydata)
+        v = self.dataLinOp.rmatvec(vin[1:(self.ncol+1)])
+        v = np.concatenate((np.array([vin[0]]),v))
         
         # compute u and v for regularizer blocks except the final regularizer 
         for i in range(self.numRegs - 1):
@@ -560,18 +598,22 @@ class ProjSplitFit(object):
             
                 self.z = self.z - self.gamma**(-1)*tau*v
                 if (len(self.wdata) > 1) | (self.numRegs > 0):              
-                    if self.numRegs == 0:                    
+                    if self.numRegs == 0:               
+                        # if no regularizers, the linearOp corresponding to the 
+                        # data block must be the identity
                         self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
                         self.wdata[-1] = -np.sum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
                     else:
-                        self.wdata = self.wdata - tau*self.udata
+                        self.wdata = self.wdata - tau*self.udata                        
                         negsumw = -np.sum(self.wdata,axis=0)
+                        GstarNegSumw = self.dataLinOp.rmatvec(negsumw[1:len(negsumw)])
+                        GstarNegSumw = np.concatenate((np.array([negsumw[0]]),GstarNegSumw))
                         for i in range(self.numRegs - 1):
                             self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
                             Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
-                            negsumw -= np.concatenate((np.array([0.0]),Gstarw))
+                            GstarNegSumw -= np.concatenate((np.array([0.0]),Gstarw))
                         
-                        self.wreg[-1] = negsumw                                    
+                        self.wreg[-1] = GstarNegSumw
             
         else:
             print("Gradient of the hyperplane is 0, converged")
@@ -732,6 +774,9 @@ class LossPlugIn(object):
 class ProjSplitLossProcessor(object):
     @staticmethod
     def getAGrad(psObj,point,thisSlice,block):
+        #point[0] is the intercept term
+        #point[1:len(point)] are the coefficients and 
+        #len(point) must equal the num cols of A. 
         yhat = point[0]+psObj.A[thisSlice].dot(point[1:len(point)])
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
         grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)
@@ -754,10 +799,11 @@ class Forward2Fixed(ProjSplitLossProcessor):
         self.step = step
         self.embedOK = True
         
-    def update(self,psObj,thisSlice,block):        
-        gradz = ProjSplitLossProcessor.getAGrad(psObj,psObj.z,thisSlice,block)
-        t = psObj.z - self.step*(gradz - psObj.wdata[block])        
-        psObj.xdata[block][1:len(psObj.z)] = psObj.embedded.getProx(t[1:len(psObj.z)]) 
+    def update(self,psObj,block):        
+        thisSlice = psObj.partition[block]
+        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice,block)
+        t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
+        psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
         psObj.xdata[block][0] = t[0]        
         a = self.step**(-1)*(t-psObj.xdata[block])
         gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice,block)        

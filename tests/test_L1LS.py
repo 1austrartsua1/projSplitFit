@@ -92,9 +92,9 @@ def test_user_defined_embedded():
     #opt = prob.value
     xopt = x_cvx.value
     xopt = np.squeeze(np.array(xopt))
-    
-    print("Norm error = {}".format(np.linalg.norm(xopt-projSplit.getSolution(),2)))
-    assert(np.linalg.norm(xopt-projSplit.getSolution(),2)<1e-2)
+    xps,_ = projSplit.getSolution()
+    print("Norm error = {}".format(np.linalg.norm(xopt-xps,2)))
+    assert(np.linalg.norm(xopt-xps,2)<1e-2)
     
     
     
@@ -174,7 +174,8 @@ def test_user_defined():
         xopt = np.squeeze(np.array(xopt))
         
         if i == 0:
-            assert(np.linalg.norm(xopt-projSplit.getSolution(),2)<1e-2)    
+            xps,_ = projSplit.getSolution()
+            assert(np.linalg.norm(xopt-xps,2)<1e-2)    
         else:
             print('cvx opt val = {}'.format(opt))
             print('ps opt val = {}'.format(ps_val))        
@@ -223,7 +224,8 @@ def test_user_defined():
     opt = prob.value
     xopt = x_cvx.value
     xopt = np.squeeze(np.array(xopt))    
-    assert(np.linalg.norm(xopt-projSplit.getSolution(),2)<1e-2)  
+    xps,_ = projSplit.getSolution()
+    assert(np.linalg.norm(xopt-xps,2)<1e-2)  
     
     
 def test_l1_lasso():
@@ -248,15 +250,7 @@ def test_l1_lasso():
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-3
-    
-    xps = projSplit.getSolution()
-    #plt.plot(xps)
-    #plt.plot(xopt)
-    #plt.show()
-    
-    ps_vals = projSplit.getHistory()[0]
-    #plt.plot(ps_vals)
-    #plt.show()
+        
     
     for numBlocks in range(2,10):
         projSplit.run(maxIterations=2000,keepHistory = True, nblocks = numBlocks)
@@ -318,13 +312,7 @@ def test_l1_intercept():
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
     
-    #xps = projSplit.getSolution()
-    #plt.plot(xps-xopt)
-    #plt.show()
     
-    #ps_all_vals = projSplit.getHistory()[0]
-    #plt.plot(ps_all_vals)
-    #plt.show()
     assert abs(ps_val-opt)<1e-3
     
 
@@ -360,13 +348,7 @@ def test_l1_intercept_and_normalize():
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
     
-    #xps = projSplit.getSolution()
-    #plt.plot(xps-xopt)
-    #plt.show()
     
-    #ps_all_vals = projSplit.getHistory()[0]
-    #plt.plot(ps_all_vals)
-    #plt.show()
     
     assert abs(ps_val-opt)<1e-3
     
