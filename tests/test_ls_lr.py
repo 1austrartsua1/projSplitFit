@@ -13,18 +13,22 @@ from matplotlib import pyplot as plt
 from utils import runCVX_LR
 from utils import getLSdata
 
-def test_ls_fixed():
+stepsize = 1.0
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed])
+def test_ls_fixed(processor):
     projSplit = ps.ProjSplitFit()
     m = 10
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    stepsize = 1.0
-    processor = ps.Forward2Fixed(stepsize)
     projSplit.addData(A,y,2,processor)
     projSplit.run(maxIterations = 100,keepHistory = True)
-    
-def test_cyclic():
+
+stepsize = 5e-1
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed])
+def test_cyclic(processor):
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
@@ -34,9 +38,6 @@ def test_cyclic():
     result = np.linalg.lstsq(A,y,rcond=None)
     xhat = result[0]
     LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
-    
-    stepsize = 5e-1
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
@@ -48,53 +49,24 @@ def test_cyclic():
     
     assert abs(ps_opt - LSval)<1e-2
     
-    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,
-                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=2)
+    for blks in range(2,7):   
+        projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,
+                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=blks)
 
-    ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-2
-    
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
-                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=3)
-    
-    ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-2
-    
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
-                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=4)
-    
-    ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-2
-            
-    projSplit.run(maxIterations=20,keepHistory = True, nblocks = 5,
-                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=5)
-    
-    ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-2
-    
-    projSplit.run(maxIterations=20,keepHistory = True, nblocks = 5,
-                  blockActivation="cyclic",resetIterate=True, blocksPerIteration=6)
-    
-    ps_opt = projSplit.getObjective()
-    assert abs(ps_opt - LSval)<1e-2
-
+        ps_opt = projSplit.getObjective()
+        assert abs(ps_opt - LSval)<1e-2
     
     
 
-    
-    
-     
-        
-
-
-def test_ls_noIntercept_noNormalize():
+stepsize = 5e-1
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed])
+def test_ls_noIntercept_noNormalize(processor):
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    stepsize = 5e-1
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)    
@@ -111,14 +83,15 @@ def test_ls_noIntercept_noNormalize():
     LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
     assert(abs(psSolVal - LSval) < 1e-5)
     
-def test_ls_noIntercept_Normalize():
+stepsize = 1e0
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed])
+def test_ls_noIntercept_Normalize(processor):
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    stepsize = 1e0
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-2
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=False)    
@@ -142,14 +115,15 @@ def test_ls_noIntercept_Normalize():
     #assert np.linalg.norm(xhat - ps_sol)<1e-2
     assert(abs(psSolVal - LSval) < 1e-2)
  
-def test_Intercept_noNormalize():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed])
+def test_Intercept_noNormalize(processor):
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-2
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)  
@@ -172,16 +146,16 @@ def test_Intercept_noNormalize():
     assert np.linalg.norm(xhat-ps_sol)<1e-1
     
     
-    
-def test_ls_blocks():
+stepsize = 5e-1
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed]) 
+def test_ls_blocks(processor):
     
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    stepsize = 5e-1
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False)    
@@ -211,16 +185,16 @@ def test_ls_blocks():
     PScyclic = projSplit.getObjective()
     assert abs(PSresid  - PScyclic)<1e-5
 
-def test_lr():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed]) 
+def test_lr(processor):
     projSplit = ps.ProjSplitFit()
     m = 50
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = 2.0*(np.random.normal(0,1,m)>0)-1.0
     lam = 0.0
-    
-    stepsize = 1e-1 
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,'logistic',processor,normalize=False,intercept=False)    
@@ -233,16 +207,16 @@ def test_lr():
         
     assert abs(opt - ps_opt_val)<1e-2
     
-def test_lr_normalize():
+stepsize = 1e0
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed]) 
+def test_lr_normalize(processor):
     projSplit = ps.ProjSplitFit()
     m = 50
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = 2.0*(np.random.normal(0,1,m)>0)-1.0
     lam = 0.0
-    
-    stepsize = 1e0 
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-4
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,'logistic',processor,normalize=True,intercept=False)    
@@ -260,16 +234,16 @@ def test_lr_normalize():
         
     assert abs(opt - ps_opt_val)<1e-2
     
-def test_lr_norm_intercept():
+stepsize = 1e0
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed]) 
+def test_lr_norm_intercept(processor):
     projSplit = ps.ProjSplitFit()
     m = 50
     d = 10
     A = np.random.normal(0,1,[m,d])
     y = 2.0*(np.random.normal(0,1,m)>0)-1.0
     lam = 0.0
-    
-    stepsize = 1e0 
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-4
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,'logistic',processor,normalize=True,intercept=True)    
@@ -299,14 +273,15 @@ def test_lr_norm_intercept():
     assert abs(opt - ps_opt_val)<1e-2
     
 
-def test_blockIs1bug():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)
+@pytest.mark.parametrize("processor",[f2fixed]) 
+def test_blockIs1bug(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     projSplit = ps.ProjSplitFit()
     
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
     gamma = 1e1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
