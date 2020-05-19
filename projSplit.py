@@ -76,7 +76,7 @@ class ProjSplitFit(object):
             self.dataLinOpFlag = False
         elif linearOp.shape[0] != self.ncol:
             print("Error! number of columns of the data matrix is {}".format(self.ncol))
-            print("while numner of rows of the composed linear operator is {}".format(linearOp.shape[0]))
+            print("while number of rows of the composed linear operator is {}".format(linearOp.shape[0]))
             print("These must be equal! Aborting addData call")
             self.A = None
             self.yresponse = None

@@ -14,6 +14,107 @@ import cvxpy as cvx
 from utils import getLSdata
 from scipy.sparse.linalg import aslinearoperator
 
+
+def test_linear_op_data_term_wrong():
+    m = 40
+    d = 10
+    A,y = getLSdata(m,d)    
+    
+    projSplit = ps.ProjSplitFit()
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e0
+    projSplit.setDualScaling(gamma)
+    p = 15
+    d2 = 11
+    H = np.random.normal(0,1,[d2,p])
+    
+    assert projSplit.addData(A,y,2,processor,normalize=False,intercept=False,
+                      linearOp = aslinearoperator(H)) == -1
+                             
+
+TryAll = []
+for i in [False,True]:
+    for j in [False,True]:
+        for k in [False,True]:
+            for l in [False,True]:
+                TryAll.append((i,j,k,l))
+@pytest.mark.parametrize("norm,inter,addL1,add2L1",TryAll)
+def test_linear_op_data_term(norm,inter,addL1,add2L1):
+    
+                             
+    m = 40
+    d = 10
+    A,y = getLSdata(m,d)    
+    
+    projSplit = ps.ProjSplitFit()
+    stepsize = 5e-1
+    processor = ps.Forward2Fixed(stepsize)
+    gamma = 1e0
+    projSplit.setDualScaling(gamma)
+    p = 15
+    d2 = 10
+    H = np.random.normal(0,1,[d2,p])
+    
+    projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter,
+                      linearOp = aslinearoperator(H))
+    
+    lam = 0.01
+    step = 1.0
+    if addL1:
+        regObj = ps.L1(lam,step)
+        projSplit.addRegularizer(regObj)
+    
+    if add2L1:
+        regObj2 = ps.L1(lam,step)
+        projSplit.addRegularizer(regObj2)
+        
+    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 3)
+    ps_val = projSplit.getObjective()
+    
+    
+    
+    if norm == True:         
+        scaling = np.linalg.norm(A,axis=0)
+        scaling += 1.0*(scaling < 1e-10)
+        A = A/scaling
+    if inter == True:
+        AwithIntercept = np.zeros((m,d+1))
+        AwithIntercept[:,0] = np.ones(m)
+        AwithIntercept[:,1:(d+1)] = A
+        A = AwithIntercept
+        HwithIntercept = np.zeros((d2+1,p+1))
+        HwithIntercept[:,0] = np.zeros(d2+1)
+        HwithIntercept[0] = np.ones(p+1)
+        HwithIntercept[0,0] = 1.0
+        HwithIntercept[1:(d2+1),1:(p+1)] = H
+        H = HwithIntercept
+        
+    
+    (m,_) = A.shape
+    if inter:
+        x_cvx = cvx.Variable(p+1)
+    else:
+        x_cvx = cvx.Variable(p)
+        
+    f = (1/(2*m))*cvx.sum_squares(A@H@x_cvx - y)
+    if addL1:
+        f += lam*cvx.norm(x_cvx,1)
+    
+    if add2L1:
+        f += lam*cvx.norm(x_cvx,1)
+        
+    prob = cvx.Problem(cvx.Minimize(f))
+    prob.solve(verbose=True)
+    opt = prob.value
+    xopt = x_cvx.value
+    xopt = np.squeeze(np.array(xopt))
+    
+    print("ps opt = {}".format(ps_val))
+    print("cvx opt = {}".format(opt))
+    assert(abs(ps_val-opt)<1e-2)
+    
+
 def test_linear_op_l1():
     
     
@@ -251,7 +352,7 @@ def test_multi_linear_op_l1_inter_multiblocks():
 
     
 if __name__ == '__main__':
-    test_multi_linear_op_l1_inter_multiblocks()
+    test_linear_op_data_term()
     
     
     
