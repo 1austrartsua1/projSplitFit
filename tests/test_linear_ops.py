@@ -60,6 +60,8 @@ def test_linear_op_data_term(norm,inter,addL1,add2L1):
     projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter,
                       linearOp = aslinearoperator(H))
     
+    
+    
     lam = 0.01
     step = 1.0
     if addL1:
@@ -70,8 +72,14 @@ def test_linear_op_data_term(norm,inter,addL1,add2L1):
         regObj2 = ps.L1(lam,step)
         projSplit.addRegularizer(regObj2)
         
-    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 3)
+    projSplit.run(maxIterations=10000,keepHistory = True, 
+                  nblocks = 3,primalTol=1e-3,dualTol=1e-3)
     ps_val = projSplit.getObjective()
+    
+    primViol = projSplit.getPrimalViolation()
+    dualViol = projSplit.getDualViolation()
+    print("primal violation = {}".format(primViol))
+    print("dual violation = {}".format(dualViol))
     
     
     
@@ -119,7 +127,7 @@ def test_linear_op_data_term(norm,inter,addL1,add2L1):
     
     print("ps opt = {}".format(ps_val))
     print("cvx opt = {}".format(opt))
-    assert(abs(ps_val-opt)<1e-1)
+    assert(ps_val-opt<1e-2)
     
 @pytest.mark.parametrize("norm,inter",[(False,False)]) 
 def test_linear_op_l1(norm,inter):
@@ -142,7 +150,8 @@ def test_linear_op_l1(norm,inter):
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H))
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
+    projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 1,
+                  primalTol=1e-3,dualTol=1e-3)
     ps_val = projSplit.getObjective()
     
 
@@ -160,7 +169,7 @@ def test_linear_op_l1(norm,inter):
     
     print("ps val = {}".format(ps_val))
     print("cvx val = {}".format(opt))
-    assert abs(ps_val - opt) < 1e-3
+    assert ps_val - opt < 1e-3
     
 
 Todo = [(False,False),(True,False),
@@ -193,7 +202,8 @@ def test_multi_linear_op_l1(norm,inter):
         regObj = ps.L1(lam[-1],step)
         projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H[-1]))
         
-    projSplit.run(maxIterations=3000,keepHistory = True, nblocks = 1)
+    projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 1,
+                  primalTol=1e-3,dualTol=1e-3)
     ps_val = projSplit.getObjective()
     
     if norm:
@@ -231,7 +241,7 @@ def test_multi_linear_op_l1(norm,inter):
     #    ps_val = projSplit.getHistory()[0]
     #    plt.plot(ps_val)
     #    plt.show()
-    assert abs(ps_val - opt) < 1e-1
+    assert ps_val - opt < 1e-2
     
 
     
@@ -260,7 +270,7 @@ def test_multi_linear_op_l1_inter_multiblocks():
         regObj = ps.L1(lam[-1],step)
         projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H[-1]))
         
-    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 9)
+    projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 9,primalTol=1e-3,dualTol=1e-3)
     ps_val = projSplit.getObjective()
     
     
@@ -284,7 +294,7 @@ def test_multi_linear_op_l1_inter_multiblocks():
     
     print("ps val = {}".format(ps_val))
     print("cvx val = {}".format(opt))
-    assert abs(ps_val - opt) < 1e-1
+    assert ps_val - opt < 1e-2
     
 
     

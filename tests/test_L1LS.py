@@ -336,6 +336,11 @@ def test_l1_intercept_and_normalize():
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 10)
     ps_val = projSplit.getObjective()
     
+    primViol = projSplit.getPrimalViolation()
+    dualViol = projSplit.getDualViolation()
+    print("primal violation = {}".format(primViol))
+    print("dual violation = {}".format(dualViol))
+    
     
     Anorm = np.copy(A)            
     scaling = np.linalg.norm(Anorm,axis=0)
@@ -356,7 +361,7 @@ def test_l1_intercept_and_normalize():
     
     
 if __name__ == '__main__':
-    test_user_defined_embedded()
+    test_l1_intercept_and_normalize()
     
     
     
