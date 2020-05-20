@@ -70,6 +70,13 @@ class ProjSplitFit(object):
             self.yresponse = None
             return -1 
         
+        if process.pMustBe2 and (loss != 2):
+            print("Error: this process object only works for the squared loss")
+            print("Aborting addData")
+            self.A = None
+            self.yresponse = None
+            return -1 
+        
         if linearOp is None:
             self.dataLinOp = MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
             self.nvar = self.ncol
@@ -794,6 +801,7 @@ class LossPlugIn(object):
 
 #-----------------------------------------------------------------------------
 class ProjSplitLossProcessor(object):
+    pMustBe2 = False 
     @staticmethod
     def getAGrad(psObj,point,thisSlice):
         #point[0] is the intercept term
@@ -868,10 +876,29 @@ class Forward2Backtrack(ProjSplitLossProcessor):
         
     
 class Forward2Affine(ProjSplitLossProcessor):
-    def __init__(self,acceptThreshold):
-        pass
+    def __init__(self,Delta=1.0):
+        self.embedOK = False
+        self.Delta=Delta 
+        self.pMustBe2 = True 
+        
     def update(self,psObj,block):
-        pass
+        thisSlice = psObj.partition[block]
+        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice)
+        lhs = gradHz - psObj.wdata[block]
+        
+        yhat = lhs[0]+psObj.A[thisSlice].dot(lhs[1:len(lhs)])        
+        affinePart = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(yhat)
+        if psObj.intercept:            
+            affine0 = np.array([(1.0/psObj.nobs)*sum(affinePart)])
+        else:
+            affine0 = np.array([0.0])
+        affinePart = np.concatenate((affine0,affinePart))
+        normLHS = np.linalg.norm(lhs,2)**2
+        step = normLHS/(self.Delta*normLHS + lhs.T.dot(affinePart))
+        psObj.xdata[block] = psObj.Hz - step*lhs
+        psObj.ydata[block] = gradHz - step*affinePart
+        
+        
     
 class  Forward1Fixed(ProjSplitLossProcessor):
     def __init__(self,stepsize, blendFactor=0.1,includeInterceptTerm = False):

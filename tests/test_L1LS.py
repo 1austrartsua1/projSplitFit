@@ -15,7 +15,11 @@ from utils import getLSdata
 import cvxpy as cvx
 
 
-def test_user_defined_embedded():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt)]) 
+def test_user_defined_embedded(processor):
     def val1(x,nu):
         return 0.5*nu*np.linalg.norm(x,2)**2
     
@@ -48,8 +52,7 @@ def test_user_defined_embedded():
     A,y = getLSdata(m,d)    
         
     projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)        
+    
 
     gamma = 1e0        
     projSplit.setDualScaling(gamma)

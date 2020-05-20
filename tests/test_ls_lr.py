@@ -46,11 +46,12 @@ def test_f2backtrack(gf):
 stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2backtrack = ps.Forward2Backtrack()
+f2affine = ps.Forward2Affine()
 ToDo = []
 for i in [False,True]:
     for j in [False,True]:
         for blk in range(1,5):
-            for process in [f2fixed,f2backtrack]:
+            for process in [f2fixed,f2backtrack,f2affine]:
                 ToDo.append((f2fixed,i,j,blk))
         
 @pytest.mark.parametrize("processor,inter,norm,nblk",ToDo)
@@ -86,7 +87,8 @@ def test_ls_PrimDual(processor,inter,norm,nblk):
 stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt)])
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)])
 def test_cyclic(processor):
     projSplit = ps.ProjSplitFit()
     m = 20
@@ -120,10 +122,14 @@ def test_cyclic(processor):
 stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
+f2affine = ps.Forward2Affine()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend([(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)])
+toDo.extend([(f2affine,False,False),(f2affine,True,False),
+        (f2affine,False,True),(f2affine,True,True)])
+
 @pytest.mark.parametrize("processor,norm,inter",toDo)
 def test_ls_Int_Norm(processor,norm,inter):
     projSplit = ps.ProjSplitFit()
@@ -163,7 +169,8 @@ def test_ls_Int_Norm(processor,norm,inter):
 stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt)]) 
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
 def test_ls_blocks(processor):
     
     projSplit = ps.ProjSplitFit()
@@ -209,6 +216,7 @@ toDo.extend(
         [(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)]
         )
+
 
 @pytest.mark.parametrize("processor,norm,inter",toDo) 
 def test_lr(processor,norm,inter):
