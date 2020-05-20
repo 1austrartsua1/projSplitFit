@@ -304,7 +304,9 @@ class ProjSplitFit(object):
         '''
         After at least one call to run with keepHistory set to True, the function call
         historyArray = psfObj.getHistory()
-        returns a two-dimensional four-column NumPy array with each row corresponding to an iteration. 
+        returns a two-dimensional four-column NumPy array with each row corresponding to an iteration
+        for which the history statistics were recorded. The total number of rows is num iterations
+        divided by the historyFreq parameter, which can be set in run() and defaults to 10. 
         In each row of this array, the columns have the following interpretation:
         Column Number Interpretation
         0             Objective value
@@ -322,7 +324,8 @@ class ProjSplitFit(object):
         return self.historyArray
     
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
-            nblocks = 1, blockActivation="greedy", blocksPerIteration=1, resetIterate=False):
+            historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1, 
+            resetIterate=False):
         
         if self.dataAdded == False:
             print("Must add data before calling run(). Aborting...")
@@ -463,25 +466,26 @@ class ProjSplitFit(object):
         while(k < maxIterations):  
             #print('iteration = {}'.format(k))
             t0 = time.time()
-            self.updateLossBlocks(blockActivation,blocksPerIteration)        # update all blocks (xi,yi) from (xi,yi,z,wi)
+            # update all blocks (xi,yi) from (xi,yi,z,wi)
+            self.updateLossBlocks(blockActivation,blocksPerIteration)        
             self.updateRegularizerBlocks()            
+            
+            if (self.primalErr < primalTol) & (self.dualErr < dualTol):
+                print("primal and dual tolerance reached, finishing run")
+                break            
+            
+            
             phi = self.projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
             t1 = time.time()
-            self.primalErr = 1.0
-            self.dualErr = 1.0
-            if keepHistory == True:
+
+            if (keepHistory == True) and (k % historyFreq == 0):
                 objective.append(self.getObjective())
                 times.append(times[-1]+t1-t0)
                 primalErrs.append(self.primalErr)
                 dualErrs.append(self.dualErr)
                 phis.append(phi)
                 
-            if self.primalErr < primalTol:
-                print("Less than primal tol, finishing run")
-                break
-            if self.dualErr < dualTol:
-                print("Less than dual tol, finishing run")
-                break
+            
             k += 1
             
         
@@ -527,6 +531,9 @@ class ProjSplitFit(object):
         for i in activeBlocks:
             # update this block
             self.process.update(self,i)
+        
+        self.primalErr = np.linalg.norm(self.Hz - self.xdata,ord=2,axis=1).max()
+        self.dualErr =   np.linalg.norm(self.ydata - self.wdata,ord=2,axis=1).max()
                 
     def updateRegularizerBlocks(self):
         i = 0        
@@ -536,6 +543,13 @@ class ProjSplitFit(object):
             t = Giz + reg.step*self.wreg[i]
             self.xreg[i] = reg.getProx(t)
             self.yreg[i] = reg.step**(-1)*(t - self.xreg[i])
+            primal_err_i = np.linalg.norm(Giz - self.xreg[i],2)
+            if self.primalErr<primal_err_i:
+                self.primalErr = primal_err_i
+            dual_err_i = np.linalg.norm(self.wreg[i] - self.yreg[i],2)
+            if self.dualErr<dual_err_i:
+                self.dualErr = dual_err_i
+                
             i += 1
             
         # update coefficients corresponding to the last block
@@ -553,6 +567,14 @@ class ProjSplitFit(object):
                 self.xreg[-1][0] = 0.0
                 
             self.yreg[-1][0] = 0.0
+            
+            primal_err_i = np.linalg.norm(self.xreg[-1]-self.z,2)
+            if self.primalErr<primal_err_i:
+                self.primalErr = primal_err_i
+                
+            dual_err_i = np.linalg.norm(self.yreg[-1]-self.wreg[-1],2)
+            if self.dualErr<dual_err_i:
+                self.dualErr = dual_err_i
                 
                                     
     def projectToHyperplane(self):

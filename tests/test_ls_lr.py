@@ -16,17 +16,43 @@ from utils import getLSdata
 #np.random.seed(1987)
 
 
-stepsize = 1.0
+stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)
-@pytest.mark.parametrize("processor",[f2fixed])
-def test_ls_fixed(processor):
+ToDo = []
+for i in [False,True]:
+    for j in [False,True]:
+        for blk in range(1,5):
+            ToDo.append((f2fixed,i,j,blk))
+        
+@pytest.mark.parametrize("processor,inter,norm,nblk",ToDo)
+def test_ls_PrimDual(processor,inter,norm,nblk):
     projSplit = ps.ProjSplitFit()
     m = 10
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    projSplit.addData(A,y,2,processor)
-    projSplit.run(maxIterations = 100,keepHistory = True)
+    projSplit.setDualScaling(1e-1)
+    projSplit.addData(A,y,2,processor,intercept=inter,normalize=norm)
+    projSplit.run(maxIterations = None,keepHistory = True,
+                  primalTol=1e-3,dualTol=1e-3,nblocks=nblk,historyFreq=1)
+    
+    print("Primal violation = {}".format(projSplit.getPrimalViolation()))
+    print("Dual violation = {}".format(projSplit.getDualViolation()))
+    #print("ps optimal function val = {}".format(projSplit.getObjective()))
+    
+    #result = np.linalg.lstsq(A,y,rcond=None)
+    #xhat = result[0]
+    #LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
+    #print("LS val = {}".format(LSval))
+        
+    #func = projSplit.getHistory()[0]
+    #plt.plot(primerr)
+    #plt.plot(dualerr)
+    #plt.plot(func)
+    #plt.show()
+    
+    assert projSplit.getPrimalViolation()<1e-3
+    assert projSplit.getDualViolation()<1e-3
 
 stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
@@ -196,7 +222,10 @@ def test_blockIs1bug(processor):
     
 
 if __name__ == "__main__":    
-    pass
+    stepsize = 1e-1
+    processor = ps.Forward2Fixed(stepsize)
+
+    test_ls_fixed(processor)
     
     
     
