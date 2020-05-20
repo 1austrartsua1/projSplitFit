@@ -167,6 +167,11 @@ def test_linear_op_l1(norm,inter):
     xopt = x_cvx.value
     xopt = np.squeeze(np.array(xopt))
     
+    primViol = projSplit.getPrimalViolation()
+    dualViol = projSplit.getDualViolation()
+    print("primal violation = {}".format(primViol))
+    print("dual violation = {}".format(dualViol))
+    
     print("ps val = {}".format(ps_val))
     print("cvx val = {}".format(opt))
     assert ps_val - opt < 1e-3
@@ -203,7 +208,7 @@ def test_multi_linear_op_l1(norm,inter):
         projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H[-1]))
         
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 1,
-                  primalTol=1e-3,dualTol=1e-3)
+                  primalTol=1e-4,dualTol=1e-4)
     ps_val = projSplit.getObjective()
     
     if norm:

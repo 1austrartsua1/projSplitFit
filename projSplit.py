@@ -454,7 +454,7 @@ class ProjSplitFit(object):
             maxIterations = float('Inf')
         
         
-        k = 0
+        self.k = 0
         objective = []
         times = [0]
         primalErrs = []
@@ -463,8 +463,8 @@ class ProjSplitFit(object):
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################
-        while(k < maxIterations):  
-            #print('iteration = {}'.format(k))
+        while(self.k < maxIterations):  
+            #print('iteration = {}'.format(self.k))
             t0 = time.time()
             # update all blocks (xi,yi) from (xi,yi,z,wi)
             self.updateLossBlocks(blockActivation,blocksPerIteration)        
@@ -478,7 +478,7 @@ class ProjSplitFit(object):
             phi = self.projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
             t1 = time.time()
 
-            if (keepHistory == True) and (k % historyFreq == 0):
+            if (keepHistory == True) and (self.k % historyFreq == 0):
                 objective.append(self.getObjective())
                 times.append(times[-1]+t1-t0)
                 primalErrs.append(self.primalErr)
@@ -486,7 +486,7 @@ class ProjSplitFit(object):
                 phis.append(phi)
                 
             
-            k += 1
+            self.k += 1
             
         
         if keepHistory == True:
@@ -795,7 +795,7 @@ class LossPlugIn(object):
 #-----------------------------------------------------------------------------
 class ProjSplitLossProcessor(object):
     @staticmethod
-    def getAGrad(psObj,point,thisSlice,block):
+    def getAGrad(psObj,point,thisSlice):
         #point[0] is the intercept term
         #point[1:len(point)] are the coefficients and 
         #len(point) must equal the num cols of A. 
@@ -823,38 +823,67 @@ class Forward2Fixed(ProjSplitLossProcessor):
         
     def update(self,psObj,block):        
         thisSlice = psObj.partition[block]
-        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice,block)
+        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice)
         t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
         psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
         psObj.xdata[block][0] = t[0]        
         a = self.step**(-1)*(t-psObj.xdata[block])
-        gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice,block)        
+        gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice)        
         psObj.ydata[block] = a + gradx        
         
 class Forward2Backtrack(ProjSplitLossProcessor):
-    def __init__(self,initialStep,acceptThreshold,backtrackFactor,
+    def __init__(self,initialStep=1.0,Delta=1.0,backtrackFactor=0.7,
                  growFactor=1.0,growFreq=None):
-        pass 
-    def update(self,psObj,thisSlice):
-        pass
+        self.embedOK = True
+        self.step = initialStep
+        self.Delta = Delta
+        self.decFactor = backtrackFactor
+        self.growFactor = growFactor
+        self.growFreq = growFreq
+        
+    def update(self,psObj,block):
+        thisSlice = psObj.partition[block]
+        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice)
+        if self.growFreq is not None:
+            if psObj.k % self.growFreq == 0:
+                # time to grow the stepsize
+                self.step *= self.growFactor
+                psObj.embedded.setStep(self.step)
+                
+        while True:
+            t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
+            psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+            psObj.xdata[block][0] = t[0]        
+            a = self.step**(-1)*(t-psObj.xdata[block])
+            gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+            psObj.ydata[block] = a + gradx  
+            lhs = psObj.Hz - psObj.xdata[block]
+            rhs = psObj.ydata[block] - psObj.wdata[block]
+            if lhs.T.dot(rhs)>=self.Delta*np.linalg.norm(lhs,2)**2:
+                break
+            else:
+                self.step *= self.decFactor
+                psObj.embedded.setStep(self.step)
+            
+        
     
 class Forward2Affine(ProjSplitLossProcessor):
     def __init__(self,acceptThreshold):
         pass
-    def update(self,psObj,thisSlice):
+    def update(self,psObj,block):
         pass
     
 class  Forward1Fixed(ProjSplitLossProcessor):
     def __init__(self,stepsize, blendFactor=0.1,includeInterceptTerm = False):
         pass
-    def update(self,psObj,thisSlice):
+    def update(self,psObj,block):
         pass
 
 class Forward1Backtrack(Forward1Fixed):
     def __init__(self,initialStep, blendFactor=0.1,includeInterceptTerm = False, 
                       backTrackFactor = 0.7, growFactor = 1.0, growFreq = None):
         pass
-    def update(self,psObj,thisSlice):
+    def update(self,psObj,block):
         pass
     
     
