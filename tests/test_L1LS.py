@@ -323,11 +323,13 @@ def test_l1_intercept_and_normalize():
     
     projSplit = ps.ProjSplitFit()
     stepsize = 5e-1
+    #stepsize = 1e-1
     processor = ps.Forward2Fixed(stepsize)
     gamma = 1e-2
+    #gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
-    lam = 2e-4
+    lam = 1e-3
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
