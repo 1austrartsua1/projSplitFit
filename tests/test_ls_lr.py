@@ -47,12 +47,13 @@ stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2backtrack = ps.Forward2Backtrack()
 f2affine = ps.Forward2Affine()
+f1fixed = ps.Forward1Fixed(stepsize)
 ToDo = []
 for i in [False,True]:
     for j in [False,True]:
         for blk in range(1,5):
-            for process in [f2fixed,f2backtrack,f2affine]:
-                ToDo.append((f2fixed,i,j,blk))
+            for process in [f2fixed,f2backtrack,f2affine,f1fixed]:
+                ToDo.append((process,i,j,blk))
         
 @pytest.mark.parametrize("processor,inter,norm,nblk",ToDo)
 def test_ls_PrimDual(processor,inter,norm,nblk):
@@ -88,7 +89,8 @@ stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)])
+f1fixed = ps.Forward1Fixed(stepsize)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)])
 def test_cyclic(processor):
     projSplit = ps.ProjSplitFit()
     m = 20
@@ -123,12 +125,15 @@ stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
 f2affine = ps.Forward2Affine()
+f1fixed = ps.Forward1Fixed(stepsize)
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend([(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)])
 toDo.extend([(f2affine,False,False),(f2affine,True,False),
         (f2affine,False,True),(f2affine,True,True)])
+toDo.extend([(f1fixed,False,False),(f1fixed,True,False),
+        (f1fixed,False,True),(f1fixed,True,True)])
 
 @pytest.mark.parametrize("processor,norm,inter",toDo)
 def test_ls_Int_Norm(processor,norm,inter):
@@ -170,7 +175,8 @@ stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+f1fixed = ps.Forward1Fixed(stepsize)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
 def test_ls_blocks(processor):
     
     projSplit = ps.ProjSplitFit()
@@ -210,13 +216,17 @@ def test_ls_blocks(processor):
 stepsize = 1e0
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
+f1fixed = ps.Forward1Fixed(stepsize)
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend(
         [(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)]
         )
-
+toDo.extend(
+        [(f1fixed,False,False),(f1fixed,True,False),
+        (f1fixed,False,True),(f1fixed,True,True)]
+        )
 
 @pytest.mark.parametrize("processor,norm,inter",toDo) 
 def test_lr(processor,norm,inter):
@@ -248,7 +258,8 @@ def test_lr(processor,norm,inter):
 stepsize = 1e-1
 f2bt = ps.Forward2Backtrack()
 f2fixed = ps.Forward2Fixed(stepsize)
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt)]) 
+f1fixed = ps.Forward1Fixed(stepsize)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed)]) 
 def test_blockIs1bug(processor):
     m = 40
     d = 10

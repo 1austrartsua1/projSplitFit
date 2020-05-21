@@ -27,6 +27,7 @@ class ProjSplitFit(object):
         self.numRegs = 0
         self.z = None
         self.nDataBlocks = None
+        self.gradxdata = None 
         
     
     def setDualScaling(self,dualScaling):
@@ -72,9 +73,9 @@ class ProjSplitFit(object):
         
         if process.pMustBe2 and (loss != 2):
             print("Warning: this process object only works for the squared loss")
-            print("Using forward2backtrack() as the process object")
-            pass
-            #XX
+            print("Using Forward2Backtrack() as the process object")
+            process = Forward2Backtrack()
+            
         
         if linearOp is None:
             self.dataLinOp = MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
@@ -667,6 +668,8 @@ class ProjSplitFit(object):
             phi -= self.xreg[i].dot(self.yreg[i])
             
         return phi
+    
+    
                 
 #-----------------------------------------------------------------------------
 class Regularizer(object):
@@ -821,6 +824,18 @@ class ProjSplitLossProcessor(object):
     
     def setStep(self,step):
         self.step = step
+        
+    def initializeGradXdata(self,psObj):
+        '''
+           this routine is used by Forward1Fixed and Foward1Backtrack
+           to initialize the gradients of xdata
+        '''
+        psObj.gradxdata = np.zeros(psObj.xdata.shape)
+        for block in range(psObj.nDataBlocks):
+            thisSlice = psObj.partition[block]
+            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+        
+        
 
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
@@ -900,15 +915,31 @@ class Forward2Affine(ProjSplitLossProcessor):
         
     
 class  Forward1Fixed(ProjSplitLossProcessor):
-    def __init__(self,stepsize, blendFactor=0.1,includeInterceptTerm = False):
-        pass
+    def __init__(self,stepsize, blendFactor=0.1):
+        self.step = stepsize
+        self.alpha = blendFactor
+        self.embedOK = True 
+        
     def update(self,psObj,block):
-        pass
+        if psObj.gradxdata is None:
+            ProjSplitLossProcessor.initializeGradXdata(ProjSplitLossProcessor,psObj)
+                        
+        thisSlice = psObj.partition[block]
+        t = (1-self.alpha)*psObj.xdata[block] +self.alpha*psObj.Hz \
+            - self.step*(psObj.gradxdata[block] - psObj.wdata[block])
+        psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+        psObj.xdata[block][0] = t[0]   
+        psObj.gradxdata[block] = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+        psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
+        
+  
+        
 
 class Forward1Backtrack(Forward1Fixed):
-    def __init__(self,initialStep, blendFactor=0.1,includeInterceptTerm = False, 
-                      backTrackFactor = 0.7, growFactor = 1.0, growFreq = None):
+    def __init__(self,initialStep, blendFactor=0.1,backTrackFactor = 0.7, 
+                 growFactor = 1.0, growFreq = None):
         pass
+        
     def update(self,psObj,block):
         pass
     

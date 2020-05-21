@@ -14,13 +14,16 @@ from matplotlib import pyplot as plt
 from utils import runCVX_lasso
 from utils import getLSdata
 
-def test_embedded():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+def test_embedded(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)        
-    projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    projSplit = ps.ProjSplitFit()    
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
@@ -79,15 +82,17 @@ def test_embedded():
     
     
     
-
-def test_l1_multi_lasso():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+def test_l1_multi_lasso(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     
-    projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    projSplit = ps.ProjSplitFit()    
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)

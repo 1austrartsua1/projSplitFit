@@ -18,7 +18,8 @@ import cvxpy as cvx
 stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)        
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt)]) 
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
 def test_user_defined_embedded(processor):
     def val1(x,nu):
         return 0.5*nu*np.linalg.norm(x,2)**2
@@ -101,8 +102,12 @@ def test_user_defined_embedded(processor):
     
     
     
-    
-def test_user_defined():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+def test_user_defined(processor):
     
     def val1(x,nu):
         return 0.5*nu*np.linalg.norm(x,2)**2
@@ -140,8 +145,6 @@ def test_user_defined():
         A,y = getLSdata(m,d)    
         
         projSplit = ps.ProjSplitFit()
-        stepsize = 1e-1
-        processor = ps.Forward2Fixed(stepsize)        
 
         gamma = 1e0        
         projSplit.setDualScaling(gamma)
@@ -191,9 +194,7 @@ def test_user_defined():
     A,y = getLSdata(m,d)    
     
     projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)        
-
+    
     gamma = 1e0        
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
@@ -230,15 +231,17 @@ def test_user_defined():
     xps,_ = projSplit.getSolution()
     assert(np.linalg.norm(xopt-xps,2)<1e-2)  
     
-    
-def test_l1_lasso():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+def test_l1_lasso(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     
-    projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    projSplit = ps.ProjSplitFit()    
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
@@ -262,14 +265,18 @@ def test_l1_lasso():
         #print('ps opt val = {}'.format(ps_val))
         assert abs(ps_val-opt)<1e-2
         
-def test_l1_normalized():
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+def test_l1_normalized(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     
     projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+        
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=False)
@@ -288,15 +295,18 @@ def test_l1_normalized():
     #print('cvx opt val = {}'.format(opt))
     #print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-3
-    
-def test_l1_intercept():
+
+stepsize = 1e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)])     
+def test_l1_intercept(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     
-    projSplit = ps.ProjSplitFit()
-    stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    projSplit = ps.ProjSplitFit()    
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
@@ -319,17 +329,18 @@ def test_l1_intercept():
     assert abs(ps_val-opt)<1e-3
     
 
-def test_l1_intercept_and_normalize():
+stepsize = 5e-1
+f2fixed = ps.Forward2Fixed(stepsize)        
+f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = ps.Forward2Affine()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+def test_l1_intercept_and_normalize(processor):
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     
-    projSplit = ps.ProjSplitFit()
-    stepsize = 5e-1
-    #stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    projSplit = ps.ProjSplitFit()    
     gamma = 1e-2
-    #gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
     lam = 1e-3
