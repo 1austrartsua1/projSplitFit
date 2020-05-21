@@ -29,9 +29,15 @@ def test_linear_op_data_term_wrong():
     p = 15
     d2 = 11
     H = np.random.normal(0,1,[d2,p])
+    try:
+        projSplit.addData(A,y,2,processor,normalize=False,intercept=False,
+                      linearOp = aslinearoperator(H))
+        notExcept = True
+                          
+    except:
+        notExcept = False
     
-    assert projSplit.addData(A,y,2,processor,normalize=False,intercept=False,
-                      linearOp = aslinearoperator(H)) == -1
+    assert notExcept == False 
                              
 
 TryAll = []

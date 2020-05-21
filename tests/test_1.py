@@ -12,9 +12,10 @@ import numpy as np
 import pytest 
 from scipy.sparse.linalg import aslinearoperator
 
-class ProcessDummy():
+class ProcessDummy(ps.ProjSplitLossProcessor):
         def __init__(self):
             self.embedOK = True
+            
             
 # createApartition test
 
@@ -102,7 +103,14 @@ def test_add_linear_ops():
         
     d2 = 9
     H = np.random.normal(0,1,[p,d2])
-    assert (projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H)) == - 1) 
+    try: 
+        projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H)) == - 1
+        noExcept = True
+    except:
+        noExcept = False
+    
+    assert noExcept == False 
+    
     
 def test_add_linear_ops_v2():
     projSplit = ps.ProjSplitFit()
@@ -118,8 +126,12 @@ def test_add_linear_ops_v2():
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H))
-    
-    assert(projSplit.addData(A,y,2,processDummy)==-1)
+    try:
+        projSplit.addData(A,y,2,processDummy)==-1
+        noExcept = True
+    except:
+        noExcept = False
+    assert noExcept == False 
     
 
 def test_good_embed():

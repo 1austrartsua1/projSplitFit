@@ -55,27 +55,26 @@ class ProjSplitFit(object):
             ny = len(responses)
         except:
             print("Error: observations and responses should be arrays, i.e. ")
-            print("NumPy arrays. Aborting, did not add data")            
-            return -1
+            print("NumPy arrays. They must have a shape attribute. Aborting, did not add data")            
+            raise Exception
 
         if (self.nobs!=ny):
             print("Error: len(responses) != num observations")
             print("aborting. Data not added")
-            return -1
+            raise Exception
         
         if (self.nobs == 0) | (self.ncol == 0):
             print("Error! number of observations or variables is 0! Aborting addData")
             print("Please call with valid data, i.e. numpy arrays")
             self.A = None
             self.yresponse = None
-            return -1 
+            raise Exception 
         
         if process.pMustBe2 and (loss != 2):
-            print("Error: this process object only works for the squared loss")
-            print("Aborting addData")
-            self.A = None
-            self.yresponse = None
-            return -1 
+            print("Warning: this process object only works for the squared loss")
+            print("Using forward2backtrack() as the process object")
+            pass
+            #XX
         
         if linearOp is None:
             self.dataLinOp = MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
@@ -88,7 +87,7 @@ class ProjSplitFit(object):
             self.A = None
             self.yresponse = None
             self.nvar = None
-            return -1
+            raise Exception
         else:
             self.dataLinOp = linearOp
             self.nvar = linearOp.shape[1]
@@ -108,7 +107,7 @@ class ProjSplitFit(object):
                     self.A = None
                     self.yresponse = None
                     self.nvar = None
-                    return -1
+                    raise Exception
         
         self.yresponse = responses
         
@@ -173,7 +172,7 @@ class ProjSplitFit(object):
                 print("Added data has {} columns".format(self.nvar))
                 print("This linear operator has {} columns".format(linearOp.shape[1]))
                 print("These must be equal, aborting addRegularizer")
-                return -1 
+                raise Exception 
             
         if embed == True:
             OK2Embed = True
@@ -336,7 +335,7 @@ class ProjSplitFit(object):
         
         if self.dataAdded == False:
             print("Must add data before calling run(). Aborting...")
-            return -1        
+            raise Exception        
         
         if type(nblocks) == int:
             if nblocks >= 1:
@@ -928,6 +927,12 @@ class BackwardLBFGS(ProjSplitLossProcessor):
     def update(self,psObj,thisSlice):
         pass
         
+class BackwardExact(ProjSplitLossProcessor):
+    def __init__(self,stepsize):
+        pass
+    def update(self,psObj,thisSlice):
+        pass
+    
 #-----------------------------------------------------------------------------
 
 def totalVariation1d(n):
