@@ -18,11 +18,16 @@ from utils import getLRdata
 stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
+f1fixed = ps.Forward1Fixed(stepsize)
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend(
         [(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)]        
+        )
+toDo.extend(
+        [(f1fixed,False,False),(f1fixed,True,False),
+        (f1fixed,False,True),(f1fixed,True,True)]        
         )
 
 @pytest.mark.parametrize("processor,nrm,inter",toDo) 

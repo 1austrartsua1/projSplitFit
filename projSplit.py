@@ -26,8 +26,7 @@ class ProjSplitFit(object):
         self.dataAdded = False
         self.numRegs = 0
         self.z = None
-        self.nDataBlocks = None
-        self.gradxdata = None 
+        self.nDataBlocks = None        
         
     
     def setDualScaling(self,dualScaling):
@@ -417,6 +416,8 @@ class ProjSplitFit(object):
             
                                 
         self.nDataVars = self.ncol + 1
+        
+        self.gradxdata = None # this is a variable used in Forward1Fixed and Forward1Backtrack processors
         
         if (resetIterate == True) | (self.resetIterate == True):
             
@@ -933,11 +934,11 @@ class  Forward1Fixed(ProjSplitLossProcessor):
         psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
         
   
-        
-
-class Forward1Backtrack(Forward1Fixed):
+    
+class Forward1Backtrack(ProjSplitLossProcessor):
     def __init__(self,initialStep, blendFactor=0.1,backTrackFactor = 0.7, 
                  growFactor = 1.0, growFreq = None):
+        self.embedOK = True 
         pass
         
     def update(self,psObj,block):

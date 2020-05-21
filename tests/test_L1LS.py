@@ -17,9 +17,10 @@ import cvxpy as cvx
 
 stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)        
+f1fixed = ps.Forward1Fixed(stepsize)
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
 def test_user_defined_embedded(processor):
     def val1(x,nu):
         return 0.5*nu*np.linalg.norm(x,2)**2
@@ -103,10 +104,11 @@ def test_user_defined_embedded(processor):
     
     
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
+f2fixed = ps.Forward2Fixed(stepsize)
+f1fixed = ps.Forward1Fixed(stepsize)        
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
 def test_user_defined(processor):
     
     def val1(x,nu):
@@ -234,8 +236,9 @@ def test_user_defined(processor):
 stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)        
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f1fixed = ps.Forward1Fixed(stepsize)
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
 def test_l1_lasso(processor):
     m = 40
     d = 10
@@ -269,7 +272,8 @@ stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)        
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+f1fixed = ps.Forward1Fixed(stepsize)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
 def test_l1_normalized(processor):
     m = 40
     d = 10
@@ -300,7 +304,8 @@ stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)        
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)])     
+f1fixed = ps.Forward1Fixed(stepsize)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)])     
 def test_l1_intercept(processor):
     m = 40
     d = 10
@@ -333,7 +338,8 @@ stepsize = 5e-1
 f2fixed = ps.Forward2Fixed(stepsize)        
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine)]) 
+f1fixed = ps.Forward1Fixed(stepsize)
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
 def test_l1_intercept_and_normalize(processor):
     m = 40
     d = 10
@@ -347,7 +353,7 @@ def test_l1_intercept_and_normalize(processor):
     step = 1.0
     regObj = ps.L1(lam,step)
     projSplit.addRegularizer(regObj)
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 10)
+    projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 10,primalTol=1e-3,dualTol=1e-3)
     ps_val = projSplit.getObjective()
     
     primViol = projSplit.getPrimalViolation()
@@ -371,7 +377,7 @@ def test_l1_intercept_and_normalize(processor):
     
     
     
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
     
     
 if __name__ == '__main__':
