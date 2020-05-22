@@ -83,6 +83,7 @@ for i in [False,True]:
         
 @pytest.mark.parametrize("processor,inter,norm,nblk",ToDo)
 def test_ls_PrimDual(processor,inter,norm,nblk):
+    processor.setStep(1e-1)
     projSplit = ps.ProjSplitFit()
     m = 10
     d = 20
@@ -119,6 +120,7 @@ f1fixed = ps.Forward1Fixed(stepsize)
 f1bt = ps.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)])
 def test_cyclic(processor):
+    processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
@@ -167,6 +169,7 @@ toDo.extend([(f1bt,False,False),(f1bt,True,False),
 
 @pytest.mark.parametrize("processor,norm,inter",toDo)
 def test_ls_Int_Norm(processor,norm,inter):
+    processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
@@ -209,7 +212,7 @@ f1fixed = ps.Forward1Fixed(stepsize)
 f1bt = ps.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_ls_blocks(processor):
-    
+    processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
@@ -267,6 +270,7 @@ toDo.extend(
 
 @pytest.mark.parametrize("processor,norm,inter",toDo) 
 def test_lr(processor,norm,inter):
+    processor.setStep(1e0)
     projSplit = ps.ProjSplitFit()
     m = 50
     d = 10

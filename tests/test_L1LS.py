@@ -23,6 +23,7 @@ f2affine = ps.Forward2Affine()
 f1bt = ps.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_user_defined_embedded(processor):
+    
     def val1(x,nu):
         return 0.5*nu*np.linalg.norm(x,2)**2
     
@@ -112,6 +113,7 @@ f2affine = ps.Forward2Affine()
 f1bt = ps.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_user_defined(processor):
+    
     
     def val1(x,nu):
         return 0.5*nu*np.linalg.norm(x,2)**2
@@ -278,7 +280,7 @@ f2affine = ps.Forward2Affine()
 f1fixed = ps.Forward1Fixed(stepsize)
 f1bt = ps.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
-def test_l1_normalized(processor):
+def test_l1_normalized(processor):    
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
