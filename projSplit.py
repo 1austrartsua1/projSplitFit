@@ -14,6 +14,7 @@ Functions implemented here:
 
 
 import numpy as np
+from numpy.linalg import norm
 import time 
 
 class ProjSplitFit(object):
@@ -115,7 +116,7 @@ class ProjSplitFit(object):
             print("Normalizing columns of A to unit norm")
             self.normalize = True
             self.A = np.copy(observations)            
-            self.scaling = np.linalg.norm(self.A,axis=0)
+            self.scaling = norm(self.A,axis=0)
             self.scaling += 1.0*(self.scaling < 1e-10)
             self.A = self.A/self.scaling
         else:
@@ -540,8 +541,8 @@ class ProjSplitFit(object):
             # update this block
             self.process.update(self,i)
         
-        self.primalErr = np.linalg.norm(self.Hz - self.xdata,ord=2,axis=1).max()
-        self.dualErr =   np.linalg.norm(self.ydata - self.wdata,ord=2,axis=1).max()
+        self.primalErr = norm(self.Hz - self.xdata,ord=2,axis=1).max()
+        self.dualErr =   norm(self.ydata - self.wdata,ord=2,axis=1).max()
                 
     def updateRegularizerBlocks(self):
         i = 0        
@@ -551,10 +552,10 @@ class ProjSplitFit(object):
             t = Giz + reg.step*self.wreg[i]
             self.xreg[i] = reg.getProx(t)
             self.yreg[i] = reg.step**(-1)*(t - self.xreg[i])
-            primal_err_i = np.linalg.norm(Giz - self.xreg[i],2)
+            primal_err_i = norm(Giz - self.xreg[i],2)
             if self.primalErr<primal_err_i:
                 self.primalErr = primal_err_i
-            dual_err_i = np.linalg.norm(self.wreg[i] - self.yreg[i],2)
+            dual_err_i = norm(self.wreg[i] - self.yreg[i],2)
             if self.dualErr<dual_err_i:
                 self.dualErr = dual_err_i
                 
@@ -576,11 +577,11 @@ class ProjSplitFit(object):
                 
             self.yreg[-1][0] = 0.0
             
-            primal_err_i = np.linalg.norm(self.xreg[-1]-self.z,2)
+            primal_err_i = norm(self.xreg[-1]-self.z,2)
             if self.primalErr<primal_err_i:
                 self.primalErr = primal_err_i
                 
-            dual_err_i = np.linalg.norm(self.yreg[-1]-self.wreg[-1],2)
+            dual_err_i = norm(self.yreg[-1]-self.wreg[-1],2)
             if self.dualErr<dual_err_i:
                 self.dualErr = dual_err_i
                 
@@ -613,9 +614,9 @@ class ProjSplitFit(object):
             v += self.yreg[-1]
                                     
         # compute pi
-        pi = np.linalg.norm(self.udata,'fro')**2 + self.gamma**(-1)*np.linalg.norm(v,2)**2
+        pi = norm(self.udata,'fro')**2 + self.gamma**(-1)*norm(v,2)**2
         for i in range(self.numRegs - 1):
-            pi += np.linalg.norm(self.ureg[i],2)**2
+            pi += norm(self.ureg[i],2)**2
                 
         # compute phi 
         if pi > 0:
@@ -735,7 +736,7 @@ class Regularizer(object):
         return self.prox(x,self.nu,self.step)
     
 def L1val(x,nu):
-    return nu*np.linalg.norm(x,1)
+    return nu*norm(x,1)
 
 def L1prox(x,nu,rho):
     rhonu = rho * nu
@@ -828,7 +829,7 @@ class ProjSplitLossProcessor(object):
         
     def initializeGradXdata(self,psObj):
         '''
-           this routine is used by Forward1Fixed and Foward1Backtrack
+           this routine is used by Forward1Fixed 
            to initialize the gradients of xdata
         '''
         psObj.gradxdata = np.zeros(psObj.xdata.shape)
@@ -836,6 +837,25 @@ class ProjSplitLossProcessor(object):
             thisSlice = psObj.partition[block]
             psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
         
+    def initialize1fBacktrack(self,psObj):
+        '''
+           this routine is used by Foward1Backtrack
+           to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
+        '''
+        # initalize theta_hat
+        psObj.thetahat = np.zeros(psObj.xdata.shape)
+        psObj.what = np.zeros(psObj.xdata.shape)
+        psObj.gradxdata = np.zeros(psObj.xdata.shape)
+        for block in range(psObj.nDataBlocks):
+            thisSlice = psObj.partition[block]
+            psObj.thetahat[block][1:psObj.nDataVars] = psObj.embedded.getProx(psObj.thetahat[block][1:psObj.nDataVars])
+            psObj.thetahat[block][0] = 0.0
+            psObj.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*psObj.thetahat[block]
+            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.thetahat[block],thisSlice)        
+            psObj.what[block] += psObj.gradxdata[block]
+        
+        psObj.xdata = psObj.thetahat
+        psObj.ydata = psObj.what
         
 
 #############
@@ -882,7 +902,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
             psObj.ydata[block] = a + gradx  
             lhs = psObj.Hz - psObj.xdata[block]
             rhs = psObj.ydata[block] - psObj.wdata[block]
-            if lhs.T.dot(rhs)>=self.Delta*np.linalg.norm(lhs,2)**2:
+            if lhs.T.dot(rhs)>=self.Delta*norm(lhs,2)**2:
                 break
             else:
                 self.step *= self.decFactor
@@ -908,7 +928,7 @@ class Forward2Affine(ProjSplitLossProcessor):
         else:
             affine0 = np.array([0.0])
         affinePart = np.concatenate((affine0,affinePart))
-        normLHS = np.linalg.norm(lhs,2)**2
+        normLHS = norm(lhs,2)**2
         step = normLHS/(self.Delta*normLHS + lhs.T.dot(affinePart))
         psObj.xdata[block] = psObj.Hz - step*lhs
         psObj.ydata[block] = gradHz - step*affinePart
@@ -936,14 +956,69 @@ class  Forward1Fixed(ProjSplitLossProcessor):
   
     
 class Forward1Backtrack(ProjSplitLossProcessor):
-    def __init__(self,initialStep, blendFactor=0.1,backTrackFactor = 0.7, 
+    def __init__(self,initialStep=1.0, blendFactor=0.1,backTrackFactor = 0.7, 
                  growFactor = 1.0, growFreq = None):
         self.embedOK = True 
-        pass
+        self.step = initialStep
+        self.alpha = blendFactor
+        self.delta = backTrackFactor
+        self.growFac = growFactor
+        self.growFreq = growFreq
+        self.eta = float('inf')
         
     def update(self,psObj,block):
-        pass
-    
+        if psObj.gradxdata is None:
+            ProjSplitLossProcessor.initialize1fBacktrack(ProjSplitLossProcessor,psObj)
+        
+        if self.growFreq is not None:
+            if psObj.k % self.growFreq == 0:
+                # time to grow the stepsize
+                upper_bound = (1+self.alpha*self.eta)*self.step 
+                desired_step = self.growFactor*self.step
+                self.step = min([upper_bound,desired_step])                                
+                psObj.embedded.setStep(self.step)
+        
+        thisSlice = psObj.partition[block]
+        
+        phi = (psObj.Hz - psObj.xdata[block]).T.dot(psObj.ydata[block] - psObj.wdata[block])
+        
+        xold = np.copy(psObj.xdata[block])
+        yold = np.copy(psObj.ydata[block])
+        
+        t1 = (1-self.alpha)*xold +self.alpha*psObj.Hz
+        t2 = np.copy(psObj.gradxdata[block]) 
+        t2 -= psObj.wdata[block]
+        while True:
+            t = t1 - self.step*t2
+            psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+            psObj.xdata[block][0] = t[0]   
+            
+            psObj.gradxdata[block] = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+            psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
+            
+            yhat = self.step**(-1)*( (1-self.alpha)*xold +self.alpha*psObj.Hz - psObj.xdata[block] )\
+                    + psObj.wdata[block]
+            phiPlus = (psObj.Hz - psObj.xdata[block]).T.dot(psObj.ydata[block] - psObj.wdata[block])
+            
+            lhs1 = norm(psObj.xdata[block] - psObj.thetahat[block],2)
+            rhs1 = (1-self.alpha)*norm(xold -psObj.thetahat[block] ,2) \
+                    + self.alpha*norm(psObj.Hz-psObj.thetahat[block],2) \
+                    + self.step*norm(psObj.wdata[block] - psObj.what[block],2)
+            if lhs1 <= rhs1:                
+                numer = norm(yhat-psObj.wdata[block],2)**2
+                denom = norm(psObj.ydata[block]-psObj.wdata[block],2)**2
+                rhs2_1 = 0.5*(self.step/self.alpha)*(denom + self.alpha*numer)
+                                                
+                rhs2_2 = (1-self.alpha)*(phi - 0.5*(self.step/self.alpha)*norm(yold-psObj.wdata[block],2)**2)
+                
+                if phiPlus >= rhs2_1 + rhs2_2:
+                    self.eta = numer/denom
+                    break
+            
+            self.step *= self.delta
+            psObj.embedded.setStep(self.step)
+                
+                
     
 #############
 class BackwardCG(ProjSplitLossProcessor):

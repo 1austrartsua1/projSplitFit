@@ -19,6 +19,7 @@ stepsize = 1e-1
 f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack()
 f1fixed = ps.Forward1Fixed(stepsize)
+f1bt = ps.Forward1Backtrack()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend(
@@ -28,6 +29,10 @@ toDo.extend(
 toDo.extend(
         [(f1fixed,False,False),(f1fixed,True,False),
         (f1fixed,False,True),(f1fixed,True,True)]        
+        )
+toDo.extend(
+        [(f1bt,False,False),(f1bt,True,False),
+        (f1bt,False,True),(f1bt,True,True)]        
         )
 
 @pytest.mark.parametrize("processor,nrm,inter",toDo) 

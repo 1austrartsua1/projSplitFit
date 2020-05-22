@@ -19,7 +19,9 @@ f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
 f1fixed = ps.Forward1Fixed(stepsize)
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
+f1bt = ps.Forward1Backtrack()
+
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_embedded(processor):
     m = 40
     d = 10
@@ -88,7 +90,9 @@ f2fixed = ps.Forward2Fixed(stepsize)
 f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = ps.Forward2Affine()
 f1fixed = ps.Forward1Fixed(stepsize)
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed)]) 
+f1bt = ps.Forward1Backtrack()
+
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_l1_multi_lasso(processor):
     m = 40
     d = 10
