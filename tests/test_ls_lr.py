@@ -14,7 +14,32 @@ from utils import runCVX_LR
 from utils import getLSdata
 
 #np.random.seed(1987)
-
+@pytest.mark.parametrize("gf",[(1.0),(1.1),(1.2),(1.5)])
+def test_f1backtrack(gf):
+    
+    projSplit = ps.ProjSplitFit()
+    m = 10
+    d = 20
+    A = np.random.normal(0,1,[m,d])
+    y = np.random.normal(0,1,m)
+    processor = ps.Forward1Backtrack(growFactor=gf,growFreq=10)
+    
+    projSplit.setDualScaling(1e-1)
+    projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
+    projSplit.run(maxIterations = None,keepHistory = True,
+                  primalTol=1e-3,dualTol=1e-3,nblocks=5)
+    ps_val = projSplit.getObjective()
+    
+    
+    AwithIntercept = np.zeros((m,d+1))
+    AwithIntercept[:,0] = np.ones(m)
+    AwithIntercept[:,1:(d+1)] = A
+    result = np.linalg.lstsq(AwithIntercept,y,rcond=None)
+    xhat = result[0]  
+    LSval = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
+    
+    assert ps_val - LSval < 1e-2
+    
 
 @pytest.mark.parametrize("gf",[(1.0),(1.1),(1.2),(1.5)])
 def test_f2backtrack(gf):

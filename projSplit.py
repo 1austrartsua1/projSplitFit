@@ -974,7 +974,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
             if psObj.k % self.growFreq == 0:
                 # time to grow the stepsize
                 upper_bound = (1+self.alpha*self.eta)*self.step 
-                desired_step = self.growFactor*self.step
+                desired_step = self.growFac*self.step
                 self.step = min([upper_bound,desired_step])                                
                 psObj.embedded.setStep(self.step)
         
