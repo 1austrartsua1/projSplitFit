@@ -43,23 +43,28 @@ def test_bad_gamma(gammain):
 # bad get things before run/initialization etc
 def test_bad_getParams():
     projSplit = ps.ProjSplitFit()
-    testing = projSplit.getParams()
-    assert testing == None, "output of getParams is not None"
-
-    testing = projSplit.getObjective()
-    assert testing == None, "output of getObjective is not None"
-
-    testing = projSplit.getSolution()
-    assert testing == None, "output of getSolution is not None"
-
-    testing = projSplit.getDualViolation()
-    assert testing == None, "output of getDualViolation is not None"
-
-    testing = projSplit.getHistory()
-    assert testing == None, "output of getHistory is not None"
-
-    testing = projSplit.getPrimalViolation()
-    assert testing == None, "output of getPrimalViolation is not None"
+    try:
+        testing = projSplit.getParams()
+        
+    
+        testing = projSplit.getObjective()
+        
+    
+        testing = projSplit.getSolution()
+        
+    
+        testing = projSplit.getDualViolation()
+        
+    
+        testing = projSplit.getHistory()
+        
+    
+        testing = projSplit.getPrimalViolation()
+        noExcept = True
+    except:
+        noExcept = False
+        
+    assert noExcept == False
     
     
 

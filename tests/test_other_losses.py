@@ -15,7 +15,7 @@ import cvxpy as cvx
 ToDo = []
 f2bt = ps.Forward2Backtrack()
 
-for p in np.linspace(1.01,4,20):
+for p in np.linspace(1.1,4,20):
     ToDo.append((p,f2bt))
 
 @pytest.mark.parametrize("p,process",ToDo)

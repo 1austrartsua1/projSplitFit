@@ -18,8 +18,43 @@ from numpy.linalg import norm
 import time 
 
 class ProjSplitFit(object):
+    '''
+    ProjSplitFit is the class used for creating a data-fitting problem and solving
+    it with projective splitting. Please refer to 
+    [1] arxiv.org/abs/1803.07043 (algorithm definition page 9)
+    [2] arxiv.org/abs/1902.09025 (algorithm definiteion pages 10-11)
+    - To create an object, call
+        psobj = ProjSplitFit(dualScaling)
+        dualScaling (defaults to 1.0) is gamma in the above algorithm definitions. 
+    
+    The general optimization objective this can solve is
+    
+    (1): (1.0/n)*sum_{i=1}^n(loss(a_i^T (G_0 z),y_i)) + sum_{k = 1}^{numReg} h_i(G_i z)
+    
+    where
+        - a_1...a_n are feature vectors forming the rows of a data matrix A
+        - y_1...y_n are the response values
+        - loss is the loss function dealt with via the Loss class defined in this 
+            module (see the addData method)
+        - G_0...G_{numReg} are linear operators (possibly the identity)
+        - h_i are generic functions dealt with via the Regularizer class defined 
+            in this module (see addRegularizer)
+            
+    The data (A,y), loss, and linear operator G_0 are added via the addData method.
+    
+    Each regularizer must be added individually via a call to the addRegularizer
+    method.                 
+    '''
     def __init__(self,dualScaling=1.0):
-        
+        '''
+        ----------
+        parameters
+        ----------
+            dualScaling (defaults to 1.0) is gamma in 
+            [1] arxiv.org/abs/1803.07043 (algorithm definition page 9)
+            [2] arxiv.org/abs/1902.09025 (algorithm definiteion pages 10-11).
+            dualScaling must be an int or float > 0
+        '''        
         self.setDualScaling(dualScaling)                
         self.allRegularizers = []
         self.embeddedFlag = False
@@ -31,6 +66,10 @@ class ProjSplitFit(object):
         
     
     def setDualScaling(self,dualScaling):
+        '''
+        Changes the dual scaling parameter (gamma), i.e.
+        psobj.setDualScaling(newGamma) where newGamma is a positive int or float
+        '''
         try:    
             self.gamma = float(dualScaling)
             if (dualScaling <= 0):
@@ -43,12 +82,32 @@ class ProjSplitFit(object):
             self.gamma = 1.0
     
     def getDualScaling(self):
+        '''
+        Returns the current setting of dualScaling
+        '''
         return self.gamma 
                             
     def addData(self,observations,responses,loss,process,intercept=True,
                 normalize=True, linearOp = None): 
-        '''
-        XX insert comments here 
+        '''        
+        Adds data for the data fitting model
+        -----------
+        Parameters
+        ----------
+        -observations: n x d numpy array/matrix with each row being a_i 
+        from Eq. (1).
+        -responses: n x 1 vector/list/numpy array with each element equal to 
+        y_i from Eq. (1)
+        -process: Selects a process object which sets how projective 
+        splitting will handle the loss. Process is an object of a class derived
+        from ProjSplitLossProcessor. Here are the possible classes:
+        Forward2Fixed, Forward2Backtrack, Forward2Affine, Forward1Fixed, 
+        Forward1Backtrack, BackwardCG, BackwardLBFGS, BackwardExact       
+        -intercept: (bool) whether to include an intercept/constant term in the 
+            linear model
+        -normalize: (bool) whether to normalize columns of the data matrix to have 
+        unit norm (if true, data matrix will be copied)
+        -linearOp: adds matrix G_0 in Eq. (1)
         '''
         
         try:
@@ -143,28 +202,37 @@ class ProjSplitFit(object):
         self.dataAdded = True
         self.resetIterate = True
         
-        
-        
-    
+                    
     def getParams(self):
         '''
         After the addData method has been called, one may call the getDataParams method to
         retrieve some of the relevant parameters in the model.
-        nvar,nobs,nblocks = psfObj.getParams()
+        nvar,nobs = psfObj.getParams()
         Here
-        nvar: Number of variables, V as defined in (2) immediately above
+        nvar: Number of variables
         nobs: Number of observations
-        nblocks: Number of blocks
-        If the addData method has not been called yet, getParams returns None.
+
+        If the addData method has not been called yet, getParams raises an exception.
         '''
         if self.dataAdded == False:
-            return None 
+            raise Exception
         else:        
             return (self.nvar + int(self.intercept),self.nobs)
     
     def addRegularizer(self,regObj, linearOp=None, embed = False):
-        #self.allRegularizers
-        #reg.linearOp        
+        '''        
+        -adds a regularizer to the optimization problem (each h_i and G_i in 
+          Eq. (1)))
+        ----------
+        parameters
+        ----------
+        -regObj: an object of class Regularizer (defined in this module)
+        -linearOp: adds matrix G_i in Eq. (1)
+        -embed: internal option in projective splitting (see Eq. (8)-(9) in
+          [1]. For forward-type loss process updates, perform the "prox" of 
+          this regularizer in a forward-backward style update)
+        '''
+        
         if (linearOp is not None) & (self.dataAdded):
             #check the dimensions make sense            
             if linearOp.shape[1] != self.nvar:
@@ -218,20 +286,13 @@ class ProjSplitFit(object):
         self.resetIterate = True # Ensures we reset the variables if we add another regularizer 
     
     def getObjective(self):
-        #self.A
-        
-        #self.z
-        #self.intercept
-        #self.onesIntercept
-        #self.nobs
-        #self.y
-        #self.loss 
-        #self.allRegularizers
-        #reg.linearOp
-        #reg.intercept
+        '''
+        Returns the current objective value, as in (1), evaluated at the current 
+        primal iterate z^k. If the method has not been run yet, raises an exception
+        '''        
         if self.z is None :
             print("Method not run yet, no objective to return. Call run() first.")
-            return None
+            raise Exception
         
         Hz = self.dataLinOp.matvec(self.z[1:len(self.z)])
         AHz = self.A.dot(Hz)
@@ -252,12 +313,14 @@ class ProjSplitFit(object):
         
     
     def getSolution(self):
-        #z is always of length d+1 as even if there is no intercept
-        # I just don't update the intercept
+        '''
+        Returns the current primal Solution z^k. If the run() has not been called yet,
+        raises an exception. 
+        '''
         
         if self.z is None:
             print("Method not run yet, no solution to return. Call run() first.")
-            return None
+            raise Exception
         
         
         Hz = self.dataLinOp.matvec(self.z[1:len(self.z)])
@@ -278,66 +341,104 @@ class ProjSplitFit(object):
         
         
     
-    def getPrimalViolation(self):
-        #self.primalErr
+    def getPrimalViolation(self):        
         '''
         After at least one call to run, the function call
         objVal = psfObj.getPrimalViolation()
         returns a float containing max_i{||G_i z^k - x_i^k||_\infty}. 
-        If run has not been called yet, it returns None.
+        If run has not been called yet, raises an exception.
         '''
         if self.z is None:
             print("Method not run yet, no primal violation to return. Call run() first.")
-            return None
+            raise Exception
         else:
             return self.primalErr
     
     def getDualViolation(self):
-        #self.dualErr
         '''
         After at least one call to run, the function call
         objVal = psfObj.getDualViolation()
         returns a float containing max_i{||y_i^k - w_i^k||_\infty}.  
-        If run has not been called yet, it returns None
+        If run has not been called yet, it raises an exception
         '''
         if self.z is None:
             print("Method not run yet, no dual violation to return. Call run() first.")
-            return None
+            raise Exception
         else:
             return self.dualErr
     
     def getHistory(self):
-        #self.historyArray
         '''
         After at least one call to run with keepHistory set to True, the function call
         historyArray = psfObj.getHistory()
-        returns a two-dimensional four-column NumPy array with each row corresponding to an iteration
-        for which the history statistics were recorded. The total number of rows is num iterations
-        divided by the historyFreq parameter, which can be set in run() and defaults to 10. 
-        In each row of this array, the columns have the following interpretation:
-        Column Number Interpretation
+        returns a two-dimensional four-column NumPy array with each row 
+        corresponding to an iteration for which the history statistics were 
+        recorded. The total number of rows is num iterations divided by the 
+        historyFreq parameter, which can be set in run() and defaults to 10. 
+        In each column of this array, the rows have the following interpretation:
+        Row Number Interpretation
         0             Objective value
-        1             Primal violation
-        2             Dual violation
-        3             Cumulative run time
+        1             Cumulative run time
+        2             Primal violation
+        3             Dual violation
+        4             Value of Phi(p^k) used in hyperplane construction 
+        
+        If run() has not yet been called with keepHistory set to True, 
+        this function will raise an Exception when called. 
         '''
         if self.z is None:
             print("Method not run yet, no history to return. Call run() first.")
-            return None
+            raise Exception
         if self.historyArray is None:
             print("run() was called without the keepHistory option, no history")
             print("call run with the keepHistory argument set to True")
-            return None
+            raise Exception
         return self.historyArray
     
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1, 
             resetIterate=False):
+        '''
+        Run projective splitting to minimize the objective in (1).
+        ----------
+        parameters
+        ----------
+        primalTol: (float>0) Continue running algorithm if primal error, 
+            max_i ||G_i z^k - x_i^k||^2, is greater than primalTol. 
+            Note that to terminate the method, both primal error AND dual error 
+            must be smaller than their respective tolerances.
+        dualTol: (float>0) Continue running algorithm if dual error, 
+            max_i ||y_i^k - w_i^k||^2, is greater than dualTol. 
+            Note that to terminate the method, both primal error AND dual error 
+            must be smaller than their respective tolerances.
+        maxIterations: (int>0) terminate algorithm if ran for more than 
+            maxIterations iterations
+        keepHistory: (bool) if True, record the history (see getHistory() method)
+        historyFreq: (int>0) frequency to keep history, defaults to every 10 
+            iterations. Note that to keepHistory requires computing the objective
+            which may be slow for large problems. Hence we allow historyFreq
+            to be set larger than 1. 
+        nBlocks: (int>0) number of blocks in the projective splitting decomposition 
+            of the loss
+        blockActivation: (string) strategy for selecting blocks of the loss in
+        projective splitting. Defaults to "greedy". Other valid choices are
+            "random" and "cyclic". 
+        blocksPerIteration: (int>0) Number of blocks to update in each iteration
+        resetIterate: (bool) if True, the current values of all variables in
+            projective splitting (eg: z^k, w_i^k etc) are erased and initialized 
+            to 0. 
+        '''
         
         if self.dataAdded == False:
             print("Must add data before calling run(). Aborting...")
             raise Exception        
         
+        if (blockActivation != "greedy") and (blockActivation != "cyclic") \
+            and (blockActivation != "greedy"):
+                print("Warning: chosen blockActivation is not recognised")
+                print("Using greedy instead")
+                blockActivation = "greedy"
+                
         if type(nblocks) == int:
             if nblocks >= 1:
                 if nblocks > self.nobs:
