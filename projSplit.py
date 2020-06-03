@@ -577,15 +577,15 @@ class ProjSplitFit(object):
             #print('iteration = {}'.format(self.k))
             t0 = time.time()
             # update all blocks (xi,yi) from (xi,yi,z,wi)
-            self.updateLossBlocks(blockActivation,blocksPerIteration)        
-            self.updateRegularizerBlocks()            
+            self.__updateLossBlocks(blockActivation,blocksPerIteration)        
+            self.__updateRegularizerBlocks()            
             
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
                 print("primal and dual tolerance reached, finishing run")
                 break            
             
             
-            phi = self.projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
+            phi = self.__projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
             t1 = time.time()
 
             if (keepHistory == True) and (self.k % historyFreq == 0):
@@ -612,7 +612,7 @@ class ProjSplitFit(object):
             # now set it back to the previous value
             self.embedded.setScaling(self.embeddedScaling)
             
-    def updateLossBlocks(self,blockActivation,blocksPerIteration):        
+    def __updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
         self.Hz[1:(self.ncol+1)] = self.dataLinOp.matvec(self.z[1:len(self.z)])
         self.Hz[0] = self.z[0]
@@ -645,7 +645,7 @@ class ProjSplitFit(object):
         self.primalErr = norm(self.Hz - self.xdata,ord=2,axis=1).max()
         self.dualErr =   norm(self.ydata - self.wdata,ord=2,axis=1).max()
                 
-    def updateRegularizerBlocks(self):
+    def __updateRegularizerBlocks(self):
         i = 0        
         for i in range(self.numRegs-1):             
             reg = self.allRegularizers[i]
@@ -687,7 +687,7 @@ class ProjSplitFit(object):
                 self.dualErr = dual_err_i
                 
                                     
-    def projectToHyperplane(self):
+    def __projectToHyperplane(self):
                             
         # compute u and v for data blocks
         if self.numRegs > 0:
@@ -721,7 +721,7 @@ class ProjSplitFit(object):
                 
         # compute phi 
         if pi > 0:
-            phi = self.getPhi(v)
+            phi = self.__getPhi(v)
                                     
             if phi > 0:               
                 # compute tau 
@@ -753,7 +753,7 @@ class ProjSplitFit(object):
         
         return phi
     
-    def getPhi(self,v):
+    def __getPhi(self,v):
         phi = self.z.dot(v)            
             
         if (len(self.wdata) > 1) | (self.numRegs > 0):       
