@@ -29,7 +29,8 @@ class ProjSplitFit(object):
     
     The general optimization objective this can solve is
     
-    (1): (1.0/n)*sum_{i=1}^n(loss(a_i^T (G_0 z),y_i)) + sum_{k = 1}^{numReg} h_i(G_i z)
+    (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n(z_int + loss(a_i^T (G_0 z),y_i)) 
+                        + sum_{k = 1}^{numReg} h_i(G_i z) }
     
     where
         - a_1...a_n are feature vectors forming the rows of a data matrix A
@@ -39,6 +40,8 @@ class ProjSplitFit(object):
         - G_0...G_{numReg} are linear operators (possibly the identity)
         - h_i are generic functions dealt with via the Regularizer class defined 
             in this module (see addRegularizer)
+        - z_int is the intercept variable to be fit
+        - z is a vector of parameters to be fit
             
     The data (A,y), loss, and linear operator G_0 are added via the addData method.
     
@@ -345,7 +348,7 @@ class ProjSplitFit(object):
         '''
         After at least one call to run, the function call
         objVal = psfObj.getPrimalViolation()
-        returns a float containing max_i{||G_i z^k - x_i^k||_\infty}. 
+        returns a float containing max_i{||G_i z^k - x_i^k||_2}. 
         If run has not been called yet, raises an exception.
         '''
         if self.z is None:
@@ -358,7 +361,7 @@ class ProjSplitFit(object):
         '''
         After at least one call to run, the function call
         objVal = psfObj.getDualViolation()
-        returns a float containing max_i{||y_i^k - w_i^k||_\infty}.  
+        returns a float containing max_i{||y_i^k - w_i^k||_2}.  
         If run has not been called yet, it raises an exception
         '''
         if self.z is None:
@@ -395,6 +398,13 @@ class ProjSplitFit(object):
             raise Exception
         return self.historyArray
     
+    def getSGDobjective():
+        pass 
+    def getSGDhistory():
+        pass 
+    def runSGD(self,maxIterations,nblocks=1):
+        pass 
+    
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1, 
             resetIterate=False):
@@ -404,11 +414,11 @@ class ProjSplitFit(object):
         parameters
         ----------
         primalTol: (float>0) Continue running algorithm if primal error, 
-            max_i ||G_i z^k - x_i^k||^2, is greater than primalTol. 
+            max_i ||G_i z^k - x_i^k||_2, is greater than primalTol. 
             Note that to terminate the method, both primal error AND dual error 
             must be smaller than their respective tolerances.
         dualTol: (float>0) Continue running algorithm if dual error, 
-            max_i ||y_i^k - w_i^k||^2, is greater than dualTol. 
+            max_i ||y_i^k - w_i^k||_2, is greater than dualTol. 
             Note that to terminate the method, both primal error AND dual error 
             must be smaller than their respective tolerances.
         maxIterations: (int>0) terminate algorithm if ran for more than 
@@ -776,7 +786,25 @@ class ProjSplitFit(object):
                 
 #-----------------------------------------------------------------------------
 class Regularizer(object):
+    '''
+      Objects of this class are used as inputs to the addRegularizer method
+      of class ProjSplitFit to define regularizers in the objective function. 
+      Recall the objective function:
+      (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n(z_int + loss(a_i^T (G_0 z),y_i)) 
+                        + sum_{k = 1}^{numReg} h_i(G_i z) }
+      The regularizer class essentially defines each h_i(G_i z) term via
+      methods for evaluating the function h_i, its prox, and the matrix G_i. 
+      The regularizer object defines these features for a single function h().
+      Note the matrix G is added in the addRegularizer method of projSplitFit. 
+    '''
     def __init__(self,value,prox,nu=1.0,step=1.0):
+        '''
+        ----------
+        parameters
+        ----------
+        value: (function) must be a function of one parameter:  a numpy-style 
+            array x. Value returns a float which is the value of h(x)
+        '''
         self.value = value 
         self.prox = prox 
         if type(nu)==int:
