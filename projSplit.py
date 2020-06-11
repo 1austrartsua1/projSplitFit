@@ -29,7 +29,7 @@ class ProjSplitFit(object):
     
     The general optimization objective this can solve is
     
-    (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n(z_int + loss(a_i^T (G_0 z),y_i)) 
+    (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n loss(z_int + a_i^T (G_0 z),y_i)
                         + sum_{k = 1}^{numReg} h_i(G_i z) }
     
     where
@@ -296,13 +296,8 @@ class ProjSplitFit(object):
         if self.z is None :
             print("Method not run yet, no objective to return. Call run() first.")
             raise Exception
-        
-        Hz = self.dataLinOp.matvec(self.z[1:len(self.z)])
-        AHz = self.A.dot(Hz)
-        if self.intercept:
-            #XX do I need this if statement or does z[0] just stay at 0?
-            AHz += self.z[0]
-        currentLoss = (1.0/self.nobs)*sum(self.loss.value(AHz,self.yresponse))     
+                
+        currentLoss,Hz = self.__getLoss(self.z)
         
         for reg in self.allRegularizers:
             Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])              
@@ -398,12 +393,58 @@ class ProjSplitFit(object):
             raise Exception
         return self.historyArray
     
-    def getSGDobjective():
-        pass 
-    def getSGDhistory():
-        pass 
-    def runSGD(self,maxIterations,nblocks=1):
-        pass 
+    
+    
+    
+    def runSGD(self,maxIterations,nblocks=1,historyFreq=10,step0 = 1.0,
+               stepStat="fixed",exponent = 0.75):
+        '''
+            returns the SGD function value history 
+        '''
+        if self.dataAdded == False:
+            print("Must add data before calling runSGD(). Aborting...")
+            raise Exception        
+            
+        # check that there are no regularizers as regularizers are not supported 
+        # by this implementation of SGD. 
+        if (self.numRegs > 0) or (self.embeddedFlag == True):
+            print("Error: Tried to run SGD but there are regularizers present")
+            print("Aborting")
+            raise Exception 
+        
+        
+        numBlocks = self.__setBlocks(nblocks)
+        SGDpartition = createApartition(self.nobs,numBlocks)
+        
+        zsgd = np.zeros(self.nvar+1)
+        Hzsgd = np.zeros(self.ncol+1)
+        Fsgd = []
+        sgdtimes = [0]
+        k = 0
+        step = step0
+        
+        while(k<maxIterations):            
+            t0 = time.time()
+            Hzsgd[1:] = self.dataLinOp.matvec(zsgd[1:])
+            Hzsgd[0] = zsgd[0]
+            activeBlock = np.random.randint(0,numBlocks)
+            thisSlice = SGDpartition[activeBlock]
+            gradHz = ProjSplitLossProcessor.getAGrad(self,Hzsgd,thisSlice)
+            Gtgrad = self.dataLinOp.rmatvec(gradHz[1:])
+            Gtgrad = np.concatenate((np.array([gradHz[0]]),Gtgrad))
+            
+            zsgd = zsgd - step*Gtgrad
+            t1 = time.time()
+            if step == "decay":
+                step = step0*(k+2)**(exponent)
+                
+            if k%historyFreq == 0:
+                fsgd,_ = self.__getLoss(zsgd)
+                Fsgd.append(fsgd)                
+                sgdtimes.append(sgdtimes[-1]+t1-t0)
+            k += 1
+        return Fsgd,sgdtimes[1:]
+            
     
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1, 
@@ -448,22 +489,9 @@ class ProjSplitFit(object):
                 print("Warning: chosen blockActivation is not recognised")
                 print("Using greedy instead")
                 blockActivation = "greedy"
-                
-        if type(nblocks) == int:
-            if nblocks >= 1:
-                if nblocks > self.nobs:
-                    print("more blocks than num rows. Setting nblocks equal to nrows")
-                    numBlocks = self.nobs 
-                else:
-                    numBlocks = nblocks
-            else:
-                print("Error: nblocks must be greater than 1, setting nblocks to 1")
-                numBlocks = 1
-        else:
-            print("Error: nblocks must be of type INT greater than 1, setting nblocks to 1")
-            numBlocks = 1
-                    
-            
+                                
+        numBlocks = self.__setBlocks(nblocks)
+                                
         if self.nDataBlocks is not None:
             if(self.nDataBlocks != numBlocks):
                 print("change of the number of blocks, resetting iterates automatically")
@@ -611,7 +639,7 @@ class ProjSplitFit(object):
         
         if keepHistory == True:
             self.historyArray = [objective]
-            self.historyArray.append(times)
+            self.historyArray.append(times[1:])
             self.historyArray.append(primalErrs)
             self.historyArray.append(dualErrs)
             self.historyArray.append(phis)
@@ -621,6 +649,23 @@ class ProjSplitFit(object):
             # we modified the embedded scaling to deal with multiple num blocks
             # now set it back to the previous value
             self.embedded.setScaling(self.embeddedScaling)
+            
+    def __setBlocks(self,nblocks):
+        if type(nblocks) == int:
+            if nblocks >= 1:
+                if nblocks > self.nobs:
+                    print("more blocks than num rows. Setting nblocks equal to nrows")
+                    numBlocks = self.nobs 
+                else:
+                    numBlocks = nblocks
+            else:
+                print("Error: nblocks must be greater than 1, setting nblocks to 1")
+                numBlocks = 1
+        else:
+            print("Error: nblocks must be of type INT greater than 1, setting nblocks to 1")
+            numBlocks = 1
+        return numBlocks
+            
             
     def __updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
@@ -782,7 +827,15 @@ class ProjSplitFit(object):
             
         return phi
     
-    
+    def __getLoss(self,z):
+        Hz = self.dataLinOp.matvec(z[1:])
+        AHz = self.A.dot(Hz)
+        if self.intercept:
+            #XX do I need this if statement or does z[0] just stay at 0?
+            AHz += z[0]
+        currentLoss = (1.0/self.nobs)*sum(self.loss.value(AHz,self.yresponse))     
+        return currentLoss,Hz
+        
                 
 #-----------------------------------------------------------------------------
 class Regularizer(object):
@@ -845,13 +898,13 @@ class Regularizer(object):
             self.nu = 1.0 
 
     def setStep(self,step):
-        if type(step)==float:
+        try:        
             if step>=0:
-                self.step = step    
+                self.step = float(step)
             else:
                 print("Error: stepsize must be >=0, keeping it set to 1.0")
                 self.step = 1.0 
-        else:
+        except:
             print("Error: stepsize must be float>=0, setting it to 1.0")
             self.step = 1.0 
             
@@ -885,8 +938,7 @@ def groupL2(dimension,groups,scaling = 1.0):
     
 #-----------------------------------------------------------------------------
 class Loss(object):
-    def __init__(self,p):
-        print(type(p))
+    def __init__(self,p):        
         
         if(p == 'logistic'):  
             self.value = lambda yhat,y: LR_loss(yhat,y)
@@ -1112,8 +1164,9 @@ class Forward1Backtrack(ProjSplitLossProcessor):
                 # time to grow the stepsize
                 upper_bound = (1+self.alpha*self.eta)*self.step 
                 desired_step = self.growFac*self.step
-                self.step = min([upper_bound,desired_step])                                
+                self.step = min([upper_bound,desired_step])                     
                 psObj.embedded.setStep(self.step)
+                
         
         thisSlice = psObj.partition[block]
         
@@ -1149,6 +1202,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
                 rhs2_2 = (1-self.alpha)*(phi - 0.5*(self.step/self.alpha)*norm(yold-psObj.wdata[block],2)**2)
                 
                 if phiPlus >= rhs2_1 + rhs2_2:
+                    #backtracking termination criteria satisfied
                     self.eta = numer/denom
                     break
             
