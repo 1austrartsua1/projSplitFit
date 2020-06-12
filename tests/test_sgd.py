@@ -43,10 +43,10 @@ def testSGD():
     print("fsgd opt = {}".format(fsgd[-1]))
     print("ps opt = {}".format(ps_val))
     
-    plt.plot(fsgd)
-    plt.plot(fps)
-    plt.legend(['sgd','ps'])
-    plt.show()
+    #plt.plot(fsgd)
+    #plt.plot(fps)
+    #plt.legend(['sgd','ps'])
+    #plt.show()
 
 def test_sgd_lr():
     gamma = 1e-8
@@ -86,10 +86,10 @@ def test_sgd_lr():
     print("fsgd opt = {}".format(fsgd[-1]))
     print("ps opt = {}".format(ps_val))
     
-    plt.plot(fsgd)
-    plt.plot(fps)
-    plt.legend(['sgd','ps'])
-    plt.show()
+    #plt.plot(fsgd)
+    #plt.plot(fps)
+    #plt.legend(['sgd','ps'])
+    #plt.show()
     
 
 if __name__=="__main__":
