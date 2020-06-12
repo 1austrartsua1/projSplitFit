@@ -1016,35 +1016,9 @@ class ProjSplitLossProcessor(object):
     def setStep(self,step):
         self.step = step
         
-    def initializeGradXdata(self,psObj):
-        '''
-           this routine is used by Forward1Fixed 
-           to initialize the gradients of xdata
-        '''
-        psObj.gradxdata = np.zeros(psObj.xdata.shape)
-        for block in range(psObj.nDataBlocks):
-            thisSlice = psObj.partition[block]
-            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+      
         
-    def initialize1fBacktrack(self,psObj):
-        '''
-           this routine is used by Foward1Backtrack
-           to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
-        '''
-        # initalize theta_hat
-        psObj.thetahat = np.zeros(psObj.xdata.shape)
-        psObj.what = np.zeros(psObj.xdata.shape)
-        psObj.gradxdata = np.zeros(psObj.xdata.shape)
-        for block in range(psObj.nDataBlocks):
-            thisSlice = psObj.partition[block]
-            psObj.thetahat[block][1:psObj.nDataVars] = psObj.embedded.getProx(psObj.thetahat[block][1:psObj.nDataVars])
-            psObj.thetahat[block][0] = 0.0
-            psObj.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*psObj.thetahat[block]
-            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.thetahat[block],thisSlice)        
-            psObj.what[block] += psObj.gradxdata[block]
-        
-        psObj.xdata = psObj.thetahat
-        psObj.ydata = psObj.what
+    
         
 
 #############
@@ -1055,12 +1029,12 @@ class Forward2Fixed(ProjSplitLossProcessor):
         
     def update(self,psObj,block):        
         thisSlice = psObj.partition[block]
-        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice)
+        gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
         t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
         psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
         psObj.xdata[block][0] = t[0]        
         a = self.step**(-1)*(t-psObj.xdata[block])
-        gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+        gradx = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
         psObj.ydata[block] = a + gradx        
         
 class Forward2Backtrack(ProjSplitLossProcessor):
@@ -1075,7 +1049,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]
-        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice)
+        gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
                 # time to grow the stepsize
@@ -1087,7 +1061,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
             psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
             psObj.xdata[block][0] = t[0]        
             a = self.step**(-1)*(t-psObj.xdata[block])
-            gradx = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+            gradx = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
             psObj.ydata[block] = a + gradx  
             lhs = psObj.Hz - psObj.xdata[block]
             rhs = psObj.ydata[block] - psObj.wdata[block]
@@ -1107,7 +1081,7 @@ class Forward2Affine(ProjSplitLossProcessor):
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]
-        gradHz = ProjSplitLossProcessor.getAGrad(psObj,psObj.Hz,thisSlice)
+        gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
         lhs = gradHz - psObj.wdata[block]
         
         yhat = lhs[0]+psObj.A[thisSlice].dot(lhs[1:len(lhs)])        
@@ -1129,17 +1103,27 @@ class  Forward1Fixed(ProjSplitLossProcessor):
         self.step = stepsize
         self.alpha = blendFactor
         self.embedOK = True 
+    
+    def __initializeGradXdata(self,psObj):
+        '''
+           this routine is used by Forward1Fixed 
+           to initialize the gradients of xdata
+        '''
+        psObj.gradxdata = np.zeros(psObj.xdata.shape)
+        for block in range(psObj.nDataBlocks):
+            thisSlice = psObj.partition[block]
+            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)     
         
     def update(self,psObj,block):
         if psObj.gradxdata is None:
-            ProjSplitLossProcessor.initializeGradXdata(ProjSplitLossProcessor,psObj)
+            self.__initializeGradXdata(psObj)
                         
         thisSlice = psObj.partition[block]
         t = (1-self.alpha)*psObj.xdata[block] +self.alpha*psObj.Hz \
             - self.step*(psObj.gradxdata[block] - psObj.wdata[block])
         psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
         psObj.xdata[block][0] = t[0]   
-        psObj.gradxdata[block] = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+        psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
         psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
         
   
@@ -1155,9 +1139,29 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         self.growFreq = growFreq
         self.eta = float('inf')
         
+    def __initialize1fBacktrack(self,psObj):
+        '''
+           this routine is used by Foward1Backtrack
+           to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
+        '''
+        # initalize theta_hat
+        psObj.thetahat = np.zeros(psObj.xdata.shape)
+        psObj.what = np.zeros(psObj.xdata.shape)
+        psObj.gradxdata = np.zeros(psObj.xdata.shape)
+        for block in range(psObj.nDataBlocks):
+            thisSlice = psObj.partition[block]
+            psObj.thetahat[block][1:psObj.nDataVars] = psObj.embedded.getProx(psObj.thetahat[block][1:psObj.nDataVars])
+            psObj.thetahat[block][0] = 0.0
+            psObj.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*psObj.thetahat[block]
+            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.thetahat[block],thisSlice)        
+            psObj.what[block] += psObj.gradxdata[block]
+        
+        psObj.xdata = psObj.thetahat
+        psObj.ydata = psObj.what
+        
     def update(self,psObj,block):
         if psObj.gradxdata is None:
-            ProjSplitLossProcessor.initialize1fBacktrack(ProjSplitLossProcessor,psObj)
+            self.__initialize1fBacktrack(psObj)
         
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
@@ -1183,7 +1187,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
             psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
             psObj.xdata[block][0] = t[0]   
             
-            psObj.gradxdata[block] = ProjSplitLossProcessor.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
             psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
             
             yhat = self.step**(-1)*( (1-self.alpha)*xold +self.alpha*psObj.Hz - psObj.xdata[block] )\
