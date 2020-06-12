@@ -485,7 +485,7 @@ class ProjSplitFit(object):
             raise Exception        
         
         if (blockActivation != "greedy") and (blockActivation != "cyclic") \
-            and (blockActivation != "greedy"):
+            and (blockActivation != "random"):
                 print("Warning: chosen blockActivation is not recognised")
                 print("Using greedy instead")
                 blockActivation = "greedy"

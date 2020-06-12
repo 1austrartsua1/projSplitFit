@@ -7,8 +7,12 @@ from matplotlib import pyplot as plt
 from utils import runCVX_LR
 
 
+doplots = True 
+BA = "greedy"
+processor = ps.Forward1Backtrack(1.0,growFactor=1.2,growFreq=10)
+#processor = ps.Forward2Backtrack(1.0,Delta =0.0,growFactor=1.2,growFreq=10)
 def testSGD():
-    
+    print("Least Squares with SGD and PS")
     gamma = 1e-5
     projSplit = ps.ProjSplitFit(gamma)
     m = 200
@@ -16,22 +20,24 @@ def testSGD():
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
     
-    stepSGD = 10.0
+    stepSGD = 5.0
     iterSGD = 2000
     blocksSGD = 10
     freqSGD = 1
     
-    processor = ps.Forward1Backtrack(stepSGD)
+    processor.setStep(stepSGD)
     projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
     
     
     
     fsgd,timessgd = projSplit.runSGD(iterSGD,blocksSGD,freqSGD,stepSGD)
     
-    projSplit.run(maxIterations = iterSGD,keepHistory = True,
+    projSplit.run(maxIterations = iterSGD,keepHistory = True,blockActivation = BA,
                   primalTol=1e-9,dualTol=1e-9,nblocks=blocksSGD,historyFreq=1)
     ps_val = projSplit.getObjective()
     fps = projSplit.getHistory()[0]
+    
+    print("Final stepsize is {}".format(processor.getStep()))
     
     AwithIntercept = np.zeros((m,d+1))
     AwithIntercept[:,0] = np.ones(m)
@@ -43,35 +49,40 @@ def testSGD():
     print("fsgd opt = {}".format(fsgd[-1]))
     print("ps opt = {}".format(ps_val))
     
-    #plt.plot(fsgd)
-    #plt.plot(fps)
-    #plt.legend(['sgd','ps'])
-    #plt.show()
+    
+    if doplots:
+        plt.plot(fsgd)
+        plt.plot(fps)
+        plt.legend(['sgd','ps'])
+        plt.show()
 
 def test_sgd_lr():
-    gamma = 1e-8
+    print("Logistic regression with SGD and PS")
+    gamma = 1e-8    
     projSplit = ps.ProjSplitFit(gamma)
     m = 200
     d = 100
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
     
-    stepSGD = 100.0
+    stepSGD = 200.0
     iterSGD = 2000
     blocksSGD = 10
     freqSGD = 1
     
-    processor = ps.Forward1Backtrack(stepSGD,growFactor=1.2,growFreq=10)
+    
+    processor.setStep(stepSGD)
     projSplit.addData(A,y,'logistic',processor,intercept=True,normalize=True)
     
     
     
     fsgd,timessgd = projSplit.runSGD(iterSGD,blocksSGD,freqSGD,stepSGD)
     
-    projSplit.run(maxIterations = iterSGD,keepHistory = True,
+    projSplit.run(maxIterations = iterSGD,keepHistory = True,blockActivation = BA,
                   primalTol=1e-9,dualTol=1e-9,nblocks=blocksSGD,historyFreq=1)
     ps_val = projSplit.getObjective()
     fps = projSplit.getHistory()[0]
+    print("Final stepsize is {}".format(processor.getStep()))
     
     getCVX = False 
     if getCVX:
@@ -86,10 +97,11 @@ def test_sgd_lr():
     print("fsgd opt = {}".format(fsgd[-1]))
     print("ps opt = {}".format(ps_val))
     
-    #plt.plot(fsgd)
-    #plt.plot(fps)
-    #plt.legend(['sgd','ps'])
-    #plt.show()
+    if doplots:
+        plt.plot(fsgd)
+        plt.plot(fps)
+        plt.legend(['sgd','ps'])
+        plt.show()
     
 
 if __name__=="__main__":
