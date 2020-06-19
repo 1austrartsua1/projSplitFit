@@ -16,6 +16,8 @@ Functions implemented here:
 import numpy as np
 from numpy.linalg import norm
 import time 
+from random import sample
+from random import uniform
 
 class ProjSplitFit(object):
     '''
@@ -414,7 +416,14 @@ class ProjSplitFit(object):
         
         
         numBlocks = self.__setBlocks(nblocks)
-        SGDpartition = createApartition(self.nobs,numBlocks)
+        
+        blockSize = self.nobs//numBlocks
+        if numBlocks*blockSize == self.nobs:
+            addobs = 0
+        else:
+            addobs = 1
+            
+        obsList = range(self.nobs)
         
         zsgd = np.zeros(self.nvar+1)
         Hzsgd = np.zeros(self.ncol+1)
@@ -427,8 +436,9 @@ class ProjSplitFit(object):
             t0 = time.time()
             Hzsgd[1:] = self.dataLinOp.matvec(zsgd[1:])
             Hzsgd[0] = zsgd[0]
-            activeBlock = np.random.randint(0,numBlocks)
-            thisSlice = SGDpartition[activeBlock]
+            
+            thisSlice = sample(obsList,blockSize + addobs*int(uniform(0,1)>0.5))
+            
             gradHz = ProjSplitLossProcessor.getAGrad(self,Hzsgd,thisSlice)
             Gtgrad = self.dataLinOp.rmatvec(gradHz[1:])
             Gtgrad = np.concatenate((np.array([gradHz[0]]),Gtgrad))
