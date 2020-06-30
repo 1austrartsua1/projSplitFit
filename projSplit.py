@@ -302,7 +302,7 @@ class ProjSplitFit(object):
         currentLoss,Hz = self.__getLoss(self.z)
         
         for reg in self.allRegularizers:
-            Hiz = reg.linearOp.matvec(self.z[1:len(self.z)])              
+            Hiz = reg.linearOp.matvec(self.z[1:])              
             currentLoss += reg.evaluate(Hiz)
                 
         if self.embeddedFlag == True:
@@ -323,21 +323,21 @@ class ProjSplitFit(object):
             raise Exception
         
         
-        Hz = self.dataLinOp.matvec(self.z[1:len(self.z)])
+        Hz = self.dataLinOp.matvec(self.z[1:])
         out = np.zeros(self.ncol+1)
         
         
         
         if self.normalize:
-            out[1:(self.ncol+1)] = Hz/self.scaling
+            out[1:] = Hz/self.scaling
         else:
-            out[1:(self.ncol+1)] = Hz 
+            out[1:] = Hz 
 
         if self.intercept:
             out[0] = self.z[0]
             return out,self.z 
         else:
-            return out[1:(self.ncol+1)],self.z 
+            return out[1:],self.z 
         
         
     
@@ -679,7 +679,7 @@ class ProjSplitFit(object):
             
     def __updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
-        self.Hz[1:(self.ncol+1)] = self.dataLinOp.matvec(self.z[1:len(self.z)])
+        self.Hz[1:] = self.dataLinOp.matvec(self.z[1:])
         self.Hz[0] = self.z[0]
         if blockActivation == "greedy":            
             phis = np.sum((self.Hz - self.xdata)*(self.ydata - self.wdata),axis=1)            
@@ -714,7 +714,7 @@ class ProjSplitFit(object):
         i = 0        
         for i in range(self.numRegs-1):             
             reg = self.allRegularizers[i]
-            Giz = reg.linearOp.matvec(self.z[1:len(self.z)])                        
+            Giz = reg.linearOp.matvec(self.z[1:])                        
             t = Giz + reg.step*self.wreg[i]
             self.xreg[i] = reg.getProx(t)
             self.yreg[i] = reg.step**(-1)*(t - self.xreg[i])
@@ -731,9 +731,9 @@ class ProjSplitFit(object):
         # including the intercept term
         if self.numRegs > 0:
             reg = self.allRegularizers[-1]
-            t = self.z[1:len(self.z)] + reg.step*self.wreg[-1][1:len(self.z)]
-            self.xreg[-1][1:len(self.z)] = reg.getProx(t)
-            self.yreg[-1][1:len(self.z)] = reg.step**(-1)*(t - self.xreg[-1][1:len(self.z)])
+            t = self.z[1:] + reg.step*self.wreg[-1][1:]
+            self.xreg[-1][1:] = reg.getProx(t)
+            self.yreg[-1][1:] = reg.step**(-1)*(t - self.xreg[-1][1:])
             
             if self.intercept:
                 t_intercept = self.z[0] + reg.step*self.wreg[-1][0]
@@ -756,21 +756,21 @@ class ProjSplitFit(object):
                             
         # compute u and v for data blocks
         if self.numRegs > 0:
-            self.Hx[1:(self.ncol+1)] = self.dataLinOp.matvec(self.xreg[-1][1:len(self.z)])
+            self.Hx[1:] = self.dataLinOp.matvec(self.xreg[-1][1:])
             self.Hx[0] = self.xreg[-1][0]
             self.udata = self.xdata - self.Hx            
         else:
             # if there are no regularizers, the last block corresponds to the 
             # last data block. Further, dataLinOp must be the identity
-            self.udata = self.xdata[0:(self.nDataBlocks-1)] - self.xdata[-1]
+            self.udata = self.xdata[:-1] - self.xdata[-1]
             
         vin = sum(self.ydata)
-        v = self.dataLinOp.rmatvec(vin[1:(self.ncol+1)])
+        v = self.dataLinOp.rmatvec(vin[1:])
         v = np.concatenate((np.array([vin[0]]),v))
         
         # compute u and v for regularizer blocks except the final regularizer 
         for i in range(self.numRegs - 1):
-            Gxn = self.allRegularizers[i].linearOp.matvec(self.xreg[-1][1:len(self.z)])
+            Gxn = self.allRegularizers[i].linearOp.matvec(self.xreg[-1][1:])
             self.ureg[i] = self.xreg[i] - Gxn
             Gstary = self.allRegularizers[i].linearOp.rmatvec(self.yreg[i])
             v += np.concatenate((np.array([0.0]),Gstary))
@@ -803,7 +803,7 @@ class ProjSplitFit(object):
                     else:
                         self.wdata = self.wdata - tau*self.udata                        
                         negsumw = -np.sum(self.wdata,axis=0)
-                        GstarNegSumw = self.dataLinOp.rmatvec(negsumw[1:len(negsumw)])
+                        GstarNegSumw = self.dataLinOp.rmatvec(negsumw[1:])
                         GstarNegSumw = np.concatenate((np.array([negsumw[0]]),GstarNegSumw))
                         for i in range(self.numRegs - 1):
                             self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
@@ -1010,7 +1010,7 @@ class ProjSplitLossProcessor(object):
         #point[0] is the intercept term
         #point[1:len(point)] are the coefficients and 
         #len(point) must equal the num cols of A. 
-        yhat = point[0]+psObj.A[thisSlice].dot(point[1:len(point)])
+        yhat = point[0]+psObj.A[thisSlice].dot(point[1:])
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
         grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)
         if psObj.intercept:            
@@ -1041,7 +1041,7 @@ class Forward2Fixed(ProjSplitLossProcessor):
         thisSlice = psObj.partition[block]
         gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
         t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
-        psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+        psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
         psObj.xdata[block][0] = t[0]        
         a = self.step**(-1)*(t-psObj.xdata[block])
         gradx = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
@@ -1068,7 +1068,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
                 
         while True:
             t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
-            psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+            psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]        
             a = self.step**(-1)*(t-psObj.xdata[block])
             gradx = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
@@ -1094,7 +1094,7 @@ class Forward2Affine(ProjSplitLossProcessor):
         gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
         lhs = gradHz - psObj.wdata[block]
         
-        yhat = lhs[0]+psObj.A[thisSlice].dot(lhs[1:len(lhs)])        
+        yhat = lhs[0]+psObj.A[thisSlice].dot(lhs[1:])        
         affinePart = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(yhat)
         if psObj.intercept:            
             affine0 = np.array([(1.0/psObj.nobs)*sum(affinePart)])
@@ -1131,7 +1131,7 @@ class  Forward1Fixed(ProjSplitLossProcessor):
         thisSlice = psObj.partition[block]
         t = (1-self.alpha)*psObj.xdata[block] +self.alpha*psObj.Hz \
             - self.step*(psObj.gradxdata[block] - psObj.wdata[block])
-        psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+        psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
         psObj.xdata[block][0] = t[0]   
         psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
         psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
@@ -1160,7 +1160,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         psObj.gradxdata = np.zeros(psObj.xdata.shape)
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            psObj.thetahat[block][1:psObj.nDataVars] = psObj.embedded.getProx(psObj.thetahat[block][1:psObj.nDataVars])
+            psObj.thetahat[block][1:] = psObj.embedded.getProx(psObj.thetahat[block][1:])
             psObj.thetahat[block][0] = 0.0
             psObj.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*psObj.thetahat[block]
             psObj.gradxdata[block] = self.getAGrad(psObj,psObj.thetahat[block],thisSlice)        
@@ -1194,7 +1194,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         t2 -= psObj.wdata[block]
         while True:
             t = t1 - self.step*t2
-            psObj.xdata[block][1:psObj.nDataVars] = psObj.embedded.getProx(t[1:psObj.nDataVars]) 
+            psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]   
             
             psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
