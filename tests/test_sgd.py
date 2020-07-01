@@ -2,6 +2,8 @@
 import sys
 sys.path.append('../')
 import projSplit as ps 
+import lossProcessors as lp
+
 import numpy as np
 from matplotlib import pyplot as plt
 from utils import runCVX_LR
@@ -9,8 +11,8 @@ from utils import runCVX_LR
 
 doplots = True 
 BA = "greedy"
-processor = ps.Forward1Backtrack(1.0,growFactor=1.2,growFreq=10)
-#processor = ps.Forward2Backtrack(1.0,Delta =0.0,growFactor=1.2,growFreq=10)
+processor = lp.Forward1Backtrack(1.0,growFactor=1.2,growFreq=10)
+#processor = lp.Forward2Backtrack(1.0,Delta =0.0,growFactor=1.2,growFreq=10)
 def testSGD():
     print("Least Squares with SGD and PS")
     gamma = 1e-12

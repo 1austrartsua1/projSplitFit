@@ -7,13 +7,16 @@ Created on Fri May 22 16:51:55 2020
 import sys
 sys.path.append('../')
 import projSplit as ps 
+from regularizers import L1
+import lossProcessors as lp
+
 import numpy as np
 import pytest 
 from matplotlib import pyplot as plt
 import cvxpy as cvx
 
 ToDo = []
-f2bt = ps.Forward2Backtrack()
+f2bt = lp.Forward2Backtrack()
 
 for p in np.linspace(1.1,4,20):
     ToDo.append((p,f2bt))
@@ -32,7 +35,7 @@ def test_other_p(p,process):
     projSplit.addData(A,y,p,process,normalize=False,intercept=False)
     
     lam = 0.01
-    regObj = ps.L1(lam,1.0)
+    regObj = L1(lam,1.0)
     projSplit.addRegularizer(regObj)
     
     projSplit.run(primalTol=1e-3,dualTol=1e-3,keepHistory = True,nblocks=2,

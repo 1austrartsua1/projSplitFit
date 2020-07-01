@@ -8,6 +8,9 @@ Created on Mon May 11 16:31:38 2020
 import sys
 sys.path.append('../')
 import projSplit as ps 
+from regularizers import L1
+import lossProcessors as lp
+
 import numpy as np
 import pytest 
 import cvxpy as cvx
@@ -23,7 +26,7 @@ def test_linear_op_data_term_wrong():
     
     projSplit = ps.ProjSplitFit()
     stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     p = 15
@@ -56,7 +59,7 @@ def test_linear_op_data_term(norm,inter,addL1,add2L1):
     
     projSplit = ps.ProjSplitFit()
     stepsize = 5e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     p = 15
@@ -71,11 +74,11 @@ def test_linear_op_data_term(norm,inter,addL1,add2L1):
     lam = 0.01
     step = 1.0
     if addL1:
-        regObj = ps.L1(lam,step)
+        regObj = L1(lam,step)
         projSplit.addRegularizer(regObj)
     
     if add2L1:
-        regObj2 = ps.L1(lam,step)
+        regObj2 = L1(lam,step)
         projSplit.addRegularizer(regObj2)
         
     projSplit.run(maxIterations=10000,keepHistory = True, 
@@ -145,7 +148,7 @@ def test_linear_op_l1(norm,inter):
     
     projSplit = ps.ProjSplitFit()
     stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
@@ -154,7 +157,7 @@ def test_linear_op_l1(norm,inter):
     H = np.random.normal(0,1,[p,d])
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H))
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 1,
                   primalTol=1e-3,dualTol=1e-3)
@@ -195,7 +198,7 @@ def test_multi_linear_op_l1(norm,inter):
     
     projSplit = ps.ProjSplitFit()
     stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
     gamma = 1e0
     if norm and inter:
         gamma = 1e2
@@ -210,7 +213,7 @@ def test_multi_linear_op_l1(norm,inter):
         H.append(np.random.normal(0,1,[p,d]))
         lam.append(0.001*(i+1))
         step = 1.0
-        regObj = ps.L1(lam[-1],step)
+        regObj = L1(lam[-1],step)
         projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H[-1]))
         
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 1,
@@ -265,7 +268,7 @@ def test_multi_linear_op_l1_inter_multiblocks():
     
     projSplit = ps.ProjSplitFit()
     stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
@@ -278,7 +281,7 @@ def test_multi_linear_op_l1_inter_multiblocks():
         H.append(np.random.normal(0,1,[p,d]))
         lam.append(0.001*(i+1))
         step = 1.0
-        regObj = ps.L1(lam[-1],step)
+        regObj = L1(lam[-1],step)
         projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H[-1]))
         
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 9,primalTol=1e-3,dualTol=1e-3)

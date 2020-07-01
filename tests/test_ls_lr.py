@@ -7,6 +7,8 @@ Created on Wed Apr 29 16:16:24 2020
 import sys
 sys.path.append('../')
 import projSplit as ps 
+import lossProcessors as lp
+
 import numpy as np
 import pytest 
 from matplotlib import pyplot as plt
@@ -22,7 +24,7 @@ def test_f1backtrack(gf):
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    processor = ps.Forward1Backtrack(growFactor=gf,growFreq=10)
+    processor = lp.Forward1Backtrack(growFactor=gf,growFreq=10)
     
     projSplit.setDualScaling(1e-1)
     projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
@@ -49,7 +51,7 @@ def test_f2backtrack(gf):
     d = 20
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
-    processor = ps.Forward2Backtrack(growFactor=gf,growFreq=10)
+    processor = lp.Forward2Backtrack(growFactor=gf,growFreq=10)
     
     projSplit.setDualScaling(1e-1)
     projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
@@ -69,11 +71,11 @@ def test_f2backtrack(gf):
     
 
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)
-f2backtrack = ps.Forward2Backtrack()
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f2backtrack = lp.Forward2Backtrack()
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 ToDo = []
 for i in [False,True]:
     for j in [False,True]:
@@ -113,11 +115,11 @@ def test_ls_PrimDual(processor,inter,norm,nblk):
     assert projSplit.getDualViolation()<1e-3
 
 stepsize = 5e-1
-f2fixed = ps.Forward2Fixed(stepsize)
-f2bt = ps.Forward2Backtrack()
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f2bt = lp.Forward2Backtrack()
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)])
 def test_cyclic(processor):
     processor.setStep(5e-1)
@@ -151,11 +153,11 @@ def test_cyclic(processor):
     
 
 stepsize = 5e-1
-f2fixed = ps.Forward2Fixed(stepsize)
-f2bt = ps.Forward2Backtrack()
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f2bt = lp.Forward2Backtrack()
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend([(f2bt,False,False),(f2bt,True,False),
@@ -205,11 +207,11 @@ def test_ls_Int_Norm(processor,norm,inter):
     
     
 stepsize = 5e-1
-f2fixed = ps.Forward2Fixed(stepsize)
-f2bt = ps.Forward2Backtrack()
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f2bt = lp.Forward2Backtrack()
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_ls_blocks(processor):
     processor.setStep(5e-1)
@@ -248,10 +250,10 @@ def test_ls_blocks(processor):
     assert abs(PSresid  - PScyclic)<1e-2
 
 stepsize = 1e0
-f2fixed = ps.Forward2Fixed(stepsize)
-f2bt = ps.Forward2Backtrack()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f2bt = lp.Forward2Backtrack()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend(
@@ -297,10 +299,10 @@ def test_lr(processor,norm,inter):
     assert abs(opt - ps_opt_val)<1e-2
     
 stepsize = 1e-1
-f2bt = ps.Forward2Backtrack()
-f2fixed = ps.Forward2Fixed(stepsize)
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2bt = lp.Forward2Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed),(f1bt)]) 
 def test_blockIs1bug(processor):
     m = 40
@@ -326,7 +328,7 @@ def test_blockIs1bug(processor):
 
 if __name__ == "__main__":    
     stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
 
     test_ls_fixed(processor)
     

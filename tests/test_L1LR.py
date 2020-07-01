@@ -8,6 +8,9 @@ Created on Mon May 11 15:11:50 2020
 import sys
 sys.path.append('../')
 import projSplit as ps 
+from regularizers import L1  
+import lossProcessors as lp
+
 import numpy as np
 import pytest 
 from matplotlib import pyplot as plt
@@ -16,10 +19,10 @@ from utils import getLRdata
 
 
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)
-f2bt = ps.Forward2Backtrack()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f2bt = lp.Forward2Backtrack()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend(
@@ -50,7 +53,7 @@ def test_L1LR(processor,nrm,inter):
     projSplit.addData(A,y,'logistic',processor,normalize=nrm,intercept=inter)
     lam = 5e-2
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()

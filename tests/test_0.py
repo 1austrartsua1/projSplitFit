@@ -9,7 +9,8 @@ Created on Fri Apr 17 12:12:34 2020
 # test-0
 import sys
 sys.path.append('../')
-import projSplit as ps 
+import projSplit as ps
+ 
 import pytest 
 #--------------------------------------------------------------------
 # Create a ProjSplitFit object

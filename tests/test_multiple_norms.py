@@ -8,6 +8,9 @@ Created on Mon May 11 15:25:50 2020
 import sys
 sys.path.append('../')
 import projSplit as ps 
+from regularizers import L1
+import lossProcessors as lp
+
 import numpy as np
 import pytest 
 from matplotlib import pyplot as plt
@@ -15,11 +18,11 @@ from utils import runCVX_lasso
 from utils import getLSdata
 
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_embedded(processor):
@@ -32,7 +35,7 @@ def test_embedded(processor):
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj,embed=True)
     
     for nblocks in range(1,11,3):
@@ -60,15 +63,15 @@ def test_embedded(processor):
     
     projSplit = ps.ProjSplitFit()
     stepsize = 1e-1
-    processor = ps.Forward2Fixed(stepsize)
+    processor = lp.Forward2Fixed(stepsize)
     gamma = 1e-2
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj,embed=True)    
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj,embed=True)            
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5)
     ps_val = projSplit.getObjective()
@@ -86,11 +89,11 @@ def test_embedded(processor):
     
     
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_l1_multi_lasso(processor):
@@ -104,7 +107,7 @@ def test_l1_multi_lasso(processor):
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     fac = 5 # add the same regularizer twice, same as using 
             # it once with twice the parameter
     for _ in range(fac):

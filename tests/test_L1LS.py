@@ -7,6 +7,10 @@ Created on Sat May  9 14:24:06 2020
 import sys
 sys.path.append('../')
 import projSplit as ps 
+from regularizers import Regularizer  
+from regularizers import L1
+import lossProcessors as lp
+
 import numpy as np
 import pytest 
 from matplotlib import pyplot as plt
@@ -16,11 +20,11 @@ import cvxpy as cvx
 
 
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f1fixed = ps.Forward1Fixed(stepsize)
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f1fixed = lp.Forward1Fixed(stepsize)
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_user_defined_embedded(processor):
     
@@ -66,9 +70,9 @@ def test_user_defined_embedded(processor):
     nu = [0.01,0.03,0.1]
     step = [1.0,1.0,1.0]
     
-    regObj.append(ps.Regularizer(val1,prox1,nu[0],step[0]))
-    regObj.append(ps.Regularizer(val2,prox2,nu[1],step[1]))
-    regObj.append(ps.Regularizer(val3,prox3,nu[2],step[2]))
+    regObj.append(Regularizer(val1,prox1,nu[0],step[0]))
+    regObj.append(Regularizer(val2,prox2,nu[1],step[1]))
+    regObj.append(Regularizer(val3,prox3,nu[2],step[2]))
     
     
     projSplit.addRegularizer(regObj[0])
@@ -106,11 +110,11 @@ def test_user_defined_embedded(processor):
     
     
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)
-f1fixed = ps.Forward1Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)
+f1fixed = lp.Forward1Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_user_defined(processor):
     
@@ -157,7 +161,7 @@ def test_user_defined(processor):
         projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
         nu = 5.5
         step = 1e0
-        regObj = ps.Regularizer(val,prox,nu = nu,step=step)
+        regObj = Regularizer(val,prox,nu = nu,step=step)
         projSplit.addRegularizer(regObj)        
         projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
                       resetIterate=True)
@@ -206,14 +210,14 @@ def test_user_defined(processor):
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     nu1 = 0.01
     step = 1e0
-    regObj = ps.Regularizer(val1,prox1,nu = nu1,step=step)
+    regObj = Regularizer(val1,prox1,nu = nu1,step=step)
     projSplit.addRegularizer(regObj)        
     nu2 = 0.05
     step = 1e0
-    regObj = ps.Regularizer(val2,prox2,nu = nu2,step=step)
+    regObj = Regularizer(val2,prox2,nu = nu2,step=step)
     projSplit.addRegularizer(regObj)            
     step = 1e0
-    regObj = ps.Regularizer(val3,prox3,step=step)
+    regObj = Regularizer(val3,prox3,step=step)
     projSplit.addRegularizer(regObj)        
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
                   resetIterate=True)
@@ -238,11 +242,11 @@ def test_user_defined(processor):
     assert(np.linalg.norm(xopt-xps,2)<1e-2)  
     
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f1fixed = ps.Forward1Fixed(stepsize)
-f2affine = ps.Forward2Affine()
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f1fixed = lp.Forward1Fixed(stepsize)
+f2affine = lp.Forward2Affine()
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_l1_lasso(processor):
     m = 40
@@ -255,7 +259,7 @@ def test_l1_lasso(processor):
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()
@@ -274,11 +278,11 @@ def test_l1_lasso(processor):
         assert abs(ps_val-opt)<1e-2
         
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_l1_normalized(processor):    
     m = 40
@@ -292,7 +296,7 @@ def test_l1_normalized(processor):
     projSplit.addData(A,y,2,processor,normalize=True,intercept=False)
     lam = 0.03
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()
@@ -307,11 +311,11 @@ def test_l1_normalized(processor):
     assert abs(ps_val-opt)<1e-3
 
 stepsize = 1e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)])     
 def test_l1_intercept(processor):
     m = 40
@@ -324,7 +328,7 @@ def test_l1_intercept(processor):
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
     lam = 1e-3
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()
@@ -342,11 +346,11 @@ def test_l1_intercept(processor):
     
 
 stepsize = 5e-1
-f2fixed = ps.Forward2Fixed(stepsize)        
-f2bt = ps.Forward2Backtrack(growFactor=1.1,growFreq=10)
-f2affine = ps.Forward2Affine()
-f1fixed = ps.Forward1Fixed(stepsize)
-f1bt = ps.Forward1Backtrack()
+f2fixed = lp.Forward2Fixed(stepsize)        
+f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
+f2affine = lp.Forward2Affine()
+f1fixed = lp.Forward1Fixed(stepsize)
+f1bt = lp.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_l1_intercept_and_normalize(processor):
     m = 40
@@ -359,7 +363,7 @@ def test_l1_intercept_and_normalize(processor):
     projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
     lam = 1e-3
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = 10,primalTol=1e-3,dualTol=1e-3)
     ps_val = projSplit.getObjective()

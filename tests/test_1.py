@@ -7,12 +7,14 @@ Created on Fri Apr 17 14:51:55 2020
 
 import sys
 sys.path.append('../')
-import projSplit as ps 
+import projSplit as ps
+from regularizers import L1
+import lossProcessors as lp
 import numpy as np
 import pytest 
 from scipy.sparse.linalg import aslinearoperator
 
-class ProcessDummy(ps.ProjSplitLossProcessor):
+class ProcessDummy(lp.ProjSplitLossProcessor):
         def __init__(self):
             self.embedOK = True
             
@@ -43,18 +45,18 @@ def test_getParams():
 def test_L1():
     #projSplit = ps.ProjSplitFit()
     scale = 15.0
-    regObj = ps.L1(scale)
+    regObj = L1(scale)
     assert regObj.getScalingAndStepsize()==(scale,1.0)
     scale = -1.0
-    regObj = ps.L1(scale)
+    regObj = L1(scale)
     assert regObj.getScalingAndStepsize()==(1.0,1.0)
     
-    regObj = ps.L1(scale)
+    regObj = L1(scale)
     assert regObj.getScalingAndStepsize()==(1.0,1.0)
     
     scale = 11.5
     rho = 3.0
-    regObj = ps.L1(scale,rho)
+    regObj = L1(scale,rho)
     lenx = 10
     x = np.ones(lenx)
     assert regObj.evaluate(x) == lenx*scale 
@@ -68,7 +70,7 @@ def test_L1():
 def test_add_regularizer():
     projSplit = ps.ProjSplitFit()    
     scale = 11.5
-    regObj = ps.L1(scale)
+    regObj = L1(scale)
     projSplit.addRegularizer(regObj)
     scale2 = 15.7
     regObj.setScaling(scale2)
@@ -77,7 +79,7 @@ def test_add_regularizer():
 def test_add_regularizer2():
     projSplit = ps.ProjSplitFit()    
     scale = 11.5
-    regObj = ps.L1(scale)
+    regObj = L1(scale)
     projSplit.addRegularizer(regObj,embed = True)
     scale2 = 15.7
     regObj.setScaling(scale2)
@@ -97,7 +99,7 @@ def test_add_linear_ops():
     H = np.random.normal(0,1,[p,d])
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     
     projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H))
         
@@ -124,7 +126,7 @@ def test_add_linear_ops_v2():
     H = np.random.normal(0,1,[p,d2])
     lam = 0.01
     step = 1.0
-    regObj = ps.L1(lam,step)
+    regObj = L1(lam,step)
     projSplit.addRegularizer(regObj,linearOp = aslinearoperator(H))
     try:
         projSplit.addData(A,y,2,processDummy)==-1
@@ -141,7 +143,7 @@ def test_good_embed():
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
     processDummy = ProcessDummy()    
-    regObj = ps.L1()
+    regObj = L1()
     projSplit.addRegularizer(regObj,embed = True)
     projSplit.addData(A,y,2,processDummy)
     assert projSplit.numRegs == 0
@@ -161,7 +163,7 @@ def test_bad_embed():
     y = np.random.normal(0,1,m)  
     processDummy = ProcessDummy()
     processDummy.embedOK = False 
-    regObj = ps.L1()
+    regObj = L1()
     projSplit.addRegularizer(regObj,embed = True)
     projSplit.addData(A,y,2,processDummy)
     assert (projSplit.numRegs == 1)
