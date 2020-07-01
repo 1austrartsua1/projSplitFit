@@ -401,7 +401,8 @@ class ProjSplitFit(object):
     def runSGD(self,maxIterations,nblocks=1,historyFreq=10,step0 = 1.0,
                stepStat="fixed",exponent = 0.75):
         '''
-            returns the SGD function value history 
+            Runs SGD on this loss. Note that this ignores any regularizers that
+            may have been added.
         '''
         if self.dataAdded == False:
             print("Must add data before calling runSGD(). Aborting...")
@@ -661,7 +662,7 @@ class ProjSplitFit(object):
             self.embedded.setScaling(self.embeddedScaling)
             
     def __setBlocks(self,nblocks):
-        if type(nblocks) == int:
+        try:        
             if nblocks >= 1:
                 if nblocks > self.nobs:
                     print("more blocks than num rows. Setting nblocks equal to nrows")
@@ -671,7 +672,7 @@ class ProjSplitFit(object):
             else:
                 print("Error: nblocks must be greater than 1, setting nblocks to 1")
                 numBlocks = 1
-        else:
+        except:
             print("Error: nblocks must be of type INT greater than 1, setting nblocks to 1")
             numBlocks = 1
         return numBlocks
@@ -848,6 +849,9 @@ class ProjSplitFit(object):
         
                 
 #-----------------------------------------------------------------------------
+# Regularizer class and related objects
+#-----------------------------------------------------------------------------
+        
 class Regularizer(object):
     '''
       Objects of this class are used as inputs to the addRegularizer method
@@ -870,40 +874,43 @@ class Regularizer(object):
         '''
         self.value = value 
         self.prox = prox 
-        if type(nu)==int:
-            nu = float(nu)
-        if type(step)==int:
-            step = float(step)
-            
-        if type(nu)==float:
+        
+        try:            
+            nu = float(nu)                                                    
             if nu>=0:
                 self.nu = nu    
             else:
                 print("Error: scaling must be >=0, keeping it set to 1.0")
                 self.nu = 1.0 
-        else:
+                                                    
+        except:            
             print("Error: scaling must be float>=0, setting it to 1.0")
-        if type(step)==float:
+            self.nu = 1.0 
+            
+        try:
+            step = float(step)
             if step>=0:
-                self.step = step    
+                    self.step = step    
             else:
                 print("Error: scaling must be >=0, keeping it set to 1.0")
-        else:
-            print("Error: scaling must be float>=0, setting it to 1.0")
-                
+                self.step = 1.0
+            
+        except:
+            print("Error: scaling must be >=0, keeping it set to 1.0")
+            self.step = 1.0
     
     def addLinear(self,linearOp,linearOpFlag):
         self.linearOp = linearOp        
         self.linearOpFlag = linearOpFlag        
         
     def setScaling(self,nu):
-        if type(nu)==float:
+        try:        
             if nu>=0:
                 self.nu = nu    
             else:
                 print("Error: scaling must be >=0, keeping it set to 1.0")
                 self.nu = 1.0 
-        else:
+        except:
             print("Error: scaling must be float>=0, setting it to 1.0")
             self.nu = 1.0 
 
@@ -947,6 +954,9 @@ def groupL2(dimension,groups,scaling = 1.0):
     pass
     
 #-----------------------------------------------------------------------------
+# loss class and related objects
+#-----------------------------------------------------------------------------
+    
 class Loss(object):
     def __init__(self,p):        
         
@@ -1003,6 +1013,9 @@ class LossPlugIn(object):
 
 
 #-----------------------------------------------------------------------------
+# processor class and related objects
+#-----------------------------------------------------------------------------
+        
 class ProjSplitLossProcessor(object):
     pMustBe2 = False 
     @staticmethod
@@ -1026,11 +1039,6 @@ class ProjSplitLossProcessor(object):
     def setStep(self,step):
         self.step = step
         
-      
-        
-    
-        
-
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
     def __init__(self,step=1.0):
@@ -1246,7 +1254,8 @@ class BackwardExact(ProjSplitLossProcessor):
         pass
     
 #-----------------------------------------------------------------------------
-
+#Miscelaneous utilities
+        
 def totalVariation1d(n):
     pass
 
@@ -1266,8 +1275,6 @@ class MyLinearOperator():
         self.matvec=matvec
         self.rmatvec=rmatvec
         
-        
-#-----------------------------------------------------------------------------
     
 def createApartition(nrows,n_partitions):
     
