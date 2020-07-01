@@ -310,7 +310,7 @@ def test_multi_linear_op_l1_inter_multiblocks():
 
     
 if __name__ == '__main__':
-    test_linear_op_data_term()
+    test_multi_linear_op_l1_inter_multiblocks()
     
     
     

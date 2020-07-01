@@ -24,30 +24,30 @@ f1bt = ps.Forward1Backtrack()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
 def test_user_defined_embedded(processor):
     
-    def val1(x,nu):
-        return 0.5*nu*np.linalg.norm(x,2)**2
+    def val1(x):
+        return 0.5*np.linalg.norm(x,2)**2
     
-    def prox1(x,nu,step):
-        return(1+step*nu)**(-1)*x
+    def prox1(x,scale):
+        return(1+scale)**(-1)*x
         
-    def val2(x,nu):
-        return nu*np.linalg.norm(x,2)
+    def val2(x):
+        return np.linalg.norm(x,2)
     
-    def prox2(x,nu,step):
+    def prox2(x,scale):
         normx = np.linalg.norm(x,2)
-        if normx <= step*nu:
+        if normx <= scale:
             return 0*x
         else:
-            return (normx - step*nu)*x/normx 
+            return (normx - scale)*x/normx 
 
     tau = 0.2
-    def val3(x,nu):        
+    def val3(x):        
         if((x<=tau)&(x>=-tau)).all():            
             return 0
         else:
             return float('inf')
         
-    def prox3(x,nu,step):
+    def prox3(x,scale):
         ones = np.ones(x.shape)        
         return tau*(x>=tau)*ones - tau*(x<=-tau)*ones + ((x<=tau)&(x>=-tau))*x 
     
@@ -115,30 +115,30 @@ f1bt = ps.Forward1Backtrack()
 def test_user_defined(processor):
     
     
-    def val1(x,nu):
-        return 0.5*nu*np.linalg.norm(x,2)**2
+    def val1(x):
+        return 0.5*np.linalg.norm(x,2)**2
     
-    def prox1(x,nu,step):
-        return(1+step*nu)**(-1)*x
+    def prox1(x,scale):
+        return(1+scale)**(-1)*x
         
-    def val2(x,nu):
-        return nu*np.linalg.norm(x,2)
+    def val2(x):
+        return np.linalg.norm(x,2)
     
-    def prox2(x,nu,step):
+    def prox2(x,scale):
         normx = np.linalg.norm(x,2)
-        if normx <= step*nu:
+        if normx <= scale:
             return 0*x
         else:
-            return (normx - step*nu)*x/normx 
+            return (normx - scale)*x/normx 
 
     tau = 0.2
-    def val3(x,nu):        
+    def val3(x):        
         if((x<=tau)&(x>=-tau)).all():            
             return 0
         else:
             return float('inf')
         
-    def prox3(x,nu,step):
+    def prox3(x,scale):
         ones = np.ones(x.shape)        
         return tau*(x>=tau)*ones - tau*(x<=-tau)*ones + ((x<=tau)&(x>=-tau))*x 
     

@@ -521,7 +521,7 @@ class ProjSplitFit(object):
         if self.embeddedFlag == False:
             # if no embedded reg added, create an artificial embedded reg
             # with a "pass-through prox
-            self.embedded = Regularizer(None,(lambda x,nu,step:x))
+            self.embedded = Regularizer(None,(lambda x,scale:x))
         else:
             if self.embedded.getScalingAndStepsize()[1] != self.process.getStep():
                 print("WARNING: embedded regularizer must use the same stepsize as the Loss update process")
@@ -540,7 +540,7 @@ class ProjSplitFit(object):
                 # if there are no regularizers and the data term is composed 
                 # with a linear operator, we must add a dummy regularizer
                 # which has a pass-through prox and 0 value
-                self.addRegularizer(Regularizer(lambda x,nu: 0, lambda x,nu,step: x))                 
+                self.addRegularizer(Regularizer(lambda x: 0, lambda x,scale: x))                 
         
         if self.numRegs != 0:                
             # if all nonembedded regularizers have a linear op
@@ -561,7 +561,7 @@ class ProjSplitFit(object):
                 i += 1
                     
             if allRegsHaveLinOps == True:
-                self.addRegularizer(Regularizer(lambda x,nu: 0, lambda x,nu,step: x))                
+                self.addRegularizer(Regularizer(lambda x: 0, lambda x,scale: x))                
                             
             self.numPSblocks = self.nDataBlocks + self.numRegs
             
@@ -871,6 +871,9 @@ class Regularizer(object):
         ----------
         value: (function) must be a function of one parameter:  a numpy-style 
             array x. Value returns a float which is the value of h(x)
+        prox: (function) must be a function of two parameters: a numpy-style array
+            x and a scaling eta applied to the function. That is, this function must 
+            return prox_{eta*h}(x) for inputs x and eta>=0. 
         '''
         self.value = value 
         self.prox = prox 
@@ -929,18 +932,17 @@ class Regularizer(object):
         return self.nu,self.step  
     
     def evaluate(self,x):
-        return self.value(x,self.nu)
+        return self.nu*self.value(x)
     
-    def getProx(self,x):
-        return self.prox(x,self.nu,self.step)
+    def getProx(self,x):                
+        return self.prox(x,self.nu*self.step)        
     
-def L1val(x,nu):
-    return nu*norm(x,1)
+def L1val(x):
+    return norm(x,1)
 
-def L1prox(x,nu,rho):
-    rhonu = rho * nu
-    out = (x> rhonu)*(x-rhonu)
-    out+= (x<-rhonu)*(x+rhonu)
+def L1prox(x,scale):    
+    out = (x> scale)*(x-scale)
+    out+= (x<-scale)*(x+scale)
     return out
 
 def L1(scaling=1.0,step=1.0):
