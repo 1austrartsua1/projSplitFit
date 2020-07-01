@@ -4,7 +4,12 @@ Created on Wed Jul  1 16:11:49 2020
 
 @author: pjohn
 """
-import numpy as np
+from numpy import log
+from numpy import exp
+from numpy import isinf
+from numpy import nan_to_num
+from numpy import ones
+
 
 #-----------------------------------------------------------------------------
 # loss class and related objects
@@ -46,17 +51,17 @@ def LR_loss(yhat,y):
     return LR_loss_from_score(score)
 
 def LR_loss_from_score(score):
-    pos = np.log(1 + np.exp(score))
-    pos2 = (~np.isinf(pos))*np.nan_to_num(pos)
-    neg = score + np.log(1+np.exp(-score))
-    neg2 = (~np.isinf(neg)) * np.nan_to_num(neg)
-    coef = 0.5*np.ones(len(pos))
-    coef = coef+0.5*np.isinf(pos)+0.5*np.isinf(neg)
+    pos = log(1 + exp(score))
+    pos2 = (~isinf(pos))*nan_to_num(pos)
+    neg = score + log(1+exp(-score))
+    neg2 = (~isinf(neg)) * nan_to_num(neg)
+    coef = 0.5*ones(len(pos))
+    coef = coef+0.5*isinf(pos)+0.5*isinf(neg)
     return coef*(pos2+neg2) 
 
 def LR_derivative(yhat,y):
     score = -yhat*y    
-    return -np.exp(score - LR_loss_from_score(score))*y
+    return -exp(score - LR_loss_from_score(score))*y
 
     
 class LossPlugIn(object):

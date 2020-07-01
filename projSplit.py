@@ -11,17 +11,23 @@ Functions implemented here:
     - L1()
     - groupL2()
 '''
-
-
-import numpy as np
+from numpy import sum as npsum
 from numpy.linalg import norm
-import time 
+from numpy import copy as npcopy
+from numpy import zeros
+from numpy import concatenate
+from numpy import array
+from numpy.random import choice
+
+from time import time 
 from random import sample
 from random import uniform
 
 from regularizers import Regularizer 
 from losses import Loss
 import lossProcessors as lp
+
+
 
 class ProjSplitFit(object):
     '''
@@ -184,7 +190,7 @@ class ProjSplitFit(object):
         if normalize == True:
             print("Normalizing columns of A to unit norm")
             self.normalize = True
-            self.A = np.copy(observations)            
+            self.A = npcopy(observations)            
             self.scaling = norm(self.A,axis=0)
             self.scaling += 1.0*(self.scaling < 1e-10)
             self.A = self.A/self.scaling
@@ -329,7 +335,7 @@ class ProjSplitFit(object):
         
         
         Hz = self.dataLinOp.matvec(self.z[1:])
-        out = np.zeros(self.ncol+1)
+        out = zeros(self.ncol+1)
         
         
         
@@ -431,15 +437,15 @@ class ProjSplitFit(object):
             
         obsList = range(self.nobs)
         
-        zsgd = np.zeros(self.nvar+1)
-        Hzsgd = np.zeros(self.ncol+1)
+        zsgd = zeros(self.nvar+1)
+        Hzsgd = zeros(self.ncol+1)
         Fsgd = []
         sgdtimes = [0]
         k = 0
         step = step0
         
         while(k<maxIterations):            
-            t0 = time.time()
+            t0 = time()
             Hzsgd[1:] = self.dataLinOp.matvec(zsgd[1:])
             Hzsgd[0] = zsgd[0]
             
@@ -447,10 +453,10 @@ class ProjSplitFit(object):
             
             gradHz = lp.ProjSplitLossProcessor.getAGrad(self,Hzsgd,thisSlice)
             Gtgrad = self.dataLinOp.rmatvec(gradHz[1:])
-            Gtgrad = np.concatenate((np.array([gradHz[0]]),Gtgrad))
+            Gtgrad = concatenate((array([gradHz[0]]),Gtgrad))
             
             zsgd = zsgd - step*Gtgrad
-            t1 = time.time()
+            t1 = time()
             if step == "decay":
                 step = step0*(k+2)**(exponent)
                 
@@ -577,18 +583,18 @@ class ProjSplitFit(object):
         
         if (resetIterate == True) | (self.resetIterate == True):
             
-            self.z = np.zeros(self.nvar+1)
-            self.v = np.zeros(self.nvar+1)
-            self.Hz = np.zeros(self.nDataVars)
-            self.Hx = np.zeros(self.nDataVars)
-            self.xdata = np.zeros((self.nDataBlocks,self.nDataVars))            
-            self.ydata = np.zeros((self.nDataBlocks,self.nDataVars))
-            self.wdata = np.zeros((self.nDataBlocks,self.nDataVars))
+            self.z = zeros(self.nvar+1)
+            self.v = zeros(self.nvar+1)
+            self.Hz = zeros(self.nDataVars)
+            self.Hx = zeros(self.nDataVars)
+            self.xdata = zeros((self.nDataBlocks,self.nDataVars))            
+            self.ydata = zeros((self.nDataBlocks,self.nDataVars))
+            self.wdata = zeros((self.nDataBlocks,self.nDataVars))
 
             if self.numRegs > 0:                        
-                self.udata = np.zeros((self.nDataBlocks,self.nDataVars))
+                self.udata = zeros((self.nDataBlocks,self.nDataVars))
             else:
-                self.udata = np.zeros((self.nDataBlocks - 1,self.nDataVars))
+                self.udata = zeros((self.nDataBlocks - 1,self.nDataVars))
             
             self.xreg = []
             self.yreg = []
@@ -604,12 +610,12 @@ class ProjSplitFit(object):
                 else:
                     regVars = self.nvar 
                     
-                self.xreg.append(np.zeros(regVars))    
-                self.yreg.append(np.zeros(regVars))    
-                self.wreg.append(np.zeros(regVars))    
+                self.xreg.append(zeros(regVars))    
+                self.yreg.append(zeros(regVars))    
+                self.wreg.append(zeros(regVars))    
                 i += 1
                 if i != self.numRegs:
-                    self.ureg.append(np.zeros(regVars))    
+                    self.ureg.append(zeros(regVars))    
                 
 
             self.resetIterate = False 
@@ -629,7 +635,7 @@ class ProjSplitFit(object):
         ################################
         while(self.k < maxIterations):  
             #print('iteration = {}'.format(self.k))
-            t0 = time.time()
+            t0 = time()
             # update all blocks (xi,yi) from (xi,yi,z,wi)
             self.__updateLossBlocks(blockActivation,blocksPerIteration)        
             self.__updateRegularizerBlocks()            
@@ -640,7 +646,7 @@ class ProjSplitFit(object):
             
             
             phi = self.__projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
-            t1 = time.time()
+            t1 = time()
 
             if (keepHistory == True) and (self.k % historyFreq == 0):
                 objective.append(self.getObjective())
@@ -659,7 +665,7 @@ class ProjSplitFit(object):
             self.historyArray.append(primalErrs)
             self.historyArray.append(dualErrs)
             self.historyArray.append(phis)
-            self.historyArray = np.array(self.historyArray) 
+            self.historyArray = array(self.historyArray) 
         
         if self.embeddedFlag == True:
             # we modified the embedded scaling to deal with multiple num blocks
@@ -688,14 +694,14 @@ class ProjSplitFit(object):
         self.Hz[1:] = self.dataLinOp.matvec(self.z[1:])
         self.Hz[0] = self.z[0]
         if blockActivation == "greedy":            
-            phis = np.sum((self.Hz - self.xdata)*(self.ydata - self.wdata),axis=1)            
+            phis = npsum((self.Hz - self.xdata)*(self.ydata - self.wdata),axis=1)            
             
             if phis.min() >= 0:
-                activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
+                activeBlocks = choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
             else:
                 activeBlocks = phis.argsort()[0:blocksPerIteration]
         elif blockActivation == "random":
-            activeBlocks = np.random.choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
+            activeBlocks = choice(range(self.nDataBlocks),blocksPerIteration,replace=False)
         elif blockActivation == "cyclic":
             
             activeBlocks = []
@@ -772,14 +778,14 @@ class ProjSplitFit(object):
             
         vin = sum(self.ydata)
         v = self.dataLinOp.rmatvec(vin[1:])
-        v = np.concatenate((np.array([vin[0]]),v))
+        v = concatenate((array([vin[0]]),v))
         
         # compute u and v for regularizer blocks except the final regularizer 
         for i in range(self.numRegs - 1):
             Gxn = self.allRegularizers[i].linearOp.matvec(self.xreg[-1][1:])
             self.ureg[i] = self.xreg[i] - Gxn
             Gstary = self.allRegularizers[i].linearOp.rmatvec(self.yreg[i])
-            v += np.concatenate((np.array([0.0]),Gstary))
+            v += concatenate((array([0.0]),Gstary))
                         
         # compute v for final regularizer block        
         if self.numRegs>0:            
@@ -805,16 +811,16 @@ class ProjSplitFit(object):
                         # if no regularizers, the linearOp corresponding to the 
                         # data block must be the identity
                         self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
-                        self.wdata[-1] = -np.sum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
+                        self.wdata[-1] = -npsum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
                     else:
                         self.wdata = self.wdata - tau*self.udata                        
-                        negsumw = -np.sum(self.wdata,axis=0)
+                        negsumw = -npsum(self.wdata,axis=0)
                         GstarNegSumw = self.dataLinOp.rmatvec(negsumw[1:])
-                        GstarNegSumw = np.concatenate((np.array([negsumw[0]]),GstarNegSumw))
+                        GstarNegSumw = concatenate((array([negsumw[0]]),GstarNegSumw))
                         for i in range(self.numRegs - 1):
                             self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
                             Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
-                            GstarNegSumw -= np.concatenate((np.array([0.0]),Gstarw))
+                            GstarNegSumw -= concatenate((array([0.0]),Gstarw))
                         
                         self.wreg[-1] = GstarNegSumw
             
@@ -829,14 +835,14 @@ class ProjSplitFit(object):
             
         if (len(self.wdata) > 1) | (self.numRegs > 0):       
             if self.numRegs == 0:
-                phi += np.sum(self.udata*self.wdata[0:(self.numPSblocks-1)])
+                phi += npsum(self.udata*self.wdata[0:(self.numPSblocks-1)])
             else:
-                phi += np.sum(self.udata*self.wdata)
+                phi += npsum(self.udata*self.wdata)
             
             for i in range(self.numRegs - 1):
                 phi += self.ureg[i].dot(self.wreg[i])
         
-        phi -= np.sum(self.xdata*self.ydata)
+        phi -= npsum(self.xdata*self.ydata)
         
         for i in range(self.numRegs):     
             phi -= self.xreg[i].dot(self.yreg[i])

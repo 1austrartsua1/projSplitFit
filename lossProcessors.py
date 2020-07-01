@@ -4,7 +4,13 @@ Created on Wed Jul  1 16:16:02 2020
 
 @author: pjohn
 """
-import numpy as np
+
+from numpy import array
+from numpy import concatenate
+from numpy import zeros
+from numpy import copy as npcopy 
+
+
 from numpy.linalg import norm
 #-----------------------------------------------------------------------------
 # processor class and related objects
@@ -21,10 +27,10 @@ class ProjSplitLossProcessor(object):
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
         grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)
         if psObj.intercept:            
-            grad0 = np.array([(1.0/psObj.nobs)*sum(gradL)])
+            grad0 = array([(1.0/psObj.nobs)*sum(gradL)])
         else:
-            grad0 = np.array([0.0])
-        grad = np.concatenate((grad0,grad))
+            grad0 = array([0.0])
+        grad = concatenate((grad0,grad))
         return grad  
       
     def getStep(self):
@@ -99,10 +105,10 @@ class Forward2Affine(ProjSplitLossProcessor):
         yhat = lhs[0]+psObj.A[thisSlice].dot(lhs[1:])        
         affinePart = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(yhat)
         if psObj.intercept:            
-            affine0 = np.array([(1.0/psObj.nobs)*sum(affinePart)])
+            affine0 = array([(1.0/psObj.nobs)*sum(affinePart)])
         else:
-            affine0 = np.array([0.0])
-        affinePart = np.concatenate((affine0,affinePart))
+            affine0 = array([0.0])
+        affinePart = concatenate((affine0,affinePart))
         normLHS = norm(lhs,2)**2
         step = normLHS/(self.Delta*normLHS + lhs.T.dot(affinePart))
         psObj.xdata[block] = psObj.Hz - step*lhs
@@ -121,7 +127,7 @@ class  Forward1Fixed(ProjSplitLossProcessor):
            this routine is used by Forward1Fixed 
            to initialize the gradients of xdata
         '''
-        psObj.gradxdata = np.zeros(psObj.xdata.shape)
+        psObj.gradxdata = zeros(psObj.xdata.shape)
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
             psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)     
@@ -157,9 +163,9 @@ class Forward1Backtrack(ProjSplitLossProcessor):
            to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
         '''
         # initalize theta_hat
-        psObj.thetahat = np.zeros(psObj.xdata.shape)
-        psObj.what = np.zeros(psObj.xdata.shape)
-        psObj.gradxdata = np.zeros(psObj.xdata.shape)
+        psObj.thetahat = zeros(psObj.xdata.shape)
+        psObj.what = zeros(psObj.xdata.shape)
+        psObj.gradxdata = zeros(psObj.xdata.shape)
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
             psObj.thetahat[block][1:] = psObj.embedded.getProx(psObj.thetahat[block][1:])
@@ -188,11 +194,11 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         
         phi = (psObj.Hz - psObj.xdata[block]).T.dot(psObj.ydata[block] - psObj.wdata[block])
         
-        xold = np.copy(psObj.xdata[block])
-        yold = np.copy(psObj.ydata[block])
+        xold = npcopy(psObj.xdata[block])
+        yold = npcopy(psObj.ydata[block])
         
         t1 = (1-self.alpha)*xold +self.alpha*psObj.Hz
-        t2 = np.copy(psObj.gradxdata[block]) 
+        t2 = npcopy(psObj.gradxdata[block]) 
         t2 -= psObj.wdata[block]
         while True:
             t = t1 - self.step*t2
