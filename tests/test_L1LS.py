@@ -156,7 +156,7 @@ def test_user_defined(processor):
         
         projSplit = ps.ProjSplitFit()
 
-        gamma = 1e0        
+        gamma = 1e0 
         projSplit.setDualScaling(gamma)
         projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
         nu = 5.5
@@ -164,7 +164,7 @@ def test_user_defined(processor):
         regObj = Regularizer(val,prox,nu = nu,step=step)
         projSplit.addRegularizer(regObj)        
         projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
-                      resetIterate=True)
+                      resetIterate=True,primalTol=1e-12,dualTol=1e-12)
         ps_val = projSplit.getObjective()
         
         (m,d) = A.shape
@@ -191,6 +191,7 @@ def test_user_defined(processor):
         
         if i == 0:
             xps,_ = projSplit.getSolution()
+            print(np.linalg.norm(xopt-xps,2))            
             assert(np.linalg.norm(xopt-xps,2)<1e-2)    
         else:
             print('cvx opt val = {}'.format(opt))
@@ -205,7 +206,7 @@ def test_user_defined(processor):
     
     projSplit = ps.ProjSplitFit()
     
-    gamma = 1e0        
+            
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     nu1 = 0.01
@@ -220,7 +221,7 @@ def test_user_defined(processor):
     regObj = Regularizer(val3,prox3,step=step)
     projSplit.addRegularizer(regObj)        
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
-                  resetIterate=True)
+                  resetIterate=True,primalTol=1e-12,dualTol = 1e-12)
     ps_val = projSplit.getObjective()
     
     x_cvx = cvx.Variable(d)
@@ -247,7 +248,8 @@ f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f1fixed = lp.Forward1Fixed(stepsize)
 f2affine = lp.Forward2Affine()
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
+back_exact = lp.BackwardExact()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
 def test_l1_lasso(processor):
     m = 40
     d = 10
@@ -267,7 +269,7 @@ def test_l1_lasso(processor):
     opt,xopt = runCVX_lasso(A,y,lam)
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
         
     
     for numBlocks in range(2,10):
@@ -283,7 +285,8 @@ f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
+back_exact = lp.BackwardExact()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
 def test_l1_normalized(processor):    
     m = 40
     d = 10
@@ -351,7 +354,8 @@ f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
+back_exact = lp.BackwardExact()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
 def test_l1_intercept_and_normalize(processor):
     m = 40
     d = 10
@@ -393,7 +397,8 @@ def test_l1_intercept_and_normalize(processor):
     
     
 if __name__ == '__main__':
-    test_l1_intercept_and_normalize()
+    back_exact = lp.BackwardExact()
+    test_user_defined(back_exact)
     
     
     

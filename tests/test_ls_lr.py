@@ -16,6 +16,11 @@ from utils import runCVX_LR
 from utils import getLSdata
 
 #np.random.seed(1987)
+
+
+    
+    
+    
 @pytest.mark.parametrize("gf",[(1.0),(1.1),(1.2),(1.5)])
 def test_f1backtrack(gf):
     
@@ -76,11 +81,12 @@ f2backtrack = lp.Forward2Backtrack()
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
+back_exact = lp.BackwardExact()
 ToDo = []
 for i in [False,True]:
     for j in [False,True]:
         for blk in range(1,5):
-            for process in [f2fixed,f2backtrack,f2affine,f1fixed,f1bt]:
+            for process in [f2fixed,f2backtrack,f2affine,f1fixed,f1bt,back_exact]:
                 ToDo.append((process,i,j,blk))
         
 @pytest.mark.parametrize("processor,inter,norm,nblk",ToDo)
@@ -97,19 +103,7 @@ def test_ls_PrimDual(processor,inter,norm,nblk):
                   primalTol=1e-3,dualTol=1e-3,nblocks=nblk,historyFreq=1)
     
     print("Primal violation = {}".format(projSplit.getPrimalViolation()))
-    print("Dual violation = {}".format(projSplit.getDualViolation()))
-    #print("ps optimal function val = {}".format(projSplit.getObjective()))
-    
-    #result = np.linalg.lstsq(A,y,rcond=None)
-    #xhat = result[0]
-    #LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
-    #print("LS val = {}".format(LSval))
-        
-    #func = projSplit.getHistory()[0]
-    #plt.plot(primerr)
-    #plt.plot(dualerr)
-    #plt.plot(func)
-    #plt.show()
+    print("Dual violation = {}".format(projSplit.getDualViolation()))    
     
     assert projSplit.getPrimalViolation()<1e-3
     assert projSplit.getDualViolation()<1e-3
@@ -120,7 +114,8 @@ f2bt = lp.Forward2Backtrack()
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)])
+back_exact = lp.BackwardExact()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)])
 def test_cyclic(processor):
     processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
@@ -158,6 +153,7 @@ f2bt = lp.Forward2Backtrack()
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
+back_exact = lp.BackwardExact()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend([(f2bt,False,False),(f2bt,True,False),
@@ -168,10 +164,12 @@ toDo.extend([(f1fixed,False,False),(f1fixed,True,False),
         (f1fixed,False,True),(f1fixed,True,True)])
 toDo.extend([(f1bt,False,False),(f1bt,True,False),
         (f1bt,False,True),(f1bt,True,True)])
+toDo.extend([(back_exact,False,False),(back_exact,True,False),
+        (back_exact,False,True),(back_exact,True,True)])
 
 @pytest.mark.parametrize("processor,norm,inter",toDo)
 def test_ls_Int_Norm(processor,norm,inter):
-    processor.setStep(5e-1)
+    processor.setStep(1e0)
     projSplit = ps.ProjSplitFit()
     m = 20
     d = 10
@@ -212,7 +210,8 @@ f2bt = lp.Forward2Backtrack()
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)]) 
+back_exact = lp.BackwardExact()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
 def test_ls_blocks(processor):
     processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
@@ -254,6 +253,7 @@ f2fixed = lp.Forward2Fixed(stepsize)
 f2bt = lp.Forward2Backtrack()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
+back_exact = lp.BackwardExact()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
 toDo.extend(
@@ -268,7 +268,10 @@ toDo.extend(
         [(f1bt,False,False),(f1bt,True,False),
         (f1bt,False,True),(f1bt,True,True)]
         )
-
+toDo.extend(
+        [(back_exact,False,False),(back_exact,True,False),
+        (back_exact,False,True),(back_exact,True,True)]
+        )
 
 @pytest.mark.parametrize("processor,norm,inter",toDo) 
 def test_lr(processor,norm,inter):
@@ -303,7 +306,8 @@ f2bt = lp.Forward2Backtrack()
 f2fixed = lp.Forward2Fixed(stepsize)
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed),(f1bt)]) 
+back_exact = lp.BackwardExact()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed),(f1bt),(back_exact)]) 
 def test_blockIs1bug(processor):
     m = 40
     d = 10
@@ -323,14 +327,42 @@ def test_blockIs1bug(processor):
     xhat = result[0]
     LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
     print('LSval = {}'.format(LSval))
-        
+    assert abs(LSval - ps_opt)<1e-2
+
+ToDo = [(1,False,False),(1,True,False),(1,False,True),(1,True,True)]
+ToDo.extend([(2,False,False),(2,True,False),(2,False,True),(2,True,True)])
+ToDo.extend([(4,False,False),(4,True,False),(4,False,True),(4,True,True)])
+ToDo.extend([(8,False,False),(8,True,False),(8,False,True),(8,True,True)])
+ToDo.extend([(16,False,False),(16,True,False),(16,False,True),(16,True,True)])
+@pytest.mark.parametrize("nblk,inter,norm",ToDo) 
+def test_backward_exact(nblk,inter,norm):
+    m = 80
+    d = 20
+    A,y = getLSdata(m,d)    
+    projSplit = ps.ProjSplitFit()
     
+    gamma = 1e1
+    projSplit.setDualScaling(gamma)
+    processor = lp.BackwardExact()
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+    
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = nblk,blockActivation="random")     
+    
+    ps_opt = projSplit.getObjective()
+    print('ps func opt = {}'.format(ps_opt))
+    
+    result = np.linalg.lstsq(A,y,rcond=None)
+    xhat = result[0]
+    LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
+    print('LSval = {}'.format(LSval))
+    
+    assert abs(LSval - ps_opt)<1e-2
 
 if __name__ == "__main__":    
-    stepsize = 1e-1
-    processor = lp.Forward2Fixed(stepsize)
-
-    test_ls_fixed(processor)
+    stepsize = 5e-1
+    processor = lp.BackwardExact(stepsize)
+    test_cyclic(processor)
+    
     
     
     

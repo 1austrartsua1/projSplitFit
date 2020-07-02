@@ -9,6 +9,9 @@ from numpy import array
 from numpy import concatenate
 from numpy import zeros
 from numpy import copy as npcopy 
+from numpy import ones
+from numpy import identity
+from numpy.linalg import inv as npinv
 
 
 from numpy.linalg import norm
@@ -17,7 +20,13 @@ from numpy.linalg import norm
 #-----------------------------------------------------------------------------
         
 class ProjSplitLossProcessor(object):
-    pMustBe2 = False 
+    pMustBe2 = False # This flag to True for lossProcessors which can only be applied 
+                     # to the case where p=2, i.e. quadratic loss. 
+                     # Such as Forward2Affine, BackwardExact, and BackwardCG
+    embedOK = False  # This flag is True if this lossProcessor can handle an embedded 
+                     # regularizer. Examples which can are Forward1x and Forward2x
+                     # but backward classes cannot. 
+                     
     @staticmethod
     def getAGrad(psObj,point,thisSlice):
         #point[0] is the intercept term
@@ -38,6 +47,7 @@ class ProjSplitLossProcessor(object):
     
     def setStep(self,step):
         self.step = step
+        
         
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
@@ -133,8 +143,9 @@ class  Forward1Fixed(ProjSplitLossProcessor):
             psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)     
         
     def update(self,psObj,block):
-        if psObj.gradxdata is None:
+        if psObj.newRun == True:
             self.__initializeGradXdata(psObj)
+            psObj.newRun = False
                         
         thisSlice = psObj.partition[block]
         t = (1-self.alpha)*psObj.xdata[block] +self.alpha*psObj.Hz \
@@ -178,8 +189,9 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         psObj.ydata = psObj.what
         
     def update(self,psObj,block):
-        if psObj.gradxdata is None:
+        if psObj.newRun == True:
             self.__initialize1fBacktrack(psObj)
+            psObj.newRun = False 
         
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
@@ -234,22 +246,123 @@ class Forward1Backtrack(ProjSplitLossProcessor):
                 
     
 #############
+class BackwardExact(ProjSplitLossProcessor):
+    def __init__(self,stepsize=1.0):
+        self.embedOK = False
+        self.pMustBe2 = True
+        self.step = stepsize 
+        self.stepChanged = False # This flag is set to True whenever the stepsize is changed via
+                                 # the settep method below. This is used by the backwardExact class
+                                 # which needs to update precomputed inverses whenever
+                                 # the stepsize is changed. 
+        
+    
+    def __initializer(self,psObj):
+        block_len = len(psObj.partition[0])
+        # block length is the number of observations in each block
+        # we only check the len of the first block because our createApartition()
+        # function guarantees that all blocks are within 1 of the same block_len
+        if block_len < psObj.ncol//2:
+            # wide matrices, use the matrix inversion lemma 
+            psObj.matInvLemma = True
+            
+        else:
+            psObj.matInvLemma = False
+        
+                 
+        
+        # need to add a ones col to deal with intercept
+        onesCol = ones((psObj.nobs,1))
+        # make a copy of the data matrix to deal with the intercept called Atilde
+        psObj.Atilde = concatenate((onesCol,psObj.A), axis = 1)
+
+        psObj.Aty = []        
+        for block in range(psObj.nDataBlocks):
+            thisSlice = psObj.partition[block]
+            psObj.Aty.append(psObj.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
+        
+        if psObj.matInvLemma == False:
+            psObj.matInv = []        
+            for block in range(psObj.nDataBlocks):
+                thisSlice = psObj.partition[block]                
+                mat2inv = (self.step/psObj.nobs)*psObj.Atilde[thisSlice].T.dot(psObj.Atilde[thisSlice])
+                (d,_) = mat2inv.shape
+                mat2inv += identity(d)
+                psObj.matInv.append(npinv(mat2inv))
+        else:
+            psObj.matInv = []        
+            for block in range(psObj.nDataBlocks):
+                thisSlice = psObj.partition[block]
+                mat2inv = (self.step/psObj.nobs)*psObj.Atilde[thisSlice].dot(psObj.Atilde[thisSlice].T)
+                (n,_) = mat2inv.shape
+                mat2inv += identity(n)
+                psObj.matInv.append(npinv(mat2inv))
+                
+            
+    def update(self,psObj,block):
+        
+        try:
+            _ = psObj.matFac
+        except:
+            # the matFac flag is set after the matrix inverses are cached in the 
+            # initializer call. If this flag is non-existent, this will raise
+            # an exception and the initializer needs to be called. 
+            # Precomputed inverses        
+            # determine if you will use the matrix inversion lemma etc
+            psObj.matFac = True
+            self.__initializer(psObj)
+            self.stepChanged = False
+            
+        if self.stepChanged or psObj.resetIterate:
+            # if the stepsize is changed or the resetIterate flag is set,
+            # need to re-initialize the cached matrix inverses. 
+            # resetIterate is set if new data are added
+            # or if the number of blocks is changed. 
+            
+            self.__initializer(psObj)
+            self.stepChanged = False
+                                
+        
+        thisSlice = psObj.partition[block]
+        t = psObj.Hz + self.step*psObj.wdata[block]
+        input2inv = t + (self.step/psObj.nobs)*psObj.Aty[block]
+        if psObj.matInvLemma == True:
+            #using the matrix inversion lemma            
+            temp = psObj.matInv[block].dot(psObj.Atilde[thisSlice].dot(input2inv))
+            psObj.xdata[block] = input2inv - (self.step/psObj.nobs)*psObj.Atilde[thisSlice].T.dot(temp)            
+        else:
+            #not using the matrix inversion lemma
+            psObj.xdata[block] = psObj.matInv[block].dot(input2inv)
+            
+        if psObj.intercept == False:
+            psObj.xdata[block][0] = 0.0 
+            
+        psObj.ydata[block] = (self.step)**(-1)*(t - psObj.xdata[block])
+            
+            
+    def setStep(self,step):
+        self.step = step
+        self.stepChanged = True 
+        
+    
+    
+    
 class BackwardCG(ProjSplitLossProcessor):
     def __init__(self,relativeErrorFactor):
-        pass
-    def update(self,psObj,thisSlice):
+        self.embedOK = False
+        self.pMustBe2 = True
+        
+    def update(self,psObj,blocl):
         pass
 
 class BackwardLBFGS(ProjSplitLossProcessor):
     def __init__(self,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
                  c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1):
-        pass
-    def update(self,psObj,thisSlice):
+        self.embedOK = False
+        
+    def update(self,psObj,block):
+        
         pass
         
-class BackwardExact(ProjSplitLossProcessor):
-    def __init__(self,stepsize):
-        pass
-    def update(self,psObj,thisSlice):
-        pass
+
     

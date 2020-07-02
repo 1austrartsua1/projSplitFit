@@ -42,7 +42,7 @@ class ProjSplitFit(object):
     The general optimization objective this can solve is
     
     (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n loss(z_int + a_i^T (G_0 z),y_i)
-                        + sum_{k = 1}^{numReg} h_i(G_i z) }
+                        + sum_{i = 1}^{numReg} h_i(G_i z) }
     
     where
         - a_1...a_n are feature vectors forming the rows of a data matrix A
@@ -214,8 +214,10 @@ class ProjSplitFit(object):
             self.numRegs += 1
             
                 
-        self.intercept = intercept                        
-        self.dataAdded = True
+        self.intercept = intercept
+                
+            
+        self.dataAdded = True 
         self.resetIterate = True
         
                     
@@ -579,7 +581,10 @@ class ProjSplitFit(object):
                                 
         self.nDataVars = self.ncol + 1
         
-        self.gradxdata = None # this is a variable used in Forward1Fixed and Forward1Backtrack processors
+        self.newRun = True    # this variable can be used by loss processors to determine
+                              # if a new run has commenced. In that case, a loss process
+                              # can initialize any stored data it needs within the projSplit object
+                              # and then set this flag to False. 
         
         if (resetIterate == True) | (self.resetIterate == True):
             
@@ -618,7 +623,7 @@ class ProjSplitFit(object):
                     self.ureg.append(zeros(regVars))    
                 
 
-            self.resetIterate = False 
+            
         
         if maxIterations is None:
             maxIterations = float('Inf')
@@ -642,6 +647,7 @@ class ProjSplitFit(object):
             
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
                 print("primal and dual tolerance reached, finishing run")
+                self.resetIterate = False 
                 break            
             
             
@@ -666,6 +672,8 @@ class ProjSplitFit(object):
             self.historyArray.append(dualErrs)
             self.historyArray.append(phis)
             self.historyArray = array(self.historyArray) 
+        self.resetIterate = False 
+    
         
         if self.embeddedFlag == True:
             # we modified the embedded scaling to deal with multiple num blocks
