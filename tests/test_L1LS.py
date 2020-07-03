@@ -249,7 +249,8 @@ f1fixed = lp.Forward1Fixed(stepsize)
 f2affine = lp.Forward2Affine()
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
+backCG = lp.BackwardCG()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
 def test_l1_lasso(processor):
     m = 40
     d = 10
@@ -286,7 +287,8 @@ f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
+backCG = lp.BackwardCG()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
 def test_l1_normalized(processor):    
     m = 40
     d = 10
@@ -319,7 +321,8 @@ f2bt = lp.Forward2Backtrack(growFactor=1.1,growFreq=10)
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt)])     
+backCG = lp.BackwardCG()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(backCG)])     
 def test_l1_intercept(processor):
     m = 40
     d = 10
@@ -355,7 +358,8 @@ f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
+backCG = lp.BackwardCG()
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
 def test_l1_intercept_and_normalize(processor):
     m = 40
     d = 10
@@ -397,8 +401,8 @@ def test_l1_intercept_and_normalize(processor):
     
     
 if __name__ == '__main__':
-    back_exact = lp.BackwardExact()
-    test_user_defined(back_exact)
+    processor = lp.BackwardCG()
+    test_l1_intercept_and_normalize(processor)
     
     
     

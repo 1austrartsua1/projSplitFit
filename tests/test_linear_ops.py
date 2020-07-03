@@ -43,23 +43,30 @@ def test_linear_op_data_term_wrong():
     assert notExcept == False 
                              
 
+f2fix = lp.Forward2Fixed()
+back2exact = lp.BackwardExact()
+backCG = lp.BackwardCG()
+f1bt = lp.Forward1Backtrack()
 TryAll = []
 for i in [False,True]:
     for j in [False,True]:
         for k in [False,True]:
             for l in [False,True]:
-                TryAll.append((i,j,k,l))
-@pytest.mark.parametrize("norm,inter,addL1,add2L1",TryAll)
-def test_linear_op_data_term(norm,inter,addL1,add2L1):
+                for p in [f2fix,back2exact,f1bt,backCG]:
+                    TryAll.append((i,j,k,l,p))
+                
+                
+@pytest.mark.parametrize("norm,inter,addL1,add2L1,processor",TryAll)
+def test_linear_op_data_term(norm,inter,addL1,add2L1,processor):
     
                              
     m = 40
     d = 10
     A,y = getLSdata(m,d)    
     
-    projSplit = ps.ProjSplitFit()
-    stepsize = 5e-1
-    processor = lp.Forward2Fixed(stepsize)
+    projSplit = ps.ProjSplitFit()    
+    
+    processor.setStep(5e-1)
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     p = 15

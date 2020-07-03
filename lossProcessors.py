@@ -320,6 +320,7 @@ class BackwardExact(ProjSplitLossProcessor):
             # or if the number of blocks is changed. 
             
             self.__initializer(psObj)
+            psObj.resetIterate = False 
             self.stepChanged = False
                                 
         
@@ -344,17 +345,118 @@ class BackwardExact(ProjSplitLossProcessor):
         self.step = step
         self.stepChanged = True 
         
-    
-    
-    
+        
 class BackwardCG(ProjSplitLossProcessor):
-    def __init__(self,relativeErrorFactor):
+    def __init__(self,relativeErrorFactor=0.9,stepsize=1.0,maxIter=100):
         self.embedOK = False
         self.pMustBe2 = True
+        self.step = stepsize
+        self.sigma = relativeErrorFactor
+        self.maxIter = maxIter
+    
+    def __initializer(self,psObj):
         
-    def update(self,psObj,blocl):
-        pass
+        if psObj.intercept == True:
+            # need to add a ones col to deal with intercept
+            onesCol = ones((psObj.nobs,1))
+            # make a copy of the data matrix to deal with the intercept called Atilde
+            psObj.Atilde = concatenate((onesCol,psObj.A), axis = 1)
+        else:
+            psObj.Atilde = psObj.A 
 
+        psObj.Aty = []        
+        for block in range(psObj.nDataBlocks):
+            thisSlice = psObj.partition[block]
+            psObj.Aty.append(psObj.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
+            
+    
+    def update(self,psObj,block):
+        try:
+            _ = psObj.conjGradSet
+        except:
+            # the conjGradSet flag is set after Aty matrix products are cached in the 
+            # initializer call. If this flag is non-existent, this will raise
+            # an exception and the initializer needs to be called.             
+            psObj.conjGradSet = True
+            self.__initializer(psObj)            
+            
+        if  psObj.resetIterate:
+            # if the resetIterate flag is set,
+            # need to re-initialize the cached Aty matrix products. 
+            # resetIterate is set if new data are added
+            # or if the number of blocks is changed. 
+            
+            self.__initializer(psObj)            
+            psObj.resetIterate = False 
+        
+        thisSlice = psObj.partition[block]
+        def Acg(x):
+            # helper function returns the matrix multiply for the "conjugate
+            # gradient" matrix, i.e. the lhs of the linear equation we are trying
+            # to solve which defines the backward step.             
+            temp = psObj.Atilde[thisSlice].dot(x)
+            temp = psObj.Atilde[thisSlice].T.dot(temp)
+            return x + (self.step/psObj.nobs)*temp
+            
+            
+        if psObj.intercept == True:
+            t = psObj.Hz + self.step*psObj.wdata[block]
+            b = t + (self.step/psObj.nobs)*psObj.Aty[block] # b is the input to the inverse
+            x = psObj.xdata[block]        
+            Hz = psObj.Hz
+            w = psObj.wdata[block]
+        else:
+            t = psObj.Hz[1:] + self.step*psObj.wdata[block][1:]
+            b = t + (self.step/psObj.nobs)*psObj.Aty[block] # b is the input to the inverse
+            x = psObj.xdata[block][1:]        
+            Hz = psObj.Hz[1:]
+            w = psObj.wdata[block][1:]
+        
+        # run conjugate gradient method
+        
+        Acgx = Acg(x)
+        r = b - Acgx
+        p = r
+        i = 0
+        while True:
+            rTr = r.T.dot(r)            
+            Ap = Acg(p)
+            denom = p.T.dot(Ap)
+            alpha = rTr/denom
+            
+            x = x + alpha*p
+            
+            
+            
+            Acgx = Acgx + alpha*Ap
+            #gradfx is gradient w.r.t. the least squares slice. 
+            gradfx = (1.0/self.step)*(Acgx - x) - (1/psObj.nobs)*psObj.Aty[block]
+            
+            i+=1
+            if i>= self.maxIter:
+                break
+            
+            e = x+self.step*gradfx - t
+            err1 = e.T.dot(Hz - x) + self.sigma*norm(Hz - x)**2
+            if err1 >= 0:
+                err2 = e.T.dot(gradfx - w) \
+                       - self.step*norm(gradfx - w)
+                if err2<=0:
+                    break
+                        
+            rplus = r - alpha*Ap
+            beta = rplus.T.dot(rplus)/rTr
+            p = rplus + beta*p
+            r = rplus
+            
+        if psObj.intercept == True:
+            psObj.xdata[block] = x
+            psObj.ydata[block] = gradfx
+        else:
+            psObj.xdata[block][1:] = x
+            psObj.ydata[block][1:] = gradfx
+            
+        
 class BackwardLBFGS(ProjSplitLossProcessor):
     def __init__(self,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
                  c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1):
