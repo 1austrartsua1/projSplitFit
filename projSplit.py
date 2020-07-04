@@ -72,8 +72,7 @@ class ProjSplitFit(object):
         '''        
         self.setDualScaling(dualScaling)                
         self.allRegularizers = []
-        self.embeddedFlag = False
-        self.process = None 
+        self.embeddedFlag = False        
         self.dataAdded = False
         self.numRegs = 0
         self.z = None
@@ -116,9 +115,7 @@ class ProjSplitFit(object):
         - loss
         -process: Selects a process object which sets how projective 
         splitting will handle the loss. Process is an object of a class derived
-        from ProjSplitLossProcessor. Here are the possible classes:
-        Forward2Fixed, Forward2Backtrack, Forward2Affine, Forward1Fixed, 
-        Forward1Backtrack, BackwardCG, BackwardLBFGS, BackwardExact       
+        from ProjSplitLossProcessor.        
         -intercept: (bool) whether to include an intercept/constant term in the 
             linear model
         -normalize: (bool) whether to normalize columns of the data matrix to have 
@@ -141,7 +138,7 @@ class ProjSplitFit(object):
         
         if (self.nobs == 0) | (self.ncol == 0):
             print("Error! number of observations or variables is 0! Aborting addData")
-            print("Please call with valid data, i.e. numpy arrays")
+            print("Please call with valid data, i.e. 2D numpy arrays")
             self.A = None
             self.yresponse = None
             raise Exception 
@@ -212,13 +209,14 @@ class ProjSplitFit(object):
             self.embedded = None
             self.embeddedFlag = False
             self.numRegs += 1
-            
-                
+                            
         self.intercept = intercept
-                
-            
+
+        # completed a successful call to addData()                
         self.dataAdded = True 
-        self.internalResetIterate = True
+        # since data have been added must/should reset the variables z^k, x_i^k etc.
+        self.internalResetIterate = True 
+         
         
                     
     def getParams(self):
@@ -251,7 +249,7 @@ class ProjSplitFit(object):
           this regularizer in a forward-backward style update)
         '''
         
-        if (linearOp is not None) & (self.dataAdded):
+        if (linearOp is not None) & self.dataAdded:
             #check the dimensions make sense            
             if linearOp.shape[1] != self.nvar:
                 print("ERROR: linear operator added with this regularizer")
@@ -263,7 +261,7 @@ class ProjSplitFit(object):
             
         if embed == True:
             OK2Embed = True
-            if (self.process is not None): 
+            if self.dataAdded: 
                 if(self.process.embedOK == False):                
                     print("WARNING: This regularizer was added with embedded = True")
                     print("But embedding is not possible with the process object used in addData()")
@@ -308,7 +306,7 @@ class ProjSplitFit(object):
         Returns the current objective value, as in (1), evaluated at the current 
         primal iterate z^k. If the method has not been run yet, raises an exception
         '''        
-        if self.z is None :
+        if self.z is None:
             print("Method not run yet, no objective to return. Call run() first.")
             raise Exception
                 
@@ -860,8 +858,7 @@ class ProjSplitFit(object):
     def __getLoss(self,z):
         Hz = self.dataLinOp.matvec(z[1:])
         AHz = self.A.dot(Hz)
-        if self.intercept:
-            #XX do I need this if statement or does z[0] just stay at 0?
+        if self.intercept:            
             AHz += z[0]
         currentLoss = (1.0/self.nobs)*sum(self.loss.value(AHz,self.yresponse))     
         return currentLoss,Hz
