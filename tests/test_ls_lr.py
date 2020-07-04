@@ -348,24 +348,28 @@ ToDo.extend([(4,False,False,back_exact),(4,True,False,back_exact),(4,False,True,
 ToDo.extend([(8,False,False,back_exact),(8,True,False,back_exact),(8,False,True,back_exact),(8,True,True,back_exact)])
 ToDo.extend([(16,False,False,back_exact),(16,True,False,back_exact),(16,False,True,back_exact),(16,True,True,back_exact)])
 
-ToDo.extend([(1,False,False,backCG),(1,True,False,backCG),(1,False,True,backCG),(1,True,True,backCG)])
-ToDo.extend([(2,False,False,backCG),(2,True,False,backCG),(2,False,True,backCG),(2,True,True,backCG)])
-ToDo.extend([(4,False,False,backCG),(4,True,False,backCG),(4,False,True,backCG),(4,True,True,backCG)])
-ToDo.extend([(8,False,False,backCG),(8,True,False,backCG),(8,False,True,backCG),(8,True,True,backCG)])
-ToDo.extend([(16,False,False,backCG),(16,True,False,backCG),(16,False,True,backCG),(16,True,True,backCG)])
+#ToDo.extend([(1,False,False,backCG),(1,True,False,backCG),(1,False,True,backCG),(1,True,True,backCG)])
+#ToDo.extend([(2,False,False,backCG),(2,True,False,backCG),(2,False,True,backCG),(2,True,True,backCG)])
+#ToDo.extend([(4,False,False,backCG),(4,True,False,backCG),(4,False,True,backCG),(4,True,True,backCG)])
+#ToDo.extend([(8,False,False,backCG),(8,True,False,backCG),(8,False,True,backCG),(8,True,True,backCG)])
+#ToDo.extend([(16,False,False,backCG),(16,True,False,backCG),(16,False,True,backCG),(16,True,True,backCG)])
 @pytest.mark.parametrize("nblk,inter,norm,processor",ToDo) 
 def test_backward(nblk,inter,norm,processor):
     m = 80
     d = 20
     A,y = getLSdata(m,d)    
     projSplit = ps.ProjSplitFit()    
-    gamma = 1e1
-    #gamma = 1e-1
+    #gamma = 1e1
+    gamma = 1e-3
     projSplit.setDualScaling(gamma)    
-    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
+    projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)
     
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = nblk,blockActivation="random")     
+    projSplit.run(maxIterations=10000,keepHistory = True, nblocks = nblk,blockActivation="random",
+                  primalTol = 0.0,dualTol = 0.0)     
     
+    psvals = projSplit.getHistory()[0]
+    plt.plot(psvals)
+    plt.show()
     ps_opt = projSplit.getObjective()
     print('ps func opt = {}'.format(ps_opt))
     
@@ -374,12 +378,12 @@ def test_backward(nblk,inter,norm,processor):
     LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
     print('LSval = {}'.format(LSval))
     
-    assert abs(LSval - ps_opt)<1e-2
+    assert ps_opt - LSval <1e-2
 
 if __name__ == "__main__":    
     stepsize = 1.0
     processor = lp.BackwardExact(stepsize)
-    test_backward(16,False,False,processor)
+    test_backward(8,False,False,processor)
     
     
     

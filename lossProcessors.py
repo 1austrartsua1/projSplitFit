@@ -47,6 +47,9 @@ class ProjSplitLossProcessor(object):
     
     def setStep(self,step):
         self.step = step
+    
+    def initialize(self,psObj):
+        pass 
         
         
 #############
@@ -131,29 +134,27 @@ class  Forward1Fixed(ProjSplitLossProcessor):
         self.step = stepsize
         self.alpha = blendFactor
         self.embedOK = True 
-    
-    def __initializeGradXdata(self,psObj):
+        
+    def initialize(self,psObj):    
         '''
            this routine is used by Forward1Fixed 
            to initialize the gradients of xdata
         '''
-        psObj.gradxdata = zeros(psObj.xdata.shape)
+        self.gradxdata = zeros(psObj.xdata.shape)
+        # gradxdata will store the gradient of the loss for each xdata[block]
+        
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)     
+            self.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)     
         
-    def update(self,psObj,block):
-        if psObj.newRun == True:
-            self.__initializeGradXdata(psObj)
-            psObj.newRun = False
-                        
+    def update(self,psObj,block):                                
         thisSlice = psObj.partition[block]
         t = (1-self.alpha)*psObj.xdata[block] +self.alpha*psObj.Hz \
-            - self.step*(psObj.gradxdata[block] - psObj.wdata[block])
+            - self.step*(self.gradxdata[block] - psObj.wdata[block])
         psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
         psObj.xdata[block][0] = t[0]   
-        psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
-        psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
+        self.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+        psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+self.gradxdata[block]
         
   
     
@@ -168,30 +169,27 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         self.growFreq = growFreq
         self.eta = float('inf')
         
-    def __initialize1fBacktrack(self,psObj):
+    def initialize(self,psObj):
         '''
            this routine is used by Foward1Backtrack
            to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
         '''
         # initalize theta_hat
-        psObj.thetahat = zeros(psObj.xdata.shape)
-        psObj.what = zeros(psObj.xdata.shape)
-        psObj.gradxdata = zeros(psObj.xdata.shape)
+        self.thetahat = zeros(psObj.xdata.shape)
+        self.what = zeros(psObj.xdata.shape)
+        self.gradxdata = zeros(psObj.xdata.shape)
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            psObj.thetahat[block][1:] = psObj.embedded.getProx(psObj.thetahat[block][1:])
-            psObj.thetahat[block][0] = 0.0
-            psObj.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*psObj.thetahat[block]
-            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.thetahat[block],thisSlice)        
-            psObj.what[block] += psObj.gradxdata[block]
+            self.thetahat[block][1:] = psObj.embedded.getProx(self.thetahat[block][1:])
+            self.thetahat[block][0] = 0.0
+            self.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*self.thetahat[block]
+            self.gradxdata[block] = self.getAGrad(psObj,self.thetahat[block],thisSlice)        
+            self.what[block] += self.gradxdata[block]
         
-        psObj.xdata = psObj.thetahat
-        psObj.ydata = psObj.what
+        psObj.xdata = self.thetahat
+        psObj.ydata = self.what
         
-    def update(self,psObj,block):
-        if psObj.newRun == True:
-            self.__initialize1fBacktrack(psObj)
-            psObj.newRun = False 
+    def update(self,psObj,block):        
         
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
@@ -210,24 +208,24 @@ class Forward1Backtrack(ProjSplitLossProcessor):
         yold = npcopy(psObj.ydata[block])
         
         t1 = (1-self.alpha)*xold +self.alpha*psObj.Hz
-        t2 = npcopy(psObj.gradxdata[block]) 
+        t2 = npcopy(self.gradxdata[block]) 
         t2 -= psObj.wdata[block]
         while True:
             t = t1 - self.step*t2
             psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]   
             
-            psObj.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
-            psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+psObj.gradxdata[block]
+            self.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+            psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+self.gradxdata[block]
             
             yhat = self.step**(-1)*( (1-self.alpha)*xold +self.alpha*psObj.Hz - psObj.xdata[block] )\
                     + psObj.wdata[block]
             phiPlus = (psObj.Hz - psObj.xdata[block]).T.dot(psObj.ydata[block] - psObj.wdata[block])
             
-            lhs1 = norm(psObj.xdata[block] - psObj.thetahat[block],2)
-            rhs1 = (1-self.alpha)*norm(xold -psObj.thetahat[block] ,2) \
-                    + self.alpha*norm(psObj.Hz-psObj.thetahat[block],2) \
-                    + self.step*norm(psObj.wdata[block] - psObj.what[block],2)
+            lhs1 = norm(psObj.xdata[block] - self.thetahat[block],2)
+            rhs1 = (1-self.alpha)*norm(xold -self.thetahat[block] ,2) \
+                    + self.alpha*norm(psObj.Hz-self.thetahat[block],2) \
+                    + self.step*norm(psObj.wdata[block] - self.what[block],2)
             if lhs1 <= rhs1:                
                 numer = norm(yhat-psObj.wdata[block],2)**2
                 denom = norm(psObj.ydata[block]-psObj.wdata[block],2)**2
@@ -257,86 +255,84 @@ class BackwardExact(ProjSplitLossProcessor):
                                  # the stepsize is changed. 
         
     
-    def __initializer(self,psObj):
+    def initialize(self,psObj):
         block_len = len(psObj.partition[0])
         # block length is the number of observations in each block
         # we only check the len of the first block because our createApartition()
         # function guarantees that all blocks are within 1 of the same block_len
         if block_len < psObj.ncol//2:
             # wide matrices, use the matrix inversion lemma 
-            psObj.matInvLemma = True
+            self.matInvLemma = True
             
         else:
-            psObj.matInvLemma = False
+            self.matInvLemma = False
         
                  
         
-        # need to add a ones col to deal with intercept
-        onesCol = ones((psObj.nobs,1))
-        # make a copy of the data matrix to deal with the intercept called Atilde
-        psObj.Atilde = concatenate((onesCol,psObj.A), axis = 1)
+        if psObj.intercept == True:
+            # need to add a ones col to deal with intercept
+            onesCol = ones((psObj.nobs,1))
+            # make a copy of the data matrix to deal with the intercept called Atilde
+            self.Atilde = concatenate((onesCol,psObj.A), axis = 1)
+        else:
+            self.Atilde = psObj.A 
 
-        psObj.Aty = []        
+        self.Aty = []        
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            psObj.Aty.append(psObj.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
+            self.Aty.append(self.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
         
-        if psObj.matInvLemma == False:
-            psObj.matInv = []        
+        if self.matInvLemma == False:
+            self.matInv = []        
             for block in range(psObj.nDataBlocks):
                 thisSlice = psObj.partition[block]                
-                mat2inv = (self.step/psObj.nobs)*psObj.Atilde[thisSlice].T.dot(psObj.Atilde[thisSlice])
+                mat2inv = (self.step/psObj.nobs)*self.Atilde[thisSlice].T.dot(self.Atilde[thisSlice])
                 (d,_) = mat2inv.shape
                 mat2inv += identity(d)
-                psObj.matInv.append(npinv(mat2inv))
+                self.matInv.append(npinv(mat2inv))
         else:
-            psObj.matInv = []        
+            self.matInv = []        
             for block in range(psObj.nDataBlocks):
                 thisSlice = psObj.partition[block]
-                mat2inv = (self.step/psObj.nobs)*psObj.Atilde[thisSlice].dot(psObj.Atilde[thisSlice].T)
+                mat2inv = (self.step/psObj.nobs)*self.Atilde[thisSlice].dot(self.Atilde[thisSlice].T)
                 (n,_) = mat2inv.shape
                 mat2inv += identity(n)
-                psObj.matInv.append(npinv(mat2inv))
+                self.matInv.append(npinv(mat2inv))
                 
             
     def update(self,psObj,block):
         
-        try:
-            _ = psObj.matFac
-        except:
-            # the matFac flag is set after the matrix inverses are cached in the 
-            # initializer call. If this flag is non-existent, this will raise
-            # an exception and the initializer needs to be called. 
-            # Precomputed inverses        
-            # determine if you will use the matrix inversion lemma etc
-            psObj.matFac = True
-            self.__initializer(psObj)
-            self.stepChanged = False
-            
-        if self.stepChanged or psObj.resetIterate:
-            # if the stepsize is changed or the resetIterate flag is set,
-            # need to re-initialize the cached matrix inverses. 
-            # resetIterate is set if new data are added
-            # or if the number of blocks is changed. 
-            
-            self.__initializer(psObj)
-            psObj.resetIterate = False 
+        if self.stepChanged: 
+            # if the stepsize is changed,
+            # we need to re-initialize the cached matrix inverses.                         
+            self.initialize(psObj)
             self.stepChanged = False
                                 
         
         thisSlice = psObj.partition[block]
         t = psObj.Hz + self.step*psObj.wdata[block]
-        input2inv = t + (self.step/psObj.nobs)*psObj.Aty[block]
-        if psObj.matInvLemma == True:
-            #using the matrix inversion lemma            
-            temp = psObj.matInv[block].dot(psObj.Atilde[thisSlice].dot(input2inv))
-            psObj.xdata[block] = input2inv - (self.step/psObj.nobs)*psObj.Atilde[thisSlice].T.dot(temp)            
+        if psObj.intercept:
+            input2inv = t + (self.step/psObj.nobs)*self.Aty[block]
+        else:
+            input2inv = t[1:] + (self.step/psObj.nobs)*self.Aty[block]
+            
+        if self.matInvLemma == True:
+            #using the matrix inversion lemma 
+            temp = self.matInv[block].dot(self.Atilde[thisSlice].dot(input2inv))
+            if psObj.intercept:                
+                psObj.xdata[block] = input2inv - (self.step/psObj.nobs)*self.Atilde[thisSlice].T.dot(temp)            
+            else:                
+                psObj.xdata[block][1:] = input2inv - (self.step/psObj.nobs)*self.Atilde[thisSlice].T.dot(temp)            
+                psObj.xdata[block][0] = 0.0
+                
         else:
             #not using the matrix inversion lemma
-            psObj.xdata[block] = psObj.matInv[block].dot(input2inv)
-            
-        if psObj.intercept == False:
-            psObj.xdata[block][0] = 0.0 
+            if psObj.intercept:
+                psObj.xdata[block] = self.matInv[block].dot(input2inv)
+            else:
+                psObj.xdata[block][1:] = self.matInv[block].dot(input2inv)
+                psObj.xdata[block][0] = 0.0
+                                    
             
         psObj.ydata[block] = (self.step)**(-1)*(t - psObj.xdata[block])
             
@@ -354,60 +350,43 @@ class BackwardCG(ProjSplitLossProcessor):
         self.sigma = relativeErrorFactor
         self.maxIter = maxIter
     
-    def __initializer(self,psObj):
+    def initialize(self,psObj):
         
         if psObj.intercept == True:
             # need to add a ones col to deal with intercept
             onesCol = ones((psObj.nobs,1))
             # make a copy of the data matrix to deal with the intercept called Atilde
-            psObj.Atilde = concatenate((onesCol,psObj.A), axis = 1)
+            self.Atilde = concatenate((onesCol,psObj.A), axis = 1)
         else:
-            psObj.Atilde = psObj.A 
+            self.Atilde = psObj.A 
 
-        psObj.Aty = []        
+        self.Aty = []        
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            psObj.Aty.append(psObj.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
+            self.Aty.append(self.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
             
     
     def update(self,psObj,block):
-        try:
-            _ = psObj.conjGradSet
-        except:
-            # the conjGradSet flag is set after Aty matrix products are cached in the 
-            # initializer call. If this flag is non-existent, this will raise
-            # an exception and the initializer needs to be called.             
-            psObj.conjGradSet = True
-            self.__initializer(psObj)            
-            
-        if  psObj.resetIterate:
-            # if the resetIterate flag is set,
-            # need to re-initialize the cached Aty matrix products. 
-            # resetIterate is set if new data are added
-            # or if the number of blocks is changed. 
-            
-            self.__initializer(psObj)            
-            psObj.resetIterate = False 
-        
+                            
         thisSlice = psObj.partition[block]
         def Acg(x):
             # helper function returns the matrix multiply for the "conjugate
             # gradient" matrix, i.e. the lhs of the linear equation we are trying
             # to solve which defines the backward step.             
-            temp = psObj.Atilde[thisSlice].dot(x)
-            temp = psObj.Atilde[thisSlice].T.dot(temp)
+            temp = self.Atilde[thisSlice].dot(x)
+            temp = self.Atilde[thisSlice].T.dot(temp)
             return x + (self.step/psObj.nobs)*temp
             
             
         if psObj.intercept == True:
             t = psObj.Hz + self.step*psObj.wdata[block]
-            b = t + (self.step/psObj.nobs)*psObj.Aty[block] # b is the input to the inverse
+            b = t + (self.step/psObj.nobs)*self.Aty[block] # b is the input to the inverse
             x = psObj.xdata[block]        
             Hz = psObj.Hz
             w = psObj.wdata[block]
         else:
             t = psObj.Hz[1:] + self.step*psObj.wdata[block][1:]
-            b = t + (self.step/psObj.nobs)*psObj.Aty[block] # b is the input to the inverse
+            b = t + (self.step/psObj.nobs)*self.Aty[block] # b is the input to the inverse
             x = psObj.xdata[block][1:]        
             Hz = psObj.Hz[1:]
             w = psObj.wdata[block][1:]
@@ -425,12 +404,10 @@ class BackwardCG(ProjSplitLossProcessor):
             alpha = rTr/denom
             
             x = x + alpha*p
-            
-            
-            
+        
             Acgx = Acgx + alpha*Ap
             #gradfx is gradient w.r.t. the least squares slice. 
-            gradfx = (1.0/self.step)*(Acgx - x) - (1/psObj.nobs)*psObj.Aty[block]
+            gradfx = (1.0/self.step)*(Acgx - x) - (1/psObj.nobs)*self.Aty[block]
             
             i+=1
             if i>= self.maxIter:
@@ -455,7 +432,7 @@ class BackwardCG(ProjSplitLossProcessor):
         else:
             psObj.xdata[block][1:] = x
             psObj.ydata[block][1:] = gradfx
-            
+            psObj.xdata[block][0] = 0.0
         
 class BackwardLBFGS(ProjSplitLossProcessor):
     def __init__(self,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,

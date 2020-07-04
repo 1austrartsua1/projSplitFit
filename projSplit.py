@@ -218,7 +218,7 @@ class ProjSplitFit(object):
                 
             
         self.dataAdded = True 
-        self.resetIterate = True
+        self.internalResetIterate = True
         
                     
     def getParams(self):
@@ -301,7 +301,7 @@ class ProjSplitFit(object):
             regObj.addLinear(
                 MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x), False)
         
-        self.resetIterate = True # Ensures we reset the variables if we add another regularizer 
+        self.internalResetIterate = True # Ensures we reset the variables if we add another regularizer 
     
     def getObjective(self):
         '''
@@ -519,7 +519,7 @@ class ProjSplitFit(object):
         if self.nDataBlocks is not None:
             if(self.nDataBlocks != numBlocks):
                 print("change of the number of blocks, resetting iterates automatically")
-                self.resetIterate = True
+                self.internalResetIterate = True
         
         self.nDataBlocks = numBlocks
                                         
@@ -579,15 +579,12 @@ class ProjSplitFit(object):
             self.numPSblocks = self.nDataBlocks + self.numRegs
             
                                 
-        self.nDataVars = self.ncol + 1
+        self.nDataVars = self.ncol + 1                
         
-        self.newRun = True    # this variable can be used by loss processors to determine
-                              # if a new run has commenced. In that case, a loss process
-                              # can initialize any stored data it needs within the projSplit object
-                              # and then set this flag to False. 
-        
-        if (resetIterate == True) | (self.resetIterate == True):
+        if (resetIterate == True) | (self.internalResetIterate == True):
             
+            self.internalResetIterate = False
+                                                            
             self.z = zeros(self.nvar+1)
             self.v = zeros(self.nvar+1)
             self.Hz = zeros(self.nDataVars)
@@ -595,6 +592,10 @@ class ProjSplitFit(object):
             self.xdata = zeros((self.nDataBlocks,self.nDataVars))            
             self.ydata = zeros((self.nDataBlocks,self.nDataVars))
             self.wdata = zeros((self.nDataBlocks,self.nDataVars))
+            
+            # initialize the loss processor auxiliary data structures 
+            # if it has any 
+            self.process.initialize(self) 
 
             if self.numRegs > 0:                        
                 self.udata = zeros((self.nDataBlocks,self.nDataVars))
@@ -622,7 +623,7 @@ class ProjSplitFit(object):
                 if i != self.numRegs:
                     self.ureg.append(zeros(regVars))    
                 
-
+            
             
         
         if maxIterations is None:
@@ -646,8 +647,7 @@ class ProjSplitFit(object):
             self.__updateRegularizerBlocks()            
             
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
-                print("primal and dual tolerance reached, finishing run")
-                self.resetIterate = False 
+                print("primal and dual tolerance reached, finishing run")                
                 break            
             
             
@@ -672,7 +672,7 @@ class ProjSplitFit(object):
             self.historyArray.append(dualErrs)
             self.historyArray.append(phis)
             self.historyArray = array(self.historyArray) 
-        self.resetIterate = False 
+        
     
         
         if self.embeddedFlag == True:
