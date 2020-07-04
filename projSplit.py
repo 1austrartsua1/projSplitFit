@@ -71,12 +71,14 @@ class ProjSplitFit(object):
             dualScaling must be an int or float > 0
         '''        
         self.setDualScaling(dualScaling)                
+        
         self.allRegularizers = []
-        self.embeddedFlag = False        
-        self.dataAdded = False
         self.numRegs = 0
-        self.z = None
-        self.nDataBlocks = None        
+        self.embeddedFlag = False        
+        
+        self.dataAdded = False
+        self.methodRun = False
+        
         
     
     def setDualScaling(self,dualScaling):
@@ -306,7 +308,7 @@ class ProjSplitFit(object):
         Returns the current objective value, as in (1), evaluated at the current 
         primal iterate z^k. If the method has not been run yet, raises an exception
         '''        
-        if self.z is None:
+        if self.methodRun == False:
             print("Method not run yet, no objective to return. Call run() first.")
             raise Exception
                 
@@ -325,11 +327,15 @@ class ProjSplitFit(object):
     
     def getSolution(self):
         '''
-        Returns the current primal Solution z^k. If the run() has not been called yet,
+        Returns (Hz^k, z^k) where ^k is the current primal Solution z^k, 
+        and Hz^k where H is the linear operator
+        added with the data. If H=I, then Hz^k = z^k. 
+        
+        If the run() has not been called yet,
         raises an exception. 
         '''
         
-        if self.z is None:
+        if self.methodRun == False:
             print("Method not run yet, no solution to return. Call run() first.")
             raise Exception
         
@@ -359,7 +365,7 @@ class ProjSplitFit(object):
         returns a float containing max_i{||G_i z^k - x_i^k||_2}. 
         If run has not been called yet, raises an exception.
         '''
-        if self.z is None:
+        if self.methodRun == False:
             print("Method not run yet, no primal violation to return. Call run() first.")
             raise Exception
         else:
@@ -372,7 +378,7 @@ class ProjSplitFit(object):
         returns a float containing max_i{||y_i^k - w_i^k||_2}.  
         If run has not been called yet, it raises an exception
         '''
-        if self.z is None:
+        if self.methodRun == False:
             print("Method not run yet, no dual violation to return. Call run() first.")
             raise Exception
         else:
@@ -397,7 +403,7 @@ class ProjSplitFit(object):
         If run() has not yet been called with keepHistory set to True, 
         this function will raise an Exception when called. 
         '''
-        if self.z is None:
+        if self.methodRun == False:
             print("Method not run yet, no history to return. Call run() first.")
             raise Exception
         if self.historyArray is None:
@@ -443,6 +449,8 @@ class ProjSplitFit(object):
         sgdtimes = [0]
         k = 0
         step = step0
+        
+        
         
         while(k<maxIterations):            
             t0 = time()
@@ -514,7 +522,7 @@ class ProjSplitFit(object):
                                 
         numBlocks = self.__setBlocks(nblocks)
                                 
-        if self.nDataBlocks is not None:
+        if self.methodRun:
             if(self.nDataBlocks != numBlocks):
                 print("change of the number of blocks, resetting iterates automatically")
                 self.internalResetIterate = True
@@ -634,6 +642,7 @@ class ProjSplitFit(object):
         primalErrs = []
         dualErrs = []
         phis = []
+        self.methodRun = True 
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################

@@ -444,4 +444,12 @@ class BackwardLBFGS(ProjSplitLossProcessor):
         pass
         
 
+class StochasticTwoForwardStep(ProjSplitLossProcessor):
+    def __init__(self):
+        pass
+
+class StochasticOneForwardStep(ProjSplitLossProcessor):
+    def __init__(self):
+        pass
+    
     
