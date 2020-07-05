@@ -28,18 +28,10 @@ class ProjSplitLossProcessor(object):
                      # but backward classes cannot. 
                      
     @staticmethod
-    def getAGrad(psObj,point,thisSlice):
-        #point[0] is the intercept term
-        #point[1:len(point)] are the coefficients and 
-        #len(point) must equal the num cols of A. 
-        yhat = point[0]+psObj.A[thisSlice].dot(point[1:])
+    def getAGrad(psObj,point,thisSlice):        
+        yhat = psObj.A[thisSlice].dot(point)
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
-        grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)
-        if psObj.intercept:            
-            grad0 = array([(1.0/psObj.nobs)*sum(gradL)])
-        else:
-            grad0 = array([0.0])
-        grad = concatenate((grad0,grad))
+        grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)        
         return grad  
       
     def getStep(self):
@@ -49,6 +41,9 @@ class ProjSplitLossProcessor(object):
         self.step = step
     
     def initialize(self,psObj):
+        '''
+            can be overwritten by children classes that need to do initialization
+        '''
         pass 
         
         
@@ -115,13 +110,8 @@ class Forward2Affine(ProjSplitLossProcessor):
         gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
         lhs = gradHz - psObj.wdata[block]
         
-        yhat = lhs[0]+psObj.A[thisSlice].dot(lhs[1:])        
-        affinePart = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(yhat)
-        if psObj.intercept:            
-            affine0 = array([(1.0/psObj.nobs)*sum(affinePart)])
-        else:
-            affine0 = array([0.0])
-        affinePart = concatenate((affine0,affinePart))
+        yhat = psObj.A[thisSlice].dot(lhs)        
+        affinePart = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(yhat)        
         normLHS = norm(lhs,2)**2
         step = normLHS/(self.Delta*normLHS + lhs.T.dot(affinePart))
         psObj.xdata[block] = psObj.Hz - step*lhs
@@ -267,26 +257,16 @@ class BackwardExact(ProjSplitLossProcessor):
         else:
             self.matInvLemma = False
         
-                 
-        
-        if psObj.intercept == True:
-            # need to add a ones col to deal with intercept
-            onesCol = ones((psObj.nobs,1))
-            # make a copy of the data matrix to deal with the intercept called Atilde
-            self.Atilde = concatenate((onesCol,psObj.A), axis = 1)
-        else:
-            self.Atilde = psObj.A 
-
         self.Aty = []        
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            self.Aty.append(self.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
+            self.Aty.append(psObj.A[thisSlice].T.dot(psObj.yresponse[thisSlice]))
         
         if self.matInvLemma == False:
             self.matInv = []        
             for block in range(psObj.nDataBlocks):
                 thisSlice = psObj.partition[block]                
-                mat2inv = (self.step/psObj.nobs)*self.Atilde[thisSlice].T.dot(self.Atilde[thisSlice])
+                mat2inv = (self.step/psObj.nobs)*psObj.A[thisSlice].T.dot(psObj.A[thisSlice])
                 (d,_) = mat2inv.shape
                 mat2inv += identity(d)
                 self.matInv.append(npinv(mat2inv))
@@ -294,7 +274,7 @@ class BackwardExact(ProjSplitLossProcessor):
             self.matInv = []        
             for block in range(psObj.nDataBlocks):
                 thisSlice = psObj.partition[block]
-                mat2inv = (self.step/psObj.nobs)*self.Atilde[thisSlice].dot(self.Atilde[thisSlice].T)
+                mat2inv = (self.step/psObj.nobs)*psObj.A[thisSlice].dot(psObj.A[thisSlice].T)
                 (n,_) = mat2inv.shape
                 mat2inv += identity(n)
                 self.matInv.append(npinv(mat2inv))
@@ -311,29 +291,19 @@ class BackwardExact(ProjSplitLossProcessor):
         
         thisSlice = psObj.partition[block]
         t = psObj.Hz + self.step*psObj.wdata[block]
-        if psObj.intercept:
-            input2inv = t + (self.step/psObj.nobs)*self.Aty[block]
-        else:
-            input2inv = t[1:] + (self.step/psObj.nobs)*self.Aty[block]
+        
+        input2inv = t + (self.step/psObj.nobs)*self.Aty[block]
+        
             
         if self.matInvLemma == True:
             #using the matrix inversion lemma 
-            temp = self.matInv[block].dot(self.Atilde[thisSlice].dot(input2inv))
-            if psObj.intercept:                
-                psObj.xdata[block] = input2inv - (self.step/psObj.nobs)*self.Atilde[thisSlice].T.dot(temp)            
-            else:                
-                psObj.xdata[block][1:] = input2inv - (self.step/psObj.nobs)*self.Atilde[thisSlice].T.dot(temp)            
-                psObj.xdata[block][0] = 0.0
-                
+            temp = self.matInv[block].dot(psObj.A[thisSlice].dot(input2inv))            
+            psObj.xdata[block] = input2inv - (self.step/psObj.nobs)*psObj.A[thisSlice].T.dot(temp)                                        
         else:
             #not using the matrix inversion lemma
-            if psObj.intercept:
-                psObj.xdata[block] = self.matInv[block].dot(input2inv)
-            else:
-                psObj.xdata[block][1:] = self.matInv[block].dot(input2inv)
-                psObj.xdata[block][0] = 0.0
-                                    
-            
+        
+            psObj.xdata[block] = self.matInv[block].dot(input2inv)        
+                                                
         psObj.ydata[block] = (self.step)**(-1)*(t - psObj.xdata[block])
             
             
@@ -351,19 +321,12 @@ class BackwardCG(ProjSplitLossProcessor):
         self.maxIter = maxIter
     
     def initialize(self,psObj):
-        
-        if psObj.intercept == True:
-            # need to add a ones col to deal with intercept
-            onesCol = ones((psObj.nobs,1))
-            # make a copy of the data matrix to deal with the intercept called Atilde
-            self.Atilde = concatenate((onesCol,psObj.A), axis = 1)
-        else:
-            self.Atilde = psObj.A 
+                
 
         self.Aty = []        
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            self.Aty.append(self.Atilde[thisSlice].T.dot(psObj.yresponse[thisSlice]))
+            self.Aty.append(psObj.A[thisSlice].T.dot(psObj.yresponse[thisSlice]))
             
     
     def update(self,psObj,block):
@@ -373,23 +336,18 @@ class BackwardCG(ProjSplitLossProcessor):
             # helper function returns the matrix multiply for the "conjugate
             # gradient" matrix, i.e. the lhs of the linear equation we are trying
             # to solve which defines the backward step.             
-            temp = self.Atilde[thisSlice].dot(x)
-            temp = self.Atilde[thisSlice].T.dot(temp)
+            temp = psObj.A[thisSlice].dot(x)
+            temp = psObj.A[thisSlice].T.dot(temp)
             return x + (self.step/psObj.nobs)*temp
             
             
-        if psObj.intercept == True:
-            t = psObj.Hz + self.step*psObj.wdata[block]
-            b = t + (self.step/psObj.nobs)*self.Aty[block] # b is the input to the inverse
-            x = psObj.xdata[block]        
-            Hz = psObj.Hz
-            w = psObj.wdata[block]
-        else:
-            t = psObj.Hz[1:] + self.step*psObj.wdata[block][1:]
-            b = t + (self.step/psObj.nobs)*self.Aty[block] # b is the input to the inverse
-            x = psObj.xdata[block][1:]        
-            Hz = psObj.Hz[1:]
-            w = psObj.wdata[block][1:]
+        
+        t = psObj.Hz + self.step*psObj.wdata[block]
+        b = t + (self.step/psObj.nobs)*self.Aty[block] # b is the input to the inverse
+        x = psObj.xdata[block]        
+        Hz = psObj.Hz
+        w = psObj.wdata[block]
+        
         
         # run conjugate gradient method
         
@@ -425,14 +383,10 @@ class BackwardCG(ProjSplitLossProcessor):
             beta = rplus.T.dot(rplus)/rTr
             p = rplus + beta*p
             r = rplus
-            
-        if psObj.intercept == True:
-            psObj.xdata[block] = x
-            psObj.ydata[block] = gradfx
-        else:
-            psObj.xdata[block][1:] = x
-            psObj.ydata[block][1:] = gradfx
-            psObj.xdata[block][0] = 0.0
+                   
+        psObj.xdata[block] = x
+        psObj.ydata[block] = gradfx
+        
         
 class BackwardLBFGS(ProjSplitLossProcessor):
     def __init__(self,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,

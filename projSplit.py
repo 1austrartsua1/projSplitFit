@@ -15,6 +15,7 @@ from numpy import sum as npsum
 from numpy.linalg import norm
 from numpy import copy as npcopy
 from numpy import zeros
+from numpy import ones
 from numpy import concatenate
 from numpy import array
 from numpy.random import choice
@@ -77,7 +78,7 @@ class ProjSplitFit(object):
         self.embeddedFlag = False        
         
         self.dataAdded = False
-        self.methodRun = False
+        self.runCalled = False
         
         
     
@@ -155,18 +156,36 @@ class ProjSplitFit(object):
             self.dataLinOp = MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
             self.nvar = self.ncol
             self.dataLinOpFlag = False
-        elif linearOp.shape[0] != self.ncol:
-            print("Error! number of columns of the data matrix is {}".format(self.ncol))
-            print("while number of rows of the composed linear operator is {}".format(linearOp.shape[0]))
-            print("These must be equal! Aborting addData call")
-            self.A = None
-            self.yresponse = None
-            self.nvar = None
-            raise Exception
+        
         else:
-            self.dataLinOp = linearOp
-            self.nvar = linearOp.shape[1]
-            self.dataLinOpFlag = True 
+            try:
+        
+                if linearOp.shape[0] != self.ncol:
+                    print("Error! number of columns of the data matrix is {}".format(self.ncol))
+                    print("while number of rows of the composed linear operator is {}".format(linearOp.shape[0]))
+                    print("These must be equal! Aborting addData call")
+                    self.A = None
+                    self.yresponse = None
+                    self.nvar = None
+                    raise Exception
+                else:
+                    # expandOperator to deal with the intercept term
+                    # the first entry of the input is the intercept which is 
+                    # just passed through
+                    
+                    matvec,rmatvec = expandOperator(linearOp)
+                    self.dataLinOp = MyLinearOperator(matvec,rmatvec)
+                    self.nvar = linearOp.shape[1]
+                    self.dataLinOpFlag = True 
+            except:
+                print("Error: linearOp must be a linear operator and must have ")
+                print("a shape member and support matvec and rmatvec methods")
+                print("Aborting add data")
+                self.A = None
+                self.yresponse = None
+                self.nvar = None
+                raise Exception
+                      
             
         
         # check that all of the regularizers added so far have linear ops 
@@ -211,7 +230,17 @@ class ProjSplitFit(object):
             self.embedded = None
             self.embeddedFlag = False
             self.numRegs += 1
-                            
+             
+        if (intercept not in [False,True]):
+            print("Warning: intercept should be a bool")
+            print("Setting to False, no intercept")
+            intercept = 0
+        else:
+            intercept = int(intercept)
+        
+        col2Add = intercept*ones((self.nobs,1))
+        self.A = concatenate((col2Add,self.A),axis=1)
+                       
         self.intercept = intercept
 
         # completed a successful call to addData()                
@@ -308,7 +337,7 @@ class ProjSplitFit(object):
         Returns the current objective value, as in (1), evaluated at the current 
         primal iterate z^k. If the method has not been run yet, raises an exception
         '''        
-        if self.methodRun == False:
+        if self.runCalled == False:
             print("Method not run yet, no objective to return. Call run() first.")
             raise Exception
                 
@@ -327,28 +356,34 @@ class ProjSplitFit(object):
     
     def getSolution(self):
         '''
-        Returns (Hz^k, z^k) where ^k is the current primal Solution z^k, 
+        Returns (Hz^k, z^k) where z^k is the current primal Solution 
         and Hz^k where H is the linear operator
-        added with the data. If H=I, then Hz^k = z^k. 
+        added with the data. 
+        
+        If the normalize option is set to True in addData, the scaling which 
+        was applied to each feature is applied to the entries of Hz^k, so the 
+        same results can be obtained with the original non-normalized data matrix. 
+        Note that the scaling is not applied to z^k, the second output. 
         
         If the run() has not been called yet,
         raises an exception. 
+        
+        If intercept was set to True in addData, the intercept coefficient is the 
+        first entry of both z^k and Hz^k. 
         '''
         
-        if self.methodRun == False:
+        if self.runCalled == False:
             print("Method not run yet, no solution to return. Call run() first.")
             raise Exception
         
         
-        Hz = self.dataLinOp.matvec(self.z[1:])
+        Hz = self.dataLinOp.matvec(self.z)
         out = zeros(self.ncol+1)
         
-        
-        
         if self.normalize:
-            out[1:] = Hz/self.scaling
+            out[1:] = Hz[1:]/self.scaling
         else:
-            out[1:] = Hz 
+            out[1:] = Hz[1:] 
 
         if self.intercept:
             out[0] = self.z[0]
@@ -357,7 +392,6 @@ class ProjSplitFit(object):
             return out[1:],self.z 
         
         
-    
     def getPrimalViolation(self):        
         '''
         After at least one call to run, the function call
@@ -365,7 +399,7 @@ class ProjSplitFit(object):
         returns a float containing max_i{||G_i z^k - x_i^k||_2}. 
         If run has not been called yet, raises an exception.
         '''
-        if self.methodRun == False:
+        if self.runCalled == False:
             print("Method not run yet, no primal violation to return. Call run() first.")
             raise Exception
         else:
@@ -378,7 +412,7 @@ class ProjSplitFit(object):
         returns a float containing max_i{||y_i^k - w_i^k||_2}.  
         If run has not been called yet, it raises an exception
         '''
-        if self.methodRun == False:
+        if self.runCalled == False:
             print("Method not run yet, no dual violation to return. Call run() first.")
             raise Exception
         else:
@@ -403,7 +437,7 @@ class ProjSplitFit(object):
         If run() has not yet been called with keepHistory set to True, 
         this function will raise an Exception when called. 
         '''
-        if self.methodRun == False:
+        if self.runCalled == False:
             print("Method not run yet, no history to return. Call run() first.")
             raise Exception
         if self.historyArray is None:
@@ -412,12 +446,11 @@ class ProjSplitFit(object):
             raise Exception
         return self.historyArray
     
-    
-    
-    
+       
     def runSGD(self,maxIterations,nblocks=1,historyFreq=10,step0 = 1.0,
                stepStat="fixed",exponent = 0.75):
         '''
+            XX remove me XX
             Runs SGD on this loss. Note that this ignores any regularizers that
             may have been added.
         '''
@@ -522,7 +555,7 @@ class ProjSplitFit(object):
                                 
         numBlocks = self.__setBlocks(nblocks)
                                 
-        if self.methodRun:
+        if self.runCalled:
             if(self.nDataBlocks != numBlocks):
                 print("change of the number of blocks, resetting iterates automatically")
                 self.internalResetIterate = True
@@ -535,7 +568,6 @@ class ProjSplitFit(object):
         if blocksPerIteration >= self.nDataBlocks:
             blocksPerIteration = self.nDataBlocks
             
-        self.cyclicPoint = 0
         
         if self.embeddedFlag == False:
             # if no embedded reg added, create an artificial embedded reg
@@ -587,14 +619,12 @@ class ProjSplitFit(object):
                                 
         self.nDataVars = self.ncol + 1                
         
-        if (resetIterate == True) | (self.internalResetIterate == True):
+        if resetIterate or self.internalResetIterate:
             
             self.internalResetIterate = False
                                                             
-            self.z = zeros(self.nvar+1)
-            self.v = zeros(self.nvar+1)
-            self.Hz = zeros(self.nDataVars)
-            self.Hx = zeros(self.nDataVars)
+            self.z = zeros(self.nvar+1)            
+            self.Hz = zeros(self.nDataVars)            
             self.xdata = zeros((self.nDataBlocks,self.nDataVars))            
             self.ydata = zeros((self.nDataBlocks,self.nDataVars))
             self.wdata = zeros((self.nDataBlocks,self.nDataVars))
@@ -630,8 +660,6 @@ class ProjSplitFit(object):
                     self.ureg.append(zeros(regVars))    
                 
             
-            
-        
         if maxIterations is None:
             maxIterations = float('Inf')
         
@@ -642,7 +670,9 @@ class ProjSplitFit(object):
         primalErrs = []
         dualErrs = []
         phis = []
-        self.methodRun = True 
+        self.cyclicPoint = 0
+        
+        self.runCalled = True 
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################
@@ -706,8 +736,8 @@ class ProjSplitFit(object):
             
     def __updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
-        self.Hz[1:] = self.dataLinOp.matvec(self.z[1:])
-        self.Hz[0] = self.z[0]
+        self.Hz = self.dataLinOp.matvec(self.z)
+        
         if blockActivation == "greedy":            
             phis = npsum((self.Hz - self.xdata)*(self.ydata - self.wdata),axis=1)            
             
@@ -738,7 +768,7 @@ class ProjSplitFit(object):
         self.dualErr =   norm(self.ydata - self.wdata,ord=2,axis=1).max()
                 
     def __updateRegularizerBlocks(self):
-        i = 0        
+                
         for i in range(self.numRegs-1):             
             reg = self.allRegularizers[i]
             Giz = reg.linearOp.matvec(self.z[1:])                        
@@ -752,8 +782,7 @@ class ProjSplitFit(object):
             if self.dualErr<dual_err_i:
                 self.dualErr = dual_err_i
                 
-            i += 1
-            
+                        
         # update coefficients corresponding to the last block
         # including the intercept term
         if self.numRegs > 0:
@@ -782,18 +811,15 @@ class ProjSplitFit(object):
     def __projectToHyperplane(self):
                             
         # compute u and v for data blocks
-        if self.numRegs > 0:
-            self.Hx[1:] = self.dataLinOp.matvec(self.xreg[-1][1:])
-            self.Hx[0] = self.xreg[-1][0]
-            self.udata = self.xdata - self.Hx            
+        if self.numRegs > 0:            
+            self.udata = self.xdata - self.dataLinOp.matvec(self.xreg[-1])            
         else:
             # if there are no regularizers, the last block corresponds to the 
             # last data block. Further, dataLinOp must be the identity
             self.udata = self.xdata[:-1] - self.xdata[-1]
             
         vin = sum(self.ydata)
-        v = self.dataLinOp.rmatvec(vin[1:])
-        v = concatenate((array([vin[0]]),v))
+        v = self.dataLinOp.rmatvec(vin)        
         
         # compute u and v for regularizer blocks except the final regularizer 
         for i in range(self.numRegs - 1):
@@ -818,10 +844,10 @@ class ProjSplitFit(object):
             if phi > 0:               
                 # compute tau 
                 tau = phi/pi
-                # update z and w         
-            
+                # update z and w                     
                 self.z = self.z - self.gamma**(-1)*tau*v
-                if (len(self.wdata) > 1) | (self.numRegs > 0):              
+                
+                if (len(self.wdata) > 1) or (self.numRegs > 0):              
                     if self.numRegs == 0:               
                         # if no regularizers, the linearOp corresponding to the 
                         # data block must be the identity
@@ -830,8 +856,7 @@ class ProjSplitFit(object):
                     else:
                         self.wdata = self.wdata - tau*self.udata                        
                         negsumw = -npsum(self.wdata,axis=0)
-                        GstarNegSumw = self.dataLinOp.rmatvec(negsumw[1:])
-                        GstarNegSumw = concatenate((array([negsumw[0]]),GstarNegSumw))
+                        GstarNegSumw = self.dataLinOp.rmatvec(negsumw)                        
                         for i in range(self.numRegs - 1):
                             self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
                             Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
@@ -848,7 +873,7 @@ class ProjSplitFit(object):
     def __getPhi(self,v):
         phi = self.z.dot(v)            
             
-        if (len(self.wdata) > 1) | (self.numRegs > 0):       
+        if (len(self.wdata) > 1) or (self.numRegs > 0):       
             if self.numRegs == 0:
                 phi += npsum(self.udata*self.wdata[0:(self.numPSblocks-1)])
             else:
@@ -865,10 +890,8 @@ class ProjSplitFit(object):
         return phi
     
     def __getLoss(self,z):
-        Hz = self.dataLinOp.matvec(z[1:])
+        Hz = self.dataLinOp.matvec(z)
         AHz = self.A.dot(Hz)
-        if self.intercept:            
-            AHz += z[0]
         currentLoss = (1.0/self.nobs)*sum(self.loss.value(AHz,self.yresponse))     
         return currentLoss,Hz
         
@@ -895,6 +918,10 @@ class MyLinearOperator():
         self.matvec=matvec
         self.rmatvec=rmatvec
         
+def expandOperator(linearOp):
+    expandMatVec = lambda x: concatenate((array([x[0]]),linearOp.matvec(x[1:])))
+    expandrMatVec = lambda x: concatenate((array([x[0]]),linearOp.rmatvec(x[1:])))
+    return expandMatVec,expandrMatVec
     
 def createApartition(nrows,n_partitions):
     
