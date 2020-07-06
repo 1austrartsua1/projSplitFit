@@ -46,7 +46,7 @@ def test_embedded(processor):
         
         print('cvx opt val = {}'.format(opt))
         print('ps opt val = {}'.format(ps_val))
-        assert abs(ps_val-opt)<1e-3
+        assert abs(ps_val-opt)<1e-2
         
     
     projSplit.addRegularizer(regObj,embed=True)
@@ -57,7 +57,7 @@ def test_embedded(processor):
     
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
     
     
     
@@ -83,7 +83,7 @@ def test_embedded(processor):
     opt,xopt = runCVX_lasso(AwithIntercept,y,2*lam,True,True)
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))    
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
     
     
     
@@ -121,7 +121,7 @@ def test_l1_multi_lasso(processor):
     
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
     
     
     # test with intercept 
@@ -136,7 +136,7 @@ def test_l1_multi_lasso(processor):
     
     #print('cvx opt val = {}'.format(opt))
     #print('ps opt val = {}'.format(ps_val))
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
     
     # test multi-data-blocks
     
@@ -145,7 +145,7 @@ def test_l1_multi_lasso(processor):
         ps_val = projSplit.getObjective()
         print('cvx opt val = {}'.format(opt))
         print('ps opt val = {}'.format(ps_val))
-        assert abs(ps_val-opt)<1e-3
+        assert abs(ps_val-opt)<1e-2
     
     
 
