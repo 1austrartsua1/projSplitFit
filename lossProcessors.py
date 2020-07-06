@@ -31,7 +31,7 @@ class ProjSplitLossProcessor(object):
     def getAGrad(psObj,point,thisSlice):        
         yhat = psObj.A[thisSlice].dot(point)
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
-        grad = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(gradL)        
+        grad = (1.0/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(gradL)        
         return grad  
       
     def getStep(self):
@@ -111,7 +111,7 @@ class Forward2Affine(ProjSplitLossProcessor):
         lhs = gradHz - psObj.wdata[block]
         
         yhat = psObj.A[thisSlice].dot(lhs)        
-        affinePart = (1.0/psObj.nobs)*psObj.A[thisSlice].T.dot(yhat)        
+        affinePart = (1.0/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(yhat)        
         normLHS = norm(lhs,2)**2
         step = normLHS/(self.Delta*normLHS + lhs.T.dot(affinePart))
         psObj.xdata[block] = psObj.Hz - step*lhs
@@ -250,7 +250,7 @@ class BackwardExact(ProjSplitLossProcessor):
         # block length is the number of observations in each block
         # we only check the len of the first block because our createApartition()
         # function guarantees that all blocks are within 1 of the same block_len
-        if block_len < psObj.ncol//2:
+        if block_len < psObj.ncolsOfA//2:
             # wide matrices, use the matrix inversion lemma 
             self.matInvLemma = True
             
@@ -266,7 +266,7 @@ class BackwardExact(ProjSplitLossProcessor):
             self.matInv = []        
             for block in range(psObj.nDataBlocks):
                 thisSlice = psObj.partition[block]                
-                mat2inv = (self.step/psObj.nobs)*psObj.A[thisSlice].T.dot(psObj.A[thisSlice])
+                mat2inv = (self.step/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(psObj.A[thisSlice])
                 (d,_) = mat2inv.shape
                 mat2inv += identity(d)
                 self.matInv.append(npinv(mat2inv))
@@ -274,7 +274,7 @@ class BackwardExact(ProjSplitLossProcessor):
             self.matInv = []        
             for block in range(psObj.nDataBlocks):
                 thisSlice = psObj.partition[block]
-                mat2inv = (self.step/psObj.nobs)*psObj.A[thisSlice].dot(psObj.A[thisSlice].T)
+                mat2inv = (self.step/psObj.nrowsOfA)*psObj.A[thisSlice].dot(psObj.A[thisSlice].T)
                 (n,_) = mat2inv.shape
                 mat2inv += identity(n)
                 self.matInv.append(npinv(mat2inv))
@@ -292,13 +292,13 @@ class BackwardExact(ProjSplitLossProcessor):
         thisSlice = psObj.partition[block]
         t = psObj.Hz + self.step*psObj.wdata[block]
         
-        input2inv = t + (self.step/psObj.nobs)*self.Aty[block]
+        input2inv = t + (self.step/psObj.nrowsOfA)*self.Aty[block]
         
             
         if self.matInvLemma == True:
             #using the matrix inversion lemma 
             temp = self.matInv[block].dot(psObj.A[thisSlice].dot(input2inv))            
-            psObj.xdata[block] = input2inv - (self.step/psObj.nobs)*psObj.A[thisSlice].T.dot(temp)                                        
+            psObj.xdata[block] = input2inv - (self.step/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(temp)                                        
         else:
             #not using the matrix inversion lemma
         
@@ -338,12 +338,12 @@ class BackwardCG(ProjSplitLossProcessor):
             # to solve which defines the backward step.             
             temp = psObj.A[thisSlice].dot(x)
             temp = psObj.A[thisSlice].T.dot(temp)
-            return x + (self.step/psObj.nobs)*temp
+            return x + (self.step/psObj.nrowsOfA)*temp
             
             
         
         t = psObj.Hz + self.step*psObj.wdata[block]
-        b = t + (self.step/psObj.nobs)*self.Aty[block] # b is the input to the inverse
+        b = t + (self.step/psObj.nrowsOfA)*self.Aty[block] # b is the input to the inverse
         x = psObj.xdata[block]        
         Hz = psObj.Hz
         w = psObj.wdata[block]
@@ -365,7 +365,7 @@ class BackwardCG(ProjSplitLossProcessor):
         
             Acgx = Acgx + alpha*Ap
             #gradfx is gradient w.r.t. the least squares slice. 
-            gradfx = (1.0/self.step)*(Acgx - x) - (1/psObj.nobs)*self.Aty[block]
+            gradfx = (1.0/self.step)*(Acgx - x) - (1/psObj.nrowsOfA)*self.Aty[block]
             
             i+=1
             if i>= self.maxIter:

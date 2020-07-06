@@ -732,8 +732,6 @@ class ProjSplitFit(object):
                             
             self.numPSblocks = self.nDataBlocks + self.numRegs
             
-        
-            
             
     def __updateLossBlocks(self,blockActivation,blocksPerIteration):        
         
@@ -843,34 +841,24 @@ class ProjSplitFit(object):
                 # update z and w                     
                 self.z = self.z - self.gamma**(-1)*tau*v
                 
-                if (len(self.wdata) > 1) or (self.numRegs > 0):                      
-                    if self.numRegs == 0:               
-                        # if no regularizers, the linearOp corresponding to the 
-                        # data block must be the identity
-                        self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
-                        self.wdata[-1] = -npsum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
-                    else:
-                        self.wdata = self.wdata - tau*self.udata                        
-                        negsumw = -npsum(self.wdata,axis=0)
-                        GstarNegSumw = self.dataLinOp.rmatvec(negsumw)                        
-                        for i in range(self.numRegs - 1):
-                            self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
-                            Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
-                            GstarNegSumw -= concatenate((array([0.0]),Gstarw))
-                        
-                        self.wreg[-1] = GstarNegSumw
-            
+                if len(self.wdata) + len(self.wreg) > 1:
+                    # if there is more than one w block, update w. Otherwise
+                    # if there is just a single block, it will just stay at 0.
+                    self.__updatew(tau)
+                                
         else:
             print("Gradient of the hyperplane is 0, converged")
             phi = None
         
         return phi
     
+    
+    
     def __getPhi(self,v):
         phi = self.z.dot(v)            
             
-        if (len(self.wdata) > 1) or (self.numRegs > 0):       
-            if self.numRegs == 0:
+        if len(self.wdata) + len(self.wreg) > 1:       
+            if len(self.wreg) == 0:
                 phi += npsum(self.udata*self.wdata[0:(self.numPSblocks-1)])
             else:
                 phi += npsum(self.udata*self.wdata)
@@ -890,6 +878,23 @@ class ProjSplitFit(object):
         AHz = self.A.dot(Hz)
         currentLoss = (1.0/self.nrowsOfA)*sum(self.loss.value(AHz,self.yresponse))     
         return currentLoss,Hz
+    
+    def __updatew(self,tau):        
+            if len(self.wreg) == 0:               
+                # if no regularizers, the linearOp corresponding to the 
+                # data block must be the identity
+                self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
+                self.wdata[-1] = -npsum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
+            else:
+                self.wdata = self.wdata - tau*self.udata                        
+                negsumw = -npsum(self.wdata,axis=0)
+                GstarNegSumw = self.dataLinOp.rmatvec(negsumw)                        
+                for i in range(self.numRegs - 1):
+                    self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
+                    Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
+                    GstarNegSumw -= concatenate((array([0.0]),Gstarw))
+                
+                self.wreg[-1] = GstarNegSumw
         
 
 #-----------------------------------------------------------------------------

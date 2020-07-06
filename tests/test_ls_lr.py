@@ -348,11 +348,11 @@ ToDo.extend([(4,False,False,back_exact),(4,True,False,back_exact),(4,False,True,
 ToDo.extend([(8,False,False,back_exact),(8,True,False,back_exact),(8,False,True,back_exact),(8,True,True,back_exact)])
 ToDo.extend([(16,False,False,back_exact),(16,True,False,back_exact),(16,False,True,back_exact),(16,True,True,back_exact)])
 
-#ToDo.extend([(1,False,False,backCG),(1,True,False,backCG),(1,False,True,backCG),(1,True,True,backCG)])
-#ToDo.extend([(2,False,False,backCG),(2,True,False,backCG),(2,False,True,backCG),(2,True,True,backCG)])
-#ToDo.extend([(4,False,False,backCG),(4,True,False,backCG),(4,False,True,backCG),(4,True,True,backCG)])
-#ToDo.extend([(8,False,False,backCG),(8,True,False,backCG),(8,False,True,backCG),(8,True,True,backCG)])
-#ToDo.extend([(16,False,False,backCG),(16,True,False,backCG),(16,False,True,backCG),(16,True,True,backCG)])
+ToDo.extend([(1,False,False,backCG),(1,True,False,backCG),(1,False,True,backCG),(1,True,True,backCG)])
+ToDo.extend([(2,False,False,backCG),(2,True,False,backCG),(2,False,True,backCG),(2,True,True,backCG)])
+ToDo.extend([(4,False,False,backCG),(4,True,False,backCG),(4,False,True,backCG),(4,True,True,backCG)])
+ToDo.extend([(8,False,False,backCG),(8,True,False,backCG),(8,False,True,backCG),(8,True,True,backCG)])
+ToDo.extend([(16,False,False,backCG),(16,True,False,backCG),(16,False,True,backCG),(16,True,True,backCG)])
 @pytest.mark.parametrize("nblk,inter,norm,processor",ToDo) 
 def test_backward(nblk,inter,norm,processor):
     m = 80
@@ -367,9 +367,9 @@ def test_backward(nblk,inter,norm,processor):
     projSplit.run(maxIterations=10000,keepHistory = True, nblocks = nblk,blockActivation="random",
                   primalTol = 0.0,dualTol = 0.0)     
     
-    psvals = projSplit.getHistory()[0]
-    plt.plot(psvals)
-    plt.show()
+    #psvals = projSplit.getHistory()[0]
+    #plt.plot(psvals)
+    #plt.show()
     ps_opt = projSplit.getObjective()
     print('ps func opt = {}'.format(ps_opt))
     
