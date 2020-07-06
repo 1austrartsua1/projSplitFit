@@ -23,8 +23,13 @@ f2fixed = lp.Forward2Fixed(stepsize)
 f2bt = lp.Forward2Backtrack()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-toDo = [(f2fixed,False,False),(f2fixed,True,False),
-        (f2fixed,False,True),(f2fixed,True,True)]
+backLBFGS = lp.BackwardLBFGS()
+
+toDo = [(backLBFGS,False,False),(backLBFGS,True,False),
+        (backLBFGS,False,True),(backLBFGS,True,True)]
+
+toDo.extend([(f2fixed,False,False),(f2fixed,True,False),
+        (f2fixed,False,True),(f2fixed,True,True)])
 toDo.extend(
         [(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)]        
@@ -75,7 +80,7 @@ def test_L1LR(processor,nrm,inter):
     
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
-    assert abs(ps_val-opt)<1e-3
+    assert abs(ps_val-opt)<1e-2
     
   
     

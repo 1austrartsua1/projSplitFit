@@ -83,11 +83,12 @@ f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
+backLBFGS = lp.BackwardLBFGS()
 ToDo = []
 for i in [False,True]:
     for j in [False,True]:
         for blk in range(1,5):
-            for process in [f2fixed,f2backtrack,f2affine,f1fixed,f1bt,back_exact,backCG]:
+            for process in [backLBFGS,f2fixed,f2backtrack,f2affine,f1fixed,f1bt,back_exact,backCG]:
                 ToDo.append((process,i,j,blk))
         
 @pytest.mark.parametrize("processor,inter,norm,nblk",ToDo)
@@ -117,7 +118,9 @@ f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG(maxIter=100)
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)])
+backLBFGS = lp.BackwardLBFGS()
+
+@pytest.mark.parametrize("processor",[(backLBFGS),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)])
 def test_cyclic(processor):
     processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
@@ -135,6 +138,9 @@ def test_cyclic(processor):
 
     #projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,blockActivation="cyclic")     
+    #fps = projSplit.getHistory()[0]
+    #plt.plot(fps)
+    #plt.show()
     
     ps_opt = projSplit.getObjective()
     print("PS opt = {}".format(ps_opt))
@@ -160,8 +166,11 @@ f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG(maxIter=100)
+backLBFGS = lp.BackwardLBFGS()
 toDo = [(f2fixed,False,False),(f2fixed,True,False),
         (f2fixed,False,True),(f2fixed,True,True)]
+toDo.extend([(backLBFGS,False,False),(backLBFGS,True,False),
+        (backLBFGS,False,True),(backLBFGS,True,True)])
 toDo.extend([(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)])
 toDo.extend([(f2affine,False,False),(f2affine,True,False),
@@ -174,6 +183,7 @@ toDo.extend([(back_exact,False,False),(back_exact,True,False),
         (back_exact,False,True),(back_exact,True,True)])
 toDo.extend([(backCG,False,False),(backCG,True,False),
         (backCG,False,True),(backCG,True,True)])
+
 
 @pytest.mark.parametrize("processor,norm,inter",toDo)
 def test_ls_Int_Norm(processor,norm,inter):
@@ -220,7 +230,8 @@ f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
+backLBFGS = lp.BackwardLBFGS()
+@pytest.mark.parametrize("processor",[(backLBFGS),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
 def test_ls_blocks(processor):
     processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
@@ -262,10 +273,12 @@ f2fixed = lp.Forward2Fixed(stepsize)
 f2bt = lp.Forward2Backtrack()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
-back_exact = lp.BackwardExact()
-backCG = lp.BackwardCG(maxIter=100)
-toDo = [(f2fixed,False,False),(f2fixed,True,False),
-        (f2fixed,False,True),(f2fixed,True,True)]
+backLBFGS = lp.BackwardLBFGS()
+
+toDo = [(backLBFGS,False,False),(backLBFGS,True,False),
+        (backLBFGS,False,True),(backLBFGS,True,True)]
+toDo.extend([(f2fixed,False,False),(f2fixed,True,False),
+        (f2fixed,False,True),(f2fixed,True,True)])
 toDo.extend(
         [(f2bt,False,False),(f2bt,True,False),
         (f2bt,False,True),(f2bt,True,True)]
@@ -278,10 +291,7 @@ toDo.extend(
         [(f1bt,False,False),(f1bt,True,False),
         (f1bt,False,True),(f1bt,True,True)]
         )
-toDo.extend(
-        [(back_exact,False,False),(back_exact,True,False),
-        (back_exact,False,True),(back_exact,True,True)]
-        )
+
 
 @pytest.mark.parametrize("processor,norm,inter",toDo) 
 def test_lr(processor,norm,inter):
@@ -342,7 +352,14 @@ def test_blockIs1bug(processor):
 
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG(maxIter=100)
-ToDo = [(1,False,False,back_exact),(1,True,False,back_exact),(1,False,True,back_exact),(1,True,True,back_exact)]
+backLBFGS = lp.BackwardLBFGS()
+ToDo = [(1,False,False,backLBFGS),(1,True,False,backLBFGS),(1,False,True,backLBFGS),(1,True,True,backLBFGS)]
+ToDo.extend([(2,False,False,backLBFGS),(2,True,False,backLBFGS),(2,False,True,backLBFGS),(2,True,True,backLBFGS)])
+ToDo.extend([(4,False,False,backLBFGS),(4,True,False,backLBFGS),(4,False,True,backLBFGS),(4,True,True,backLBFGS)])
+ToDo.extend([(8,False,False,backLBFGS),(8,True,False,backLBFGS),(8,False,True,backLBFGS),(8,True,True,backLBFGS)])
+ToDo.extend([(16,False,False,backLBFGS),(16,True,False,backLBFGS),(16,False,True,backLBFGS),(16,True,True,backLBFGS)])
+
+ToDo.extend([(1,False,False,back_exact),(1,True,False,back_exact),(1,False,True,back_exact),(1,True,True,back_exact)])
 ToDo.extend([(2,False,False,back_exact),(2,True,False,back_exact),(2,False,True,back_exact),(2,True,True,back_exact)])
 ToDo.extend([(4,False,False,back_exact),(4,True,False,back_exact),(4,False,True,back_exact),(4,True,True,back_exact)])
 ToDo.extend([(8,False,False,back_exact),(8,True,False,back_exact),(8,False,True,back_exact),(8,True,True,back_exact)])
@@ -353,18 +370,19 @@ ToDo.extend([(2,False,False,backCG),(2,True,False,backCG),(2,False,True,backCG),
 ToDo.extend([(4,False,False,backCG),(4,True,False,backCG),(4,False,True,backCG),(4,True,True,backCG)])
 ToDo.extend([(8,False,False,backCG),(8,True,False,backCG),(8,False,True,backCG),(8,True,True,backCG)])
 ToDo.extend([(16,False,False,backCG),(16,True,False,backCG),(16,False,True,backCG),(16,True,True,backCG)])
+
 @pytest.mark.parametrize("nblk,inter,norm,processor",ToDo) 
 def test_backward(nblk,inter,norm,processor):
     m = 80
     d = 20
     A,y = getLSdata(m,d)    
-    projSplit = ps.ProjSplitFit()    
-    #gamma = 1e1
+    projSplit = ps.ProjSplitFit()        
     gamma = 1e-3
+    #gamma = 1e0
     projSplit.setDualScaling(gamma)    
     projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)
     
-    projSplit.run(maxIterations=10000,keepHistory = True, nblocks = nblk,blockActivation="random",
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = nblk,blockActivation="random",
                   primalTol = 0.0,dualTol = 0.0)     
     
     #psvals = projSplit.getHistory()[0]
@@ -381,9 +399,12 @@ def test_backward(nblk,inter,norm,processor):
     assert ps_opt - LSval <1e-2
 
 if __name__ == "__main__":    
-    stepsize = 1.0
-    processor = lp.BackwardExact(stepsize)
-    test_backward(8,False,False,processor)
+    
+    processor = lp.BackwardLBFGS()
+    nblk = 16
+    inter = False
+    norm = False
+    test_backward(nblk,inter,norm,processor)
     
     
     

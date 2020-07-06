@@ -250,7 +250,9 @@ f2affine = lp.Forward2Affine()
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
+backLBFGS = lp.BackwardLBFGS()
+
+@pytest.mark.parametrize("processor",[(backLBFGS),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
 def test_l1_lasso(processor):
     m = 40
     d = 10
@@ -359,7 +361,8 @@ f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
+backLBFGS = lp.BackwardLBFGS()
+@pytest.mark.parametrize("processor",[(backLBFGS),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
 def test_l1_intercept_and_normalize(processor):
     m = 40
     d = 10

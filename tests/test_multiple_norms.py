@@ -95,8 +95,9 @@ f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
+backLB = lp.BackwardLBFGS()
 
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
+@pytest.mark.parametrize("processor",[(backLB),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact)]) 
 def test_l1_multi_lasso(processor):
     m = 40
     d = 10
@@ -150,7 +151,7 @@ def test_l1_multi_lasso(processor):
     
 
 if __name__ == '__main__':
-    test_embedded()
-    
+    backLB = lp.BackwardLBFGS()
+    test_l1_multi_lasso(backLB)
     
     

@@ -510,7 +510,7 @@ class ProjSplitFit(object):
     
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False, 
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1, 
-            resetIterate=False,verbose=True):
+            resetIterate=False,verbose=False):
         '''
         Run projective splitting to minimize the objective in (1).
         ----------
@@ -637,6 +637,10 @@ class ProjSplitFit(object):
                 break            
                         
             phi = self.__projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
+            
+            if phi == "converged":
+                print("Gradient of the hyperplane is 0, converged, finishing run")                
+                break
             t1 = time()
 
             if (keepHistory == True) and (self.k % historyFreq == 0):
@@ -846,9 +850,8 @@ class ProjSplitFit(object):
                     # if there is just a single block, it will just stay at 0.
                     self.__updatew(tau)
                                 
-        else:
-            print("Gradient of the hyperplane is 0, converged")
-            phi = None
+        else:            
+            phi = "converged"
         
         return phi
     

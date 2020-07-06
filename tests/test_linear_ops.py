@@ -47,12 +47,13 @@ f2fix = lp.Forward2Fixed()
 back2exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
 f1bt = lp.Forward1Backtrack()
+backLB = lp.BackwardLBFGS()
 TryAll = []
 for i in [False,True]:
     for j in [False,True]:
         for k in [False,True]:
             for l in [False,True]:
-                for p in [f2fix,back2exact,f1bt,backCG]:
+                for p in [backLB,f2fix,back2exact,f1bt,backCG]:
                     TryAll.append((i,j,k,l,p))
                 
                 

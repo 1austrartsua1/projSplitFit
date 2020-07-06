@@ -42,9 +42,6 @@ class Loss(object):
                 raise Exception
             
                 
-            
-
-
 def LR_loss(yhat,y):
     score = -yhat*y
     

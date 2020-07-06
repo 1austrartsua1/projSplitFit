@@ -389,13 +389,136 @@ class BackwardCG(ProjSplitLossProcessor):
         
         
 class BackwardLBFGS(ProjSplitLossProcessor):
-    def __init__(self,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
-                 c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1):
+    def __init__(self,step=1.0,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
+                 c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1,
+                 maxiter=100,lineSearchIter = 20):
         self.embedOK = False
+        self.step = float(step)
+        self.sigma = float(relativeErrorFactor)
+        self.m = int(memory)
+        self.c1 = float(c1)
+        self.c2 = float(c2)
+        self.shrinkFactor = float(shrinkFactor)
+        self.growFactor = float(growFactor)
+        self.maxiter = int(maxiter)
+        self.lineSearchIter = int(lineSearchIter)
+        
+    def Fprox(self,psObj,x,thisSlice,t):
+        Ax = psObj.A[thisSlice].dot(x)        
+        f = (self.step/psObj.nrowsOfA)\
+            *sum(psObj.loss.value(Ax,psObj.yresponse[thisSlice])) 
+        f += 0.5*norm(t - x,2)**2
+        return f
+    
+    def gradprox(self,psObj,x,thisSlice,t):
+        return self.step*self.getAGrad(psObj,x,thisSlice) + x - t
         
     def update(self,psObj,block):
+        thisSlice = psObj.partition[block]
+        t = psObj.Hz + self.step*psObj.wdata[block]
+        x = psObj.xdata[block]
+        d = len(x)
+        Y = zeros([self.m,d])
+        S = zeros([self.m,d])
+        rho = zeros(self.m)
+        alpha = zeros(self.m)
+                
         
-        pass
+                
+        grad = self.gradprox(psObj,x,thisSlice,t)
+        f = self.Fprox(psObj,x,thisSlice,t)
+        z = grad
+        
+        k = 0
+        while k < self.maxiter:        
+            p = -z
+            
+            xnew,gradnew,fnew = self.wolfeLineSearch(psObj,x,p,grad,f,t,thisSlice)
+            gradfx = (gradnew - (xnew - t))/self.step 
+            k += 1
+            if self.passesErrCheck(psObj,xnew,t,block,gradfx) or (k>=self.maxiter):
+                x = xnew
+                break                                      
+            
+            snew = xnew - x                        
+            x = xnew            
+            ynew = gradnew - grad
+            grad = gradnew
+            f = fnew
+            
+            self.shift(Y,ynew)
+            self.shift(S,snew)
+            
+            rhonew = 1.0/ynew.T.dot(snew)
+            self.shift(rho,rhonew)
+            
+            q = grad
+            for i in range(self.m-1,-1,-1):
+                alpha[i] = rho[i]*S[i].T.dot(q)
+                q = q - alpha[i]*Y[i]
+           
+            gamma = snew.T.dot(ynew)/(ynew.T.dot(ynew))
+            z = gamma*q
+            
+            for i in range(self.m):
+                beta = rho[i]*Y[i].T.dot(z)
+                z = z + (alpha[i] - beta)*S[i]
+        
+        psObj.xdata[block] = x
+        psObj.ydata[block] = gradfx 
+                                
+    @staticmethod
+    def shift(vec,newel):
+        vec[0:-1] = vec[1:]
+        vec[-1] = newel
+        
+    def wolfeLineSearch(self,psObj,x,p,grad,f,t,thisSlice):
+        
+        direcDeriv = grad.T.dot(p)
+        step = 1.0
+        stepNotFound = True
+        niter = 0
+        gradNotComputed = True
+        while stepNotFound:
+            xTrial = x + step*p
+            fTrial = self.Fprox(psObj,xTrial,thisSlice,t)
+            
+            cond1 = fTrial - f - self.c1*step*direcDeriv
+            if cond1 <= 0:
+                gradNotComputed = False
+                gradTrial = self.gradprox(psObj,xTrial,thisSlice,t)
+                cond2 = gradTrial.T.dot(p) - self.c2*direcDeriv
+                if cond2 >= 0:
+                    stepNotFound = False
+                else:
+                    step = self.growFactor*step
+                    
+            else:
+                step = self.shrinkFactor*step
+                
+            niter += 1
+            if (niter >= self.lineSearchIter):
+                stepNotFound = False
+                
+        if gradNotComputed:
+            gradTrial = self.gradprox(psObj,xTrial,thisSlice,t)
+        return xTrial,gradTrial,fTrial
+    
+    def passesErrCheck(self,psObj,x,t,block,gradfx):
+        w = psObj.wdata[block]        
+        e = x+self.step*gradfx - t
+        err1 = e.T.dot(psObj.Hz - x) + self.sigma*norm(psObj.Hz - x)**2
+        if err1 >= 0:
+            err2 = e.T.dot(gradfx - w) \
+                   - self.step*norm(gradfx - w)
+            if err2<=0:
+                return True
+            else:
+                return False
+        else:
+            return False 
+        
+    
         
 
 class StochasticTwoForwardStep(ProjSplitLossProcessor):
