@@ -95,7 +95,15 @@ def test_L1LR(processor,nrm,inter):
 
 
 if __name__ == '__main__':
-    test_L1LR()
+    stepsize = 1e-1
+    processor = lp.Forward2Fixed(stepsize)
+    nrm = False
+    inter = False
+    test_L1LR(processor,nrm,inter)
+    
+    
+    
+    
     
     
 

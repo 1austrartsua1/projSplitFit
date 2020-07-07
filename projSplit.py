@@ -1,15 +1,6 @@
 '''
 projSplit module.
 
-Classes implemented here:
-    - projSplitFit
-    - Regularizer 
-    - LossPlugIn
-Functions implemented here:
-    - totalVariation1d()
-    - dropFirst()
-    - L1()
-    - groupL2()
 '''
 from numpy import sum as npsum
 from numpy.linalg import norm
@@ -27,6 +18,7 @@ from random import uniform
 from regularizers import Regularizer 
 from losses import Loss
 import lossProcessors as lp
+import projSplitUtils as ut
 
 
 
@@ -152,7 +144,7 @@ class ProjSplitFit(object):
             
         
         if linearOp is None:
-            self.dataLinOp = MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
+            self.dataLinOp = ut.MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
             self.nPrimalVars = self.ncolsOfA
             self.dataLinOpFlag = False
         
@@ -172,8 +164,8 @@ class ProjSplitFit(object):
                     # the first entry of the input is the intercept which is 
                     # just passed through
                     
-                    matvec,rmatvec = expandOperator(linearOp)
-                    self.dataLinOp = MyLinearOperator(matvec,rmatvec)
+                    matvec,rmatvec = ut.expandOperator(linearOp)
+                    self.dataLinOp = ut.MyLinearOperator(matvec,rmatvec)
                     self.nPrimalVars = linearOp.shape[1]
                     self.dataLinOpFlag = True 
             except:
@@ -327,7 +319,7 @@ class ProjSplitFit(object):
             regObj.addLinear(linearOp,True)
         else:
             regObj.addLinear(
-                MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x), False)
+                ut.MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x), False)
         
         self.internalResetIterate = True # Ensures we reset the variables if we add another regularizer 
     
@@ -565,7 +557,7 @@ class ProjSplitFit(object):
         if blocksPerIteration >= self.nDataBlocks:
             blocksPerIteration = self.nDataBlocks
             
-        self.partition = createApartition(self.nrowsOfA,self.nDataBlocks)
+        self.partition = ut.createApartition(self.nrowsOfA,self.nDataBlocks)
                     
         self.__setUpRegularizers()
                                             
@@ -899,50 +891,4 @@ class ProjSplitFit(object):
                 
                 self.wreg[-1] = GstarNegSumw
         
-
-#-----------------------------------------------------------------------------
-#Miscelaneous utilities
-        
-def totalVariation1d(n):
-    pass
-
-def dropFirst(n):
-    pass
-
-class MyLinearOperator():
-    '''
-    Because scipy's linear operator requires passing in the shape
-    of a linear operator, we had to create my own "dumb" linear operator class.
-    This is used because a regularizer may be created with no composed linear operator,
-    and to deal with this we create an identity linear operator which just passes
-    through the input to output. But we don't necessarily know the dimensions at
-    that point, because addData() may not yet have been called. 
-    '''
-    def __init__(self,matvec,rmatvec):
-        self.matvec=matvec
-        self.rmatvec=rmatvec
-        
-def expandOperator(linearOp):
-    expandMatVec = lambda x: concatenate((array([x[0]]),linearOp.matvec(x[1:])))
-    expandrMatVec = lambda x: concatenate((array([x[0]]),linearOp.rmatvec(x[1:])))
-    return expandMatVec,expandrMatVec
-    
-def createApartition(nrows,n_partitions):
-    
-    if nrows%n_partitions == 0:
-        partition_size = nrows // n_partitions
-        partition_list = [range(i*partition_size,(i+1)*partition_size) for i in range(0,n_partitions)]
-    else:
-        n_with_ceil = nrows%n_partitions
-        flr = nrows//n_partitions
-        ceil = flr+1
-        partition_list = [range(i*ceil,(i+1)*ceil) for i in range(0,n_with_ceil)]            
-        endFirstPart = n_with_ceil*ceil
-        partition_list.extend([range(endFirstPart + i*flr, endFirstPart + (i+1)*flr) 
-                                for i in range(0,n_partitions - n_with_ceil)])
-
-    return partition_list
-
-
-
 

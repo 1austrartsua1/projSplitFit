@@ -5,16 +5,12 @@ Created on Wed Jul  1 16:16:02 2020
 @author: pjohn
 """
 
-from numpy import array
-from numpy import concatenate
 from numpy import zeros
 from numpy import copy as npcopy 
-from numpy import ones
 from numpy import identity
 from numpy.linalg import inv as npinv
-
-
 from numpy.linalg import norm
+from userInputVal import *
 #-----------------------------------------------------------------------------
 # processor class and related objects
 #-----------------------------------------------------------------------------
@@ -50,7 +46,8 @@ class ProjSplitLossProcessor(object):
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
     def __init__(self,step=1.0):
-        self.step = step
+        
+        self.step = checkUserInput(step,float,'float','stepsize',1.0,0.0,None)             
         self.embedOK = True
         
     def update(self,psObj,block):        
