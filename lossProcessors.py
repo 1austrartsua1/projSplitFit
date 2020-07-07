@@ -47,7 +47,7 @@ class ProjSplitLossProcessor(object):
 class Forward2Fixed(ProjSplitLossProcessor):
     def __init__(self,step=1.0):
         
-        self.step = checkUserInput(step,float,'float','stepsize',1.0,0.0,None)             
+        self.step = checkUserInput(step,float,'float','stepsize',default=1.0,low=0.0)             
         self.embedOK = True
         
     def update(self,psObj,block):        
@@ -64,11 +64,14 @@ class Forward2Backtrack(ProjSplitLossProcessor):
     def __init__(self,initialStep=1.0,Delta=1.0,backtrackFactor=0.7,
                  growFactor=1.0,growFreq=None):
         self.embedOK = True
-        self.step = initialStep
-        self.Delta = Delta
-        self.decFactor = backtrackFactor
-        self.growFactor = growFactor
-        self.growFreq = growFreq
+        self.step = checkUserInput(initialStep,float,'float','stepsize',default=1.0,low=0.0)                     
+        self.Delta = checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
+        self.decFactor = checkUserInput(backtrackFactor,float,'float','backtrackFactor',default=0.7,low=0.0,high=1.0)                     
+        self.growFactor = checkUserInput(growFactor,float,'float','growFactor',default=1.1,high=1.0,highAllowed=True)
+        if growFreq == None:
+            self.growFreq = None
+        else:
+            self.growFreq = checkUserInput(growFreq,int,'int','growFreq',default=10,low = 0)
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]

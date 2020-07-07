@@ -11,15 +11,24 @@ class ExceptLow(Exception):
 class ExceptHigh(Exception):
     pass
 
-def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,low=None,high=None):
+def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,low=None,lowAllowed=False,high=None,highAllowed=False):
     try:
         output = rightType(userInput)        
         if low != None:
-            if output<=low:
-                raise ExceptLow
+            if lowAllowed:
+                if output<low:
+                    raise ExceptLow
+            else:
+                if output<=low:
+                    raise ExceptLow
+        
         if high != None:
-            if output>=high:
-                raise ExceptHigh
+            if highAllowed:
+                if output>high:
+                    raise ExceptHigh
+            else:
+                if output>=high:
+                    raise ExceptHigh
         return output                        
     except(ValueError):        
         if default == None:
