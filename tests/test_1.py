@@ -46,13 +46,13 @@ def test_L1():
     #projSplit = ps.ProjSplitFit()
     scale = 15.0
     regObj = L1(scale)
-    assert regObj.getScalingAndStepsize()==(scale,1.0)
+    assert regObj.getScaling()==scale
     scale = -1.0
     regObj = L1(scale)
-    assert regObj.getScalingAndStepsize()==(1.0,1.0)
+    assert (regObj.getScaling(),regObj.getStepsize())==(1.0,1.0)
     
     regObj = L1(scale)
-    assert regObj.getScalingAndStepsize()==(1.0,1.0)
+    assert (regObj.getScaling(),regObj.getStepsize())==(1.0,1.0)
     
     scale = 11.5
     rho = 3.0
@@ -74,7 +74,7 @@ def test_add_regularizer():
     projSplit.addRegularizer(regObj)
     scale2 = 15.7
     regObj.setScaling(scale2)
-    assert (projSplit.allRegularizers[0].getScalingAndStepsize()==(scale2,1.0))
+    assert (projSplit.allRegularizers[0].getScaling()==scale2)
 
 def test_add_regularizer2():
     projSplit = ps.ProjSplitFit()    
@@ -83,7 +83,7 @@ def test_add_regularizer2():
     projSplit.addRegularizer(regObj,embed = True)
     scale2 = 15.7
     regObj.setScaling(scale2)
-    assert (projSplit.embedded.getScalingAndStepsize()==(scale2,1.0))
+    assert (projSplit.embedded.getScaling()==scale2)
 
 
 def test_add_linear_ops():

@@ -10,7 +10,7 @@ from numpy import copy as npcopy
 from numpy import identity
 from numpy.linalg import inv as npinv
 from numpy.linalg import norm
-from userInputVal import *
+import userInputVal as ui
 #-----------------------------------------------------------------------------
 # processor class and related objects
 #-----------------------------------------------------------------------------
@@ -38,16 +38,23 @@ class ProjSplitLossProcessor(object):
     
     def initialize(self,psObj):
         '''
-            can be overwritten by children classes that need to do initialization
+            can implement required initialization for the loss processor
         '''
         pass 
+    
+    def update(self,psObj,block):
+        '''
+            Update psObj.xdata[block] and psObj.ydata[block].
+            This method must be implemented. 
+        '''
+        pass
         
         
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
     def __init__(self,step=1.0):
         
-        self.step = checkUserInput(step,float,'float','stepsize',default=1.0,low=0.0)             
+        self.step = ui.checkUserInput(step,float,'float','stepsize',default=1.0,low=0.0)             
         self.embedOK = True
         
     def update(self,psObj,block):        
@@ -64,14 +71,14 @@ class Forward2Backtrack(ProjSplitLossProcessor):
     def __init__(self,initialStep=1.0,Delta=1.0,backtrackFactor=0.7,
                  growFactor=1.0,growFreq=None):
         self.embedOK = True
-        self.step = checkUserInput(initialStep,float,'float','stepsize',default=1.0,low=0.0)                     
-        self.Delta = checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
-        self.decFactor = checkUserInput(backtrackFactor,float,'float','backtrackFactor',default=0.7,low=0.0,high=1.0)                     
-        self.growFactor = checkUserInput(growFactor,float,'float','growFactor',default=1.1,high=1.0,highAllowed=True)
+        self.step = ui.checkUserInput(initialStep,float,'float','stepsize',default=1.0,low=0.0)                     
+        self.Delta = ui.checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
+        self.decFactor = ui.checkUserInput(backtrackFactor,float,'float','backtrackFactor',default=0.7,low=0.0,high=1.0)                     
+        self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.1,high=1.0,highAllowed=True)
         if growFreq == None:
             self.growFreq = None
         else:
-            self.growFreq = checkUserInput(growFreq,int,'int','growFreq',default=10,low = 0)
+            self.growFreq = ui.checkUserInput(growFreq,int,'int','growFreq',default=10,low = 0)
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]
@@ -102,7 +109,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
 class Forward2Affine(ProjSplitLossProcessor):
     def __init__(self,Delta=1.0):
         self.embedOK = False
-        self.Delta=Delta 
+        self.Delta = ui.checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
         self.pMustBe2 = True 
         
     def update(self,psObj,block):
@@ -121,8 +128,8 @@ class Forward2Affine(ProjSplitLossProcessor):
     
 class  Forward1Fixed(ProjSplitLossProcessor):
     def __init__(self,stepsize, blendFactor=0.1):
-        self.step = stepsize
-        self.alpha = blendFactor
+        self.step = ui.checkUserInput(stepsize,float,'float','stepsize',default=1.0,low=0.0)             
+        self.alpha = ui.checkUserInput(blendFactor,float,'float','blendFactor',default=0.1,low=0.0,high=1.0)
         self.embedOK = True 
         
     def initialize(self,psObj):    
@@ -152,11 +159,18 @@ class Forward1Backtrack(ProjSplitLossProcessor):
     def __init__(self,initialStep=1.0, blendFactor=0.1,backTrackFactor = 0.7, 
                  growFactor = 1.0, growFreq = None):
         self.embedOK = True 
-        self.step = initialStep
-        self.alpha = blendFactor
+        self.step = ui.checkUserInput(initialStep,float,'float','initialStep',default=1.0,low=0.0)             
+        self.alpha = ui.checkUserInput(blendFactor,float,'float','blendFactor',default=0.1,low=0.0,high=1.0)
+        
         self.delta = backTrackFactor
-        self.growFac = growFactor
-        self.growFreq = growFreq
+        self.delta = ui.checkUserInput(backTrackFactor,float,'float','backTrackFactor',default=0.7,low=0.0,high=1.0)
+        self.growFac = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.0,low=1.0,lowAllowed=True)
+        
+        if growFreq == None:
+            self.growFreq = None
+        else:
+            self.growFreq = ui.checkUserInput(growFreq,int,'int','growFreq',default=10,low = 0)
+            
         self.eta = float('inf')
         
     def initialize(self,psObj):
@@ -164,7 +178,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
            this routine is used by Foward1Backtrack
            to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
         '''
-        # initalize theta_hat
+        
         self.thetahat = zeros(psObj.xdata.shape)
         self.what = zeros(psObj.xdata.shape)
         self.gradxdata = zeros(psObj.xdata.shape)
@@ -172,7 +186,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
             thisSlice = psObj.partition[block]
             self.thetahat[block][1:] = psObj.embedded.getProx(self.thetahat[block][1:])
             self.thetahat[block][0] = 0.0
-            self.what[block] = -psObj.embedded.getScalingAndStepsize()[1]**(-1)*self.thetahat[block]
+            self.what[block] = -psObj.embedded.getStepsize()**(-1)*self.thetahat[block]
             self.gradxdata[block] = self.getAGrad(psObj,self.thetahat[block],thisSlice)        
             self.what[block] += self.gradxdata[block]
         
@@ -238,7 +252,9 @@ class BackwardExact(ProjSplitLossProcessor):
     def __init__(self,stepsize=1.0):
         self.embedOK = False
         self.pMustBe2 = True
-        self.step = stepsize 
+        
+        self.step = ui.checkUserInput(stepsize,float,'float','stepsize',default=1.0,low=0.0)                     
+        
         self.stepChanged = False # This flag is set to True whenever the stepsize is changed via
                                  # the settep method below. This is used by the backwardExact class
                                  # which needs to update precomputed inverses whenever
@@ -316,9 +332,12 @@ class BackwardCG(ProjSplitLossProcessor):
     def __init__(self,relativeErrorFactor=0.9,stepsize=1.0,maxIter=100):
         self.embedOK = False
         self.pMustBe2 = True
-        self.step = stepsize
-        self.sigma = relativeErrorFactor
-        self.maxIter = maxIter
+        
+        self.step = ui.checkUserInput(stepsize,float,'float','stepsize',default=1.0,low=0.0)
+        self.sigma = ui.checkUserInput(relativeErrorFactor,float,'float',
+                                       'relativeErrorFactor',default=0.9,low=0.0,high=1.0,lowAllowed=True)     
+        self.maxIter = ui.checkUserInput(maxIter,int,'int','maxIter',default=100,low=0)
+        
     
     def initialize(self,psObj):
                 
@@ -393,15 +412,27 @@ class BackwardLBFGS(ProjSplitLossProcessor):
                  c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1,
                  maxiter=100,lineSearchIter = 20):
         self.embedOK = False
-        self.step = float(step)
-        self.sigma = float(relativeErrorFactor)
-        self.m = int(memory)
-        self.c1 = float(c1)
-        self.c2 = float(c2)
-        self.shrinkFactor = float(shrinkFactor)
-        self.growFactor = float(growFactor)
-        self.maxiter = int(maxiter)
-        self.lineSearchIter = int(lineSearchIter)
+        self.step = ui.checkUserInput(step,float,'float','stepsize',default=1.0,low=0.0)                     
+        self.sigma = ui.checkUserInput(relativeErrorFactor,float,'float',
+                                       'relativeErrorFactor',default=0.9,low=0.0,high=1.0,lowAllowed=True)     
+        
+        self.m = ui.checkUserInput(memory,int,'int','memory',default=10,low=1)
+        self.c1 = ui.checkUserInput(c1,float,'float','c1',default=1e-4,low=0.0,high=1.0)
+        self.c2 = ui.checkUserInput(c2,float,'float','c2',default=1e-4,low=0.0,high=1.0)
+        if self.c1 >= self.c2:
+            print("Warning: c1 must be less than c2. Setting to default c1=1e-4,c2=0.9")
+            self.c1=1e-4
+            self.c2=0.9
+        
+        self.shrinkFactor = ui.checkUserInput(shrinkFactor,float,'float','shrinkFactor',
+                                              default=0.7,low=0.0,high=1.0)
+
+        self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',
+                                         default=1.0,low=1.0,lowAllowed=True)
+        
+        self.maxiter = ui.checkUserInput(maxiter,int,'int','maxiter',default=100,low=0)
+        self.lineSearchIter = ui.checkUserInput(lineSearchIter,int,'int','maxiter',default=20,low=0)
+        
         
     def Fprox(self,psObj,x,thisSlice,t):
         Ax = psObj.A[thisSlice].dot(x)        
@@ -521,11 +552,11 @@ class BackwardLBFGS(ProjSplitLossProcessor):
     
         
 
-class StochasticTwoForwardStep(ProjSplitLossProcessor):
+class StochTwoForwardStep(ProjSplitLossProcessor):
     def __init__(self):
         pass
 
-class StochasticOneForwardStep(ProjSplitLossProcessor):
+class StochOneForwardStep(ProjSplitLossProcessor):
     def __init__(self):
         pass
     

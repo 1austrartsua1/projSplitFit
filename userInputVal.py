@@ -11,7 +11,8 @@ class ExceptLow(Exception):
 class ExceptHigh(Exception):
     pass
 
-def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,low=None,lowAllowed=False,high=None,highAllowed=False):
+def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,
+                   low=None,lowAllowed=False,high=None,highAllowed=False):
     try:
         output = rightType(userInput)        
         if low != None:
@@ -30,13 +31,6 @@ def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,low=N
                 if output>=high:
                     raise ExceptHigh
         return output                        
-    except(ValueError):        
-        if default == None:
-            raise Exception(f"ERROR: {inputName} is meant to be of type {typeAsString}") 
-        else:
-            print(f"WARNING: {inputName} is meant to be of type {typeAsString}")
-            print(f"Setting it to default {default}")
-            return default
     except(ExceptLow):
         if default == None:
             raise Exception(f"ERROR: {inputName} is meant to be greater than {low}") 
@@ -49,6 +43,13 @@ def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,low=N
             raise Exception(f"ERROR: {inputName} is meant to be less than {high}") 
         else:
             print(f"WARNING: {inputName} is meant to be less than {high}")
+            print(f"Setting it to default {default}")
+            return default
+    except:        
+        if default == None:
+            raise Exception(f"ERROR: {inputName} is meant to be of type {typeAsString}") 
+        else:
+            print(f"WARNING: {inputName} is meant to be of type {typeAsString}")
             print(f"Setting it to default {default}")
             return default
         

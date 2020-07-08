@@ -5,6 +5,10 @@ Created on Wed Jul  1 15:47:47 2020
 @author: pjohn
 """
 from numpy.linalg import norm
+import projSplitUtils as ut
+import userInputVal as ui
+from numpy import ones
+from scipy.sparse.linalg import aslinearoperator
 
 #-----------------------------------------------------------------------------
 # Regularizer class and related objects
@@ -33,61 +37,49 @@ class Regularizer(object):
             x and a scaling eta applied to the function. That is, this function must 
             return prox_{eta*h}(x) for inputs x and eta>=0. 
         '''
+        try:
+            test = ones(100)
+            output = value(test)
+            output = float(output)
+            output = prox(test,1.1)
+            if len(output) != 100:
+                print("Error: make sure prox outputs an array of same length as first input")
+                Exception("Error: prox method passed into Regularizer invalid")
+        except:
+            print("value must be a function of one numpy style array and return a float")
+            print("prox must be a function with two arguments, the first being a numpy style array")
+            print("and the second being a float. Must return a array same size as input")
+            Exception("Error: value or prox is invalid")
+            
         self.value = value 
         self.prox = prox 
         
-        try:            
-            nu = float(nu)                                                    
-            if nu>=0:
-                self.nu = nu    
-            else:
-                print("Error: scaling must be >=0, keeping it set to 1.0")
-                self.nu = 1.0 
-                                                    
-        except:            
-            print("Error: scaling must be float>=0, setting it to 1.0")
-            self.nu = 1.0 
-            
-        try:
-            step = float(step)
-            if step>=0:
-                    self.step = step    
-            else:
-                print("Error: scaling must be >=0, keeping it set to 1.0")
-                self.step = 1.0
-            
-        except:
-            print("Error: scaling must be >=0, keeping it set to 1.0")
-            self.step = 1.0
+        self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
+        self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
+       
     
-    def addLinear(self,linearOp,linearOpFlag):
-        self.linearOp = linearOp        
-        self.linearOpFlag = linearOpFlag        
+    def addLinear(self,linearOp=None):
+        if linearOp is None:
+            self.linearOp = ut.MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
+            self.linearOpUsed = False
+        else:
+            try:
+                self.linearOp = aslinearoperator(linearOp)        
+                self.linearOpUsed = True        
+            except:
+                Exception("linearOp invalid. Use scipy.sparse.linalg.aslinearoperator or similar")
         
     def setScaling(self,nu):
-        try:        
-            if nu>=0:
-                self.nu = nu    
-            else:
-                print("Error: scaling must be >=0, keeping it set to 1.0")
-                self.nu = 1.0 
-        except:
-            print("Error: scaling must be float>=0, setting it to 1.0")
-            self.nu = 1.0 
+        self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
 
     def setStep(self,step):
-        try:        
-            if step>=0:
-                self.step = float(step)
-            else:
-                print("Error: stepsize must be >=0, keeping it set to 1.0")
-                self.step = 1.0 
-        except:
-            print("Error: stepsize must be float>=0, setting it to 1.0")
-            self.step = 1.0 
+        self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
             
-    def getScalingAndStepsize(self):
-        return self.nu,self.step  
+    def getScaling(self):
+        return self.nu
+    
+    def getStepsize(self):
+        return self.step 
     
     def evaluate(self,x):
         return self.nu*self.value(x)

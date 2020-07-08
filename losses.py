@@ -34,12 +34,10 @@ class Loss(object):
                     else:
                         self.derivative = None                     
                 elif(p<1):
-                    print("Error, lossFunction is not >= 1")
-                    raise Exception                                                                      
+                    raise Exception("Error, lossFunction p is not >= 1")                                                                      
             except:                              
-                print("lossFunction input error")
-                print("for loss, input either an int or double >= 1, 'logistic', or an object derived from class LossPlugIn")
-                raise Exception
+                print("for loss, input either an int or float >= 1, 'logistic', or an object derived from class LossPlugIn")
+                raise Exception("lossFunction input error")
             
                 
 def LR_loss(yhat,y):
@@ -63,5 +61,18 @@ def LR_derivative(yhat,y):
     
 class LossPlugIn(object):
     def __init__(self,value,derivative):
+        try:
+            test = ones(100)
+            output = value(test)
+            output = float(output)
+            output = derivative(output,output)
+            if len(output)!= 100:
+                raise Exception
+        except:
+            print("Value should be a function of one array which outputs a float")
+            print("derivative is a function of two arrays of the same shape which outputs an array")
+            print("of the same shape")
+            raise Exception("Value or derivative incorrect")
+            
         self.value = value
         self.derivative = derivative
