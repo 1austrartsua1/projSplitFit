@@ -38,18 +38,19 @@ class Regularizer(object):
             return prox_{eta*h}(x) for inputs x and eta>=0. 
         '''
         try:
-            test = ones(100)
+            test = ones(100)            
             output = value(test)
             output = float(output)
+                
             output = prox(test,1.1)
             if len(output) != 100:
                 print("Error: make sure prox outputs an array of same length as first input")
-                Exception("Error: prox method passed into Regularizer invalid")
+                raise Exception("Error: prox method passed into Regularizer invalid")
         except:
             print("value must be a function of one numpy style array and return a float")
             print("prox must be a function with two arguments, the first being a numpy style array")
-            print("and the second being a float. Must return a array same size as input")
-            Exception("Error: value or prox is invalid")
+            print("and the second being a float. Must return an array same size as input")
+            raise Exception("Error: value or prox is invalid")
             
         self.value = value 
         self.prox = prox 
@@ -67,7 +68,7 @@ class Regularizer(object):
                 self.linearOp = aslinearoperator(linearOp)        
                 self.linearOpUsed = True        
             except:
-                Exception("linearOp invalid. Use scipy.sparse.linalg.aslinearoperator or similar")
+                raise Exception("linearOp invalid. Use scipy.sparse.linalg.aslinearoperator or similar")
         
     def setScaling(self,nu):
         self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)

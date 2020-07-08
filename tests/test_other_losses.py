@@ -2,7 +2,6 @@
 """
 Created on Fri May 22 16:51:55 2020
 
-@author: pjohn
 """
 
 getNewOptVals = False
@@ -81,14 +80,13 @@ def test_other_p(p,process,testNumber):
     
     print("ps val  = {}".format(ps_val))
     print("cvx val  = {}".format(opt))
-    
-    
-    
+        
+    assert abs(ps_val - opt) < 1e-2
+
+
+def test_writeCache2Disk():
     if getNewOptVals:
         with open('results/cache_otherLosses','wb') as file:
             pickle.dump(cache_otherLosses,file)
-        
-    
-    assert abs(ps_val - opt) < 1e-2
     
     

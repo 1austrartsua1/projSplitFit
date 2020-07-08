@@ -137,11 +137,17 @@ class ProjSplitFit(object):
             self.A = None
             self.yresponse = None
             raise Exception("Error. A dimension of the observation matrix is 0. Must be 2D.") 
+            
         
-        if process.pMustBe2 and (loss != 2):
+        if isinstance(process,lp.ProjSplitLossProcessor) == False:
+            raise Exception("process must be an object of a class derived from ProjSplitLossProcessor")
+        else:
+            self.process = process
+        
+        if self.process.pMustBe2 and (loss != 2):
             print("Warning: this process object only works for the squared loss")
             print("Using Forward2Backtrack() as the process object")
-            process = lp.Forward2Backtrack()
+            self.process = lp.Forward2Backtrack()
             
         
         if linearOp is None:
@@ -208,10 +214,7 @@ class ProjSplitFit(object):
         
         self.loss = Loss(loss)
            
-        if isinstance(process,lp.ProjSplitLossProcessor) == False:
-            raise Exception("process must be an object of a class derived from ProjSplitLossProcessor")
-        else:
-            self.process = process
+        
         
         if self.embeddedRegInUse & (self.process.embedOK == False):
             print("WARNING: A regularizer was added with embedded = True")
@@ -678,7 +681,7 @@ class ProjSplitFit(object):
         if self.embeddedRegInUse == False:
             # if no embedded reg added, create an artificial embedded reg
             # with a "pass-through" prox
-            self.embedded = Regularizer(None,(lambda x,scale:x))
+            self.embedded = Regularizer(lambda x:0,(lambda x,scale:x))
         else:
             if self.embedded.getStepsize() != self.process.getStep():
                 print("WARNING: embedded regularizer must use the same stepsize as the Loss update process")

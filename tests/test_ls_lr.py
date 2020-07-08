@@ -1,21 +1,31 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 29 16:16:24 2020
-
-@author: pjohn
 """
+
+getNewOptVals = True
 import sys
 sys.path.append('../')
 import projSplit as ps 
 import lossProcessors as lp
 
 import numpy as np
+import pickle
 import pytest 
 from matplotlib import pyplot as plt
-from utils import runCVX_LR
-from utils import getLSdata
 
-#np.random.seed(1987)
+
+
+if getNewOptVals:
+    from utils import runCVX_LR
+    from utils import getLSdata
+    cache = {}
+else:
+    with open('results/cache_lslr','rb') as file:
+        cache = pickle.load(file)
+        
+    
+
 
 
     
@@ -167,8 +177,10 @@ f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG(maxIter=100)
 backLBFGS = lp.BackwardLBFGS()
-toDo = [(f2fixed,False,False),(f2fixed,True,False),
-        (f2fixed,False,True),(f2fixed,True,True)]
+toDo = [(f1bt,False,False),(f1bt,True,False),
+        (f1bt,False,True),(f1bt,True,True)]    
+toDo.extend([(f2fixed,False,False),(f2fixed,True,False),
+        (f2fixed,False,True),(f2fixed,True,True)])
 toDo.extend([(backLBFGS,False,False),(backLBFGS,True,False),
         (backLBFGS,False,True),(backLBFGS,True,True)])
 toDo.extend([(f2bt,False,False),(f2bt,True,False),
@@ -177,8 +189,6 @@ toDo.extend([(f2affine,False,False),(f2affine,True,False),
         (f2affine,False,True),(f2affine,True,True)])
 toDo.extend([(f1fixed,False,False),(f1fixed,True,False),
         (f1fixed,False,True),(f1fixed,True,True)])
-toDo.extend([(f1bt,False,False),(f1bt,True,False),
-        (f1bt,False,True),(f1bt,True,True)])
 toDo.extend([(back_exact,False,False),(back_exact,True,False),
         (back_exact,False,True),(back_exact,True,True)])
 toDo.extend([(backCG,False,False),(backCG,True,False),
@@ -355,21 +365,18 @@ backCG = lp.BackwardCG(maxIter=100)
 backLBFGS = lp.BackwardLBFGS()
 ToDo = [(1,False,False,backLBFGS),(1,True,False,backLBFGS),(1,False,True,backLBFGS),(1,True,True,backLBFGS)]
 ToDo.extend([(2,False,False,backLBFGS),(2,True,False,backLBFGS),(2,False,True,backLBFGS),(2,True,True,backLBFGS)])
-ToDo.extend([(4,False,False,backLBFGS),(4,True,False,backLBFGS),(4,False,True,backLBFGS),(4,True,True,backLBFGS)])
-ToDo.extend([(8,False,False,backLBFGS),(8,True,False,backLBFGS),(8,False,True,backLBFGS),(8,True,True,backLBFGS)])
-ToDo.extend([(16,False,False,backLBFGS),(16,True,False,backLBFGS),(16,False,True,backLBFGS),(16,True,True,backLBFGS)])
+
+
 
 ToDo.extend([(1,False,False,back_exact),(1,True,False,back_exact),(1,False,True,back_exact),(1,True,True,back_exact)])
 ToDo.extend([(2,False,False,back_exact),(2,True,False,back_exact),(2,False,True,back_exact),(2,True,True,back_exact)])
-ToDo.extend([(4,False,False,back_exact),(4,True,False,back_exact),(4,False,True,back_exact),(4,True,True,back_exact)])
-ToDo.extend([(8,False,False,back_exact),(8,True,False,back_exact),(8,False,True,back_exact),(8,True,True,back_exact)])
-ToDo.extend([(16,False,False,back_exact),(16,True,False,back_exact),(16,False,True,back_exact),(16,True,True,back_exact)])
+
+
 
 ToDo.extend([(1,False,False,backCG),(1,True,False,backCG),(1,False,True,backCG),(1,True,True,backCG)])
 ToDo.extend([(2,False,False,backCG),(2,True,False,backCG),(2,False,True,backCG),(2,True,True,backCG)])
-ToDo.extend([(4,False,False,backCG),(4,True,False,backCG),(4,False,True,backCG),(4,True,True,backCG)])
-ToDo.extend([(8,False,False,backCG),(8,True,False,backCG),(8,False,True,backCG),(8,True,True,backCG)])
-ToDo.extend([(16,False,False,backCG),(16,True,False,backCG),(16,False,True,backCG),(16,True,True,backCG)])
+
+
 
 @pytest.mark.parametrize("nblk,inter,norm,processor",ToDo) 
 def test_backward(nblk,inter,norm,processor):
