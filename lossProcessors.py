@@ -16,6 +16,15 @@ import userInputVal as ui
 #-----------------------------------------------------------------------------
         
 class ProjSplitLossProcessor(object):
+    '''
+    Parent class for loss processors to use in ProjSplitFit.addData method. 
+    
+    Loss processors "process" the loss. They update variable blocks within 
+    projective splitting associated with the loss. Various strategies have 
+    been devised over the years. Originally, the loss was process via backward 
+    steps, i.e. proximal operators. More recently, people have investigated
+    using forward steps, i.e. gradient calculations for differentiable losses. 
+    '''
     pMustBe2 = False # This flag to True for lossProcessors which can only be applied 
                      # to the case where p=2, i.e. quadratic loss. 
                      # Such as Forward2Affine, BackwardExact, and BackwardCG
@@ -24,26 +33,45 @@ class ProjSplitLossProcessor(object):
                      # but backward classes cannot. 
                      
     @staticmethod
-    def getAGrad(psObj,point,thisSlice):        
+    def _getAGrad(psObj,point,thisSlice):        
         yhat = psObj.A[thisSlice].dot(point)
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
         grad = (1.0/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(gradL)        
         return grad  
       
     def getStep(self):
+        '''
+        Get the stepsize in use with this loss processor.
+        
+        Returns
+        -------
+        float
+        '''
         return self.step
     
     def setStep(self,step):
+        '''
+        Set the stepsize in use with this loss processor.
+        
+        Parameters
+        -------
+        float
+        '''
+        
         self.step = step
     
     def initialize(self,psObj):
         '''
+            Intended to be replaced with derived class method. 
+        
             can implement required initialization for the loss processor
         '''
         pass 
     
     def update(self,psObj,block):
         '''
+            Intended to be replaced with derived class method. 
+            
             Update psObj.xdata[block] and psObj.ydata[block].
             This method must be implemented. 
         '''
@@ -52,24 +80,66 @@ class ProjSplitLossProcessor(object):
         
 #############
 class Forward2Fixed(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    Two forward steps with a fixed stepsize. See https://arxiv.org/abs/1803.07043.    
+    
+    '''
     def __init__(self,step=1.0):
+        '''
+        Parameters
+        ----------
+            step : float,optional
+                stepsize, defaults to 1.0
+        '''
         
         self.step = ui.checkUserInput(step,float,'float','stepsize',default=1.0,low=0.0)             
         self.embedOK = True
         
     def update(self,psObj,block):        
         thisSlice = psObj.partition[block]
-        gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
+        gradHz = self._getAGrad(psObj,psObj.Hz,thisSlice)
         t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
         psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
         psObj.xdata[block][0] = t[0]        
         a = self.step**(-1)*(t-psObj.xdata[block])
-        gradx = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+        gradx = self._getAGrad(psObj,psObj.xdata[block],thisSlice)        
         psObj.ydata[block] = a + gradx        
         
 class Forward2Backtrack(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    Two forward steps with backtracking linesearch stepsize. 
+    See https://arxiv.org/abs/1803.07043.    
+    
+    '''
     def __init__(self,initialStep=1.0,Delta=1.0,backtrackFactor=0.7,
                  growFactor=1.0,growFreq=None):
+        '''
+        Parameters
+        ----------
+            step : float,optional
+                stepsize, defaults to 1.0
+                
+            Delta : float,optional
+                parameter in backtracking line search check condition.
+                Defaults to 1.0
+                
+            backtrackFactor : float,optional
+                How much to decrement the stepsize by at each iteration. 
+                Must be between 0 and 1. Defaults to 0.7
+            
+            growFactor : float,optional
+                How much to grow the stepsize by before backtracking. Must
+                be >= 1.0. Defaults to 1.0
+                
+            growFreq : int,optional
+                How often to grow the stepsize, defaults to None, which means
+                never grow the stepsize. Must be an int >= 1. 
+        '''
+        
         self.embedOK = True
         self.step = ui.checkUserInput(initialStep,float,'float','stepsize',default=1.0,low=0.0)                     
         self.Delta = ui.checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
@@ -82,7 +152,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]
-        gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
+        gradHz = self._getAGrad(psObj,psObj.Hz,thisSlice)
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
                 # time to grow the stepsize
@@ -94,7 +164,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
             psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]        
             a = self.step**(-1)*(t-psObj.xdata[block])
-            gradx = self.getAGrad(psObj,psObj.xdata[block],thisSlice)        
+            gradx = self._getAGrad(psObj,psObj.xdata[block],thisSlice)        
             psObj.ydata[block] = a + gradx  
             lhs = psObj.Hz - psObj.xdata[block]
             rhs = psObj.ydata[block] - psObj.wdata[block]
@@ -107,14 +177,30 @@ class Forward2Backtrack(ProjSplitLossProcessor):
         
     
 class Forward2Affine(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    Two forward steps with stepsize automatically tuned. Only works for affine 
+    gradients, i.e. when the loss is the squared loss, i.e. p = 2.
+    See https://arxiv.org/abs/1803.07043.    
+    
+    '''
     def __init__(self,Delta=1.0):
+        '''
+        Parameters
+        ----------
+            Delta : float,optional
+                parameter in backtracking line search check condition.
+                Defaults to 1.0
+                            
+        '''
         self.embedOK = False
         self.Delta = ui.checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
         self.pMustBe2 = True 
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]
-        gradHz = self.getAGrad(psObj,psObj.Hz,thisSlice)
+        gradHz = self._getAGrad(psObj,psObj.Hz,thisSlice)
         lhs = gradHz - psObj.wdata[block]
         
         yhat = psObj.A[thisSlice].dot(lhs)        
@@ -127,7 +213,24 @@ class Forward2Affine(ProjSplitLossProcessor):
         
     
 class  Forward1Fixed(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    One forward step with a fixed stepsize. See https://arxiv.org/abs/1902.09025.    
+    
+    '''
     def __init__(self,stepsize, blendFactor=0.1):
+        '''
+        Parameters
+        ----------
+            stepsize : float,optional
+                stepsize, defaults to 1.0
+            
+            blendFactor : float,optional
+                Averaging parameter in one forward step update. Defaults to 1.0.
+                Must be between 0 and 1. 
+                        
+        '''
         self.step = ui.checkUserInput(stepsize,float,'float','stepsize',default=1.0,low=0.0)             
         self.alpha = ui.checkUserInput(blendFactor,float,'float','blendFactor',default=0.1,low=0.0,high=1.0)
         self.embedOK = True 
@@ -142,7 +245,7 @@ class  Forward1Fixed(ProjSplitLossProcessor):
         
         for block in range(psObj.nDataBlocks):
             thisSlice = psObj.partition[block]
-            self.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice)     
+            self.gradxdata[block] = self._getAGrad(psObj,psObj.xdata[block],thisSlice)     
         
     def update(self,psObj,block):                                
         thisSlice = psObj.partition[block]
@@ -150,14 +253,43 @@ class  Forward1Fixed(ProjSplitLossProcessor):
             - self.step*(self.gradxdata[block] - psObj.wdata[block])
         psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
         psObj.xdata[block][0] = t[0]   
-        self.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+        self.gradxdata[block] = self._getAGrad(psObj,psObj.xdata[block],thisSlice) 
         psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+self.gradxdata[block]
         
   
     
 class Forward1Backtrack(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    One forward step with a backtracking line-search stepsize. 
+    See https://arxiv.org/abs/1902.09025.    
+    
+    '''
     def __init__(self,initialStep=1.0, blendFactor=0.1,backTrackFactor = 0.7, 
                  growFactor = 1.0, growFreq = None):
+        '''
+        Parameters
+        ----------
+            initialStep : float,optional
+                Stepsize in first iteration, defaults to 1.0                            
+            
+            blendFactor : float,optional
+                Averaging parameter in one forward step update. Defaults to 1.0.
+                Must be between 0 and 1.
+                
+            backtrackFactor : float,optional
+                How much to decrement the stepsize by at each iteration. 
+                Must be between 0 and 1. Defaults to 0.7
+            
+            growFactor : float,optional
+                How much to grow the stepsize by before backtracking. Must
+                be >= 1.0. Defaults to 1.0
+                
+            growFreq : int,optional
+                How often to grow the stepsize, defaults to None, which means
+                never grow the stepsize. Must be an int >= 1. 
+        '''
         self.embedOK = True 
         self.step = ui.checkUserInput(initialStep,float,'float','initialStep',default=1.0,low=0.0)             
         self.alpha = ui.checkUserInput(blendFactor,float,'float','blendFactor',default=0.1,low=0.0,high=1.0)
@@ -187,7 +319,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
             self.thetahat[block][1:] = psObj.embedded.getProx(self.thetahat[block][1:])
             self.thetahat[block][0] = 0.0
             self.what[block] = -psObj.embedded.getStepsize()**(-1)*self.thetahat[block]
-            self.gradxdata[block] = self.getAGrad(psObj,self.thetahat[block],thisSlice)        
+            self.gradxdata[block] = self._getAGrad(psObj,self.thetahat[block],thisSlice)        
             self.what[block] += self.gradxdata[block]
         
         psObj.xdata = self.thetahat
@@ -219,7 +351,7 @@ class Forward1Backtrack(ProjSplitLossProcessor):
             psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]   
             
-            self.gradxdata[block] = self.getAGrad(psObj,psObj.xdata[block],thisSlice) 
+            self.gradxdata[block] = self._getAGrad(psObj,psObj.xdata[block],thisSlice) 
             psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+self.gradxdata[block]
             
             yhat = self.step**(-1)*( (1-self.alpha)*xold +self.alpha*psObj.Hz - psObj.xdata[block] )\
@@ -249,7 +381,24 @@ class Forward1Backtrack(ProjSplitLossProcessor):
     
 #############
 class BackwardExact(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    Exact backward step for quadratics. Only works with the squared loss, i.e. p=2.
+    Appropriate matrix inverses are cached before the first iteration. 
+    
+    See https://arxiv.org/abs/1902.09025.    
+    
+    '''
     def __init__(self,stepsize=1.0):
+        '''
+        Parameters
+        ----------
+            stepsize : float,optional
+                Stepsize, defaults to 1.0                            
+                
+        '''
+        
         self.embedOK = False
         self.pMustBe2 = True
         
@@ -329,7 +478,29 @@ class BackwardExact(ProjSplitLossProcessor):
         
         
 class BackwardCG(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    Backward step via conjugate gradient for quadratics. Only works for the squared
+    loss, i.e. p=2. 
+    
+    See https://arxiv.org/abs/1902.09025.    
+    
+    '''
     def __init__(self,relativeErrorFactor=0.9,stepsize=1.0,maxIter=100):
+        '''
+        Parameters
+        ----------
+            relativeErrorFactor : float,optional
+                sigma, relative error factor. Must be in [0,1). Defaults to 0.9
+        
+            stepsize : float,optional
+                stepsize, defaults to 1.0
+            
+            maxIter : int,optional
+                max number of iterations of conjugate gradient. Defaults to 100.
+                Must be an int >= 1. 
+        '''
         self.embedOK = False
         self.pMustBe2 = True
         
@@ -408,9 +579,55 @@ class BackwardCG(ProjSplitLossProcessor):
         
         
 class BackwardLBFGS(ProjSplitLossProcessor):
+    '''
+    Loss processor derived class. 
+    
+    Backward step via the L-BFGS solver. 
+    
+    See https://arxiv.org/abs/1902.09025.    
+    
+    '''
     def __init__(self,step=1.0,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
                  c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1,
                  maxiter=100,lineSearchIter = 20):
+        '''
+        Parameters
+        ----------
+            step : float,optional
+                Stepsize, defaults to 1.0                            
+            
+            relativeErrorFactor : float,optional
+                sigma, relative error factor. Must be in [0,1). Defaults to 0.9
+        
+            memory : int,optional
+                how many iterations of memory in L-BFGS. Defaults to 10. Must be
+                an int >= 1.
+                
+            c1 : float,optional
+                c1 parameter in the Wolfe linesearch. Defaults to 1e-4. Must
+                be between 0 and 1 and c1<c2.
+            
+            c2 : float,optional
+                c2 parameter in the Wolfe linesearch. Defaults to 0.9. Must
+                be between 0 and 1 and c1<c2.
+                
+            shrinkFactor : float,optional
+                How much to shrink stepsize during Wolfe line-search. Must be
+                between 0 and 1 and defaults to 0.7
+            
+            growFactor : float,optional
+                How much to grow stepsize during Wolfe line-search. Must be
+                > 1 and defaults to 1.1
+                        
+            maxiter : int,optional
+                max number of iterations of L-BFGS. Defaults to 100.
+                Must be an int >= 1. 
+           
+            lineSearchIter : int,optional
+                max number of iterations of Wolfe linesearch. Defaults to 20.
+                Must be an int >= 1. 
+                
+        '''
         self.embedOK = False
         self.step = ui.checkUserInput(step,float,'float','stepsize',default=1.0,low=0.0)                     
         self.sigma = ui.checkUserInput(relativeErrorFactor,float,'float',
@@ -442,7 +659,7 @@ class BackwardLBFGS(ProjSplitLossProcessor):
         return f
     
     def gradprox(self,psObj,x,thisSlice,t):
-        return self.step*self.getAGrad(psObj,x,thisSlice) + x - t
+        return self.step*self._getAGrad(psObj,x,thisSlice) + x - t
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]

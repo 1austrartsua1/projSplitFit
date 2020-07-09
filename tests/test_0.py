@@ -45,7 +45,8 @@ def test_bad_gamma(gammain):
 def test_bad_getParams():
     projSplit = ps.ProjSplitFit()
     try:
-        testing = projSplit.getParams()
+        testing = projSplit.numPrimalVars()
+        testing = projSplit.numObservations()
         
     
         testing = projSplit.getObjective()

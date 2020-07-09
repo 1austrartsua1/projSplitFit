@@ -5,10 +5,9 @@ Created on Wed Jul  1 15:47:47 2020
 @author: pjohn
 """
 from numpy.linalg import norm
-import projSplitUtils as ut
 import userInputVal as ui
 from numpy import ones
-from scipy.sparse.linalg import aslinearoperator
+
 
 #-----------------------------------------------------------------------------
 # Regularizer class and related objects
@@ -16,8 +15,10 @@ from scipy.sparse.linalg import aslinearoperator
         
 class Regularizer(object):
     '''
+      Regularizer class for use within the ProjSplitFit.addRegularizer method. 
+      
       Objects of this class are used as inputs to the addRegularizer method
-      of class ProjSplitFit to define regularizers in the objective function. 
+      of class ProjSplitFit to define regularizers in the objective function.       
       Recall the objective function:
       (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n(z_int + loss(a_i^T (G_0 z),y_i)) 
                         + sum_{k = 1}^{numReg} h_i(G_i z) }
@@ -28,14 +29,24 @@ class Regularizer(object):
     '''
     def __init__(self,value,prox,nu=1.0,step=1.0):
         '''
-        ----------
         parameters
         ----------
-        value: (function) must be a function of one parameter:  a numpy-style 
-            array x. Value returns a float which is the value of h(x)
-        prox: (function) must be a function of two parameters: a numpy-style array
-            x and a scaling eta applied to the function. That is, this function must 
-            return prox_{eta*h}(x) for inputs x and eta>=0. 
+        
+        value : function 
+            must be a function of one parameter:  a numpy-style 
+            array x. Must returns a float which is the value of h(x)
+            
+        prox : function 
+            must be a function of two parameters: a numpy-style array
+            x and a float which is the scaling eta applied to the function. 
+            That is, this function must return prox_{eta*h}(x) for inputs x and eta>=0. 
+        
+        nu : float,optional
+            Scaling to use with this regularizer. Defaults to 1.0
+            
+        step : float,optional
+            Stepsize to use in the proximal steps with this regularizer. 
+            Defaults to 1.0
         '''
         try:
             test = ones(100)            
@@ -57,35 +68,67 @@ class Regularizer(object):
         
         self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
         self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
-       
-    
-    def addLinear(self,linearOp=None):
-        if linearOp is None:
-            self.linearOp = ut.MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
-            self.linearOpUsed = False
-        else:
-            try:
-                self.linearOp = aslinearoperator(linearOp)        
-                self.linearOpUsed = True        
-            except:
-                raise Exception("linearOp invalid. Use scipy.sparse.linalg.aslinearoperator or similar")
-        
+                       
     def setScaling(self,nu):
+        '''
+        Set scaling
+        
+        Parameters
+        ----------
+        nu : float
+            scaling
+        '''
         self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
 
     def setStep(self,step):
+        '''
+        Sset stepsize
+        
+        Parameters
+        -------
+        step : float
+            stepsize
+        '''
         self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
             
     def getScaling(self):
+        '''
+        Get scaling
+        
+        Returns
+        -------
+        float : scaling
+        '''
         return self.nu
     
     def getStepsize(self):
+        '''
+        get the stepsize
+        
+        Returns
+        ------
+        float : stepsize
+        '''
         return self.step 
     
     def evaluate(self,x):
+        '''
+        Evaluate value of the function including the scaling
+        
+        Returns
+        -------
+        float
+        '''
         return self.nu*self.value(x)
     
     def getProx(self,x):                
+        '''
+        Evaluates the prox including the scaling and stepsize.
+        
+        Returns
+        -------
+        float
+        '''
         return self.prox(x,self.nu*self.step)        
     
 def L1val(x):
@@ -97,6 +140,15 @@ def L1prox(x,scale):
     return out
 
 def L1(scaling=1.0,step=1.0):
+    '''
+    Create the L1 regularizer.
+    
+    Parameters
+    Scaling : float,optional
+        Defaults to 1.0
+    Stepsize : float,optional
+        Defaluts to 1.0
+    '''
     out = Regularizer(L1val,L1prox,scaling,step)    
     return out 
 

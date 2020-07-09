@@ -36,8 +36,9 @@ def test_getParams():
     y = np.random.normal(0,1,m)
     processDummy = ProcessDummy()
     projSplit.addData(A,y,2,processDummy)
-
-    nvar,nobs = projSplit.getParams()
+    
+    nvar = projSplit.numPrimalVars()
+    nobs = projSplit.numObservations()
     assert (nvar==d+1) ,"test failed, nvar!=d+1"
     assert (nobs == m), "test failed, nobs != m"    
         

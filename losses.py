@@ -16,7 +16,20 @@ from numpy import ones
 #-----------------------------------------------------------------------------
     
 class Loss(object):
-    def __init__(self,p):        
+    '''
+    Loss class for defining the loss in ProjSplitFit.addRegularizer method. 
+    
+    '''
+    def __init__(self,p):      
+        '''
+        Parameters
+        ----------
+        p : string or int or LossPlugIn
+            May be 'logistic' to create logistic loss. An int>=1 to create the
+            absolute loss of power p>=1. May be an object of class LossPlugIn
+            if the user wishes to define their own method for derivative and 
+            value.
+        '''
         
         if(p == 'logistic'):  
             self.value = lambda yhat,y: LR_loss(yhat,y)
@@ -60,7 +73,20 @@ def LR_derivative(yhat,y):
 
     
 class LossPlugIn(object):
+    '''
+    For user-defined losses. 
+    
+    '''
     def __init__(self,value,derivative):
+        '''
+        Parameters
+        ----------
+        value : function
+            Must handle ndarray inputs and output a float
+        derivative : function
+            Must handle ndarray inputs and output ndarrays of the same shape
+            as the input. 
+        '''
         try:
             test = ones(100)
             output = value(test)
