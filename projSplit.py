@@ -45,11 +45,11 @@ class ProjSplitFit(object):
     where
         - a_1...a_n are feature vectors forming the rows of a data matrix A
         - y_1...y_n are the response values
-        - loss is the loss function dealt with via the Loss class defined in this 
-            module (see the addData method)
+        - loss is the loss function dealt with via the Loss class defined in losses.py 
+         (see the addData method)
         - H,G_1...G_{numReg} are linear operators (possibly the identity)
         - h_i are generic functions dealt with via the Regularizer class defined 
-            in this module (see addRegularizer)
+            in Regularizer.py (see also addRegularizer)
         - z_int is the intercept variable to be fit
         - z is a vector of parameters to be fit
             
