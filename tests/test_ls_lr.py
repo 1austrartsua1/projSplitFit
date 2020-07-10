@@ -217,8 +217,8 @@ def test_cyclic(processor,firsttest):
     
     
 
-stepsize = 5e-1
-f2fixed = lp.Forward2Fixed(stepsize)
+
+f2fixed = lp.Forward2Fixed()
 f2bt = lp.Forward2Backtrack()
 f2affine = lp.Forward2Affine()
 f1fixed = lp.Forward1Fixed(stepsize)
@@ -293,11 +293,11 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
     assert(abs(psSolVal - LSval) < 1e-2)
     
     
-stepsize = 5e-1
-f2fixed = lp.Forward2Fixed(stepsize)
+
+f2fixed = lp.Forward2Fixed()
 f2bt = lp.Forward2Backtrack()
 f2affine = lp.Forward2Affine()
-f1fixed = lp.Forward1Fixed(stepsize)
+f1fixed = lp.Forward1Fixed()
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
@@ -358,10 +358,10 @@ def test_ls_blocks(processor):
     PScyclic = projSplit.getObjective()
     assert abs(PSresid  - PScyclic)<1e-2
 
-stepsize = 1e0
-f2fixed = lp.Forward2Fixed(stepsize)
+
+f2fixed = lp.Forward2Fixed()
 f2bt = lp.Forward2Backtrack()
-f1fixed = lp.Forward1Fixed(stepsize)
+f1fixed = lp.Forward1Fixed()
 f1bt = lp.Forward1Backtrack()
 backLBFGS = lp.BackwardLBFGS()
 processors = [f2fixed,f2bt,f1fixed,f1bt,backLBFGS]
@@ -418,10 +418,10 @@ def test_lr(processor,norm,inter):
         
     assert abs(opt - ps_opt_val)<1e-2
     
-stepsize = 1e-1
+
 f2bt = lp.Forward2Backtrack()
-f2fixed = lp.Forward2Fixed(stepsize)
-f1fixed = lp.Forward1Fixed(stepsize)
+f2fixed = lp.Forward2Fixed()
+f1fixed = lp.Forward1Fixed()
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 @pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed),(f1bt),(back_exact)]) 
@@ -467,7 +467,7 @@ def test_blockIs1bug(processor):
 
 
 back_exact = lp.BackwardExact()
-backCG = lp.BackwardCG(maxIter=100)
+backCG = lp.BackwardCG()
 backLBFGS = lp.BackwardLBFGS()
 
 ToDo = []

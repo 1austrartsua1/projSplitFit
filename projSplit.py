@@ -584,6 +584,10 @@ class ProjSplitFit(object):
             resetIterate : bool,optional 
                 If True, the current values of all variables in projective splitting 
                 (eg: z^k, w_i^k etc) are erased and initialized to 0. Defaults to False. 
+                
+            verbose : bool,optional
+                Verbose as in printing iteration counts etc. Defaults to False.
+                
         '''
         
         if self.dataAdded == False:
