@@ -174,8 +174,7 @@ def test_bad_embed():
     projSplit.addRegularizer(regObj,embed = True)
     assert (projSplit.numRegs == 1)
 
-if __name__ == '__main__':
-    test_bad_embed()
+
     
     
 
