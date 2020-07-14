@@ -420,7 +420,7 @@ def test_lr(processor,norm,inter):
     
 
 f2bt = lp.Forward2Backtrack()
-f2fixed = lp.Forward2Fixed()
+f2fixed = lp.Forward2Fixed(1e-1)
 f1fixed = lp.Forward1Fixed()
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
@@ -538,13 +538,7 @@ def test_writeCache2Disk():
             pickle.dump(cache,file)
             
 
-if __name__ == "__main__":    
-    
-    processor = lp.BackwardLBFGS()
-    nblk = 16
-    inter = False
-    norm = False
-    test_backward(nblk,inter,norm,processor)
+
     
     
     

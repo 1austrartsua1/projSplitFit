@@ -448,9 +448,7 @@ def test_writeCache2Disk():
             
     
     
-if __name__ == '__main__':
-    processor = lp.BackwardCG()
-    test_l1_intercept_and_normalize(processor)
+
     
     
     

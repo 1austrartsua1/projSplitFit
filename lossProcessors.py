@@ -133,7 +133,7 @@ class Forward2Backtrack(ProjSplitLossProcessor):
         self.step = ui.checkUserInput(initialStep,float,'float','stepsize',default=1.0,low=0.0)                     
         self.Delta = ui.checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
         self.decFactor = ui.checkUserInput(backtrackFactor,float,'float','backtrackFactor',default=0.7,low=0.0,high=1.0)                     
-        self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.1,high=1.0,highAllowed=True)
+        self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.1,low=1.0,lowAllowed=True)
         if growFreq == None:
             self.growFreq = None
         else:
@@ -208,7 +208,7 @@ class  Forward1Fixed(ProjSplitLossProcessor):
     One forward step with a fixed stepsize. See https://arxiv.org/abs/1902.09025.    
     
     '''
-    def __init__(self,stepsize, blendFactor=0.1):
+    def __init__(self,stepsize=1.0, blendFactor=0.1):
         '''
         Parameters
         ----------

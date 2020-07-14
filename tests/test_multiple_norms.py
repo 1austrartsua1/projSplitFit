@@ -196,8 +196,6 @@ def test_writeCache2Disk():
             pickle.dump(cache,file)
             
 
-if __name__ == '__main__':
-    backLB = lp.BackwardLBFGS()
-    test_l1_multi_lasso(backLB)
+
     
     
