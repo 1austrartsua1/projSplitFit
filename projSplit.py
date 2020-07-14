@@ -39,8 +39,9 @@ class ProjSplitFit(object):
     
     The general optimization objective this can solve is
     
-    (1) min_(z,z_int){ (1.0/n)*sum_{i=1}^n loss(z_int + a_i^T (H z),y_i)
+    min_(z,z_int){ (1.0/n)*sum_{i=1}^n loss(z_int + a_i^T (H z),y_i)
                         + sum_{i = 1}^{numReg} h_i(G_i z) }
+    
     
     where
         - a_1...a_n are feature vectors forming the rows of a data matrix A
@@ -632,6 +633,7 @@ class ProjSplitFit(object):
         dualErrs = []
         phis = []
         self.runCalled = True 
+        
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################

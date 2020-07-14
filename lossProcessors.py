@@ -60,21 +60,10 @@ class ProjSplitLossProcessor(object):
         
         self.step = step
     
-    def initialize(self,psObj):
-        '''
-            Intended to be replaced with derived class method. 
-        
-            can implement required initialization for the loss processor
-        '''
+    def initialize(self,psObj):        
         pass 
     
     def update(self,psObj,block):
-        '''
-            Intended to be replaced with derived class method. 
-            
-            Update psObj.xdata[block] and psObj.ydata[block].
-            This method must be implemented. 
-        '''
         pass
         
         
@@ -769,12 +758,12 @@ class BackwardLBFGS(ProjSplitLossProcessor):
     
         
 
-class StochTwoForwardStep(ProjSplitLossProcessor):
-    def __init__(self):
-        pass
+#class StochTwoForwardStep(ProjSplitLossProcessor):
+#    def __init__(self):
+#        pass
 
-class StochOneForwardStep(ProjSplitLossProcessor):
-    def __init__(self):
-        pass
+#class StochOneForwardStep(ProjSplitLossProcessor):
+#    def __init__(self):
+#        pass
     
     

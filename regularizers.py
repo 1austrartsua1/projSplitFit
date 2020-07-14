@@ -82,7 +82,7 @@ class Regularizer(object):
 
     def setStep(self,step):
         '''
-        Sset stepsize
+        Set stepsize
         
         Parameters
         -------
@@ -111,24 +111,10 @@ class Regularizer(object):
         '''
         return self.step 
     
-    def evaluate(self,x):
-        '''
-        Evaluate value of the function including the scaling
-        
-        Returns
-        -------
-        float
-        '''
+    def evaluate(self,x):        
         return self.nu*self.value(x)
     
-    def getProx(self,x):                
-        '''
-        Evaluates the prox including the scaling and stepsize.
-        
-        Returns
-        -------
-        float
-        '''
+    def getProx(self,x):                        
         return self.prox(x,self.nu*self.step)        
     
 def L1val(x):
