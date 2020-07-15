@@ -95,7 +95,7 @@ class ProjSplitFit(object):
         ---------
         dualScaling : :obj:`float`, optional
             the primal-dual scaling parameter which is gamma in 
-            arxiv.org/abs/1803.07043 (algorithm definition page 9)            
+            arxiv.org/abs/1803.07043 (algorithm definition page 9).            
             dualScaling must be > 0 and defaults to 1.0.
         
         '''
