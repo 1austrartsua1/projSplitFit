@@ -6,7 +6,9 @@ import projSplit as ps
 import losses as ls
 from regularizers import L1
 
-from utils import getLSdata
+from numpy.random import normal
+
+
 
 
 def test_one_sided():
@@ -22,7 +24,8 @@ def test_one_sided():
     loss = ls.LossPlugIn(deriv,val)
     m = 20
     d = 50
-    A,y = getLSdata(m,d)    
+    A = normal(0,1,[m,d])
+    y = normal(0,1,m)
     
     projSplit.addData(A,y,loss=loss,intercept=False,normalize=False)
     projSplit.addRegularizer(L1())
