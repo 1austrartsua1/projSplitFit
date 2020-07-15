@@ -77,20 +77,30 @@ class LossPlugIn(object):
     For user-defined losses. 
     
     '''
-    def __init__(self,value,derivative):
+    def __init__(self,derivative,value=None):
         '''
+        Only implement value if you wish to compute objective function values 
+        of the outputs of ProjSplitFit. It is not necessary for the operation
+        of ProjSplitFit. However, if the value function is 
+        set to None, but then the ProjSplit.getObjective() method is called, 
+        then it will raise an Exception.
+        
         Parameters
         ----------
-        value : function
-            Must handle ndarray inputs and output a float
         derivative : function
             Must handle ndarray inputs and output ndarrays of the same shape
             as the input. 
+            
+        value : function,optional
+            Must handle ndarray inputs and output a float. Defaults to None, not supported.             
+            
+    
         '''
         try:
             test = ones(100)
-            output = value(test)
-            output = float(output)
+            if value is not None:
+                output = value(test)
+                output = float(output)
             output = derivative(output,output)
             if len(output)!= 100:
                 raise Exception
@@ -99,6 +109,10 @@ class LossPlugIn(object):
             print("derivative is a function of two arrays of the same shape which outputs an array")
             print("of the same shape")
             raise Exception("Value or derivative incorrect")
-            
-        self.value = value
+        
+        if value is None:
+            self.value = lambda x,y:None
+        else:    
+            self.value = value
+        
         self.derivative = derivative

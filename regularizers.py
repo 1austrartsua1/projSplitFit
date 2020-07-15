@@ -27,19 +27,25 @@ class Regularizer(object):
       The regularizer object defines these features for a single function h().
       Note the matrix G is added in the addRegularizer method of projSplitFit. 
     '''
-    def __init__(self,value,prox,nu=1.0,step=1.0):
+    def __init__(self,prox,value=None,nu=1.0,step=1.0):
         '''
+        Only define value if you wish to compute objective function values 
+        within ProjSplitFit to monitor progress, as its not necessary for the 
+        actual operation of the ProjSplitFit. However, if the value function is 
+        set to None, but then the ProjSplit.getObjective() method is called, 
+        then it will raise an Exception.
+            
         parameters
         ----------
-        
-        value : function 
-            must be a function of one parameter:  a numpy-style 
-            array x. Must returns a float which is the value of h(x)
-            
         prox : function 
             must be a function of two parameters: a numpy-style array
             x and a float which is the scaling eta applied to the function. 
             That is, this function must return prox_{eta*h}(x) for inputs x and eta>=0. 
+            
+        value : function,optional
+            must be a function of one parameter:  a numpy-style 
+            array x. Must returns a float which is the value of h(x). Default is None,
+            meaning not defined. 
         
         nu : float,optional
             Scaling to use with this regularizer. Defaults to 1.0
@@ -49,21 +55,23 @@ class Regularizer(object):
             Defaults to 1.0
         '''
         try:
-            test = ones(100)            
-            output = value(test)
-            output = float(output)
+            test = ones(100)  
+            if value is not None:
+                output = value(test)
+                output = float(output)
                 
             output = prox(test,1.1)
             if len(output) != 100:
                 print("Error: make sure prox outputs an array of same length as first input")
                 raise Exception("Error: prox method passed into Regularizer invalid")
         except:
-            print("value must be a function of one numpy style array and return a float")
+            print("value (if not None) must be a function of one numpy style array and return a float")
             print("prox must be a function with two arguments, the first being a numpy style array")
             print("and the second being a float. Must return an array same size as input")
             raise Exception("Error: value or prox is invalid")
-            
-        self.value = value 
+        
+        
+        self.value = value                         
         self.prox = prox 
         
         self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
@@ -111,8 +119,11 @@ class Regularizer(object):
         '''
         return self.step 
     
-    def evaluate(self,x):        
-        return self.nu*self.value(x)
+    def evaluate(self,x):     
+        if self.value is None:
+            return None
+        else:
+            return self.nu*self.value(x)
     
     def getProx(self,x):                        
         return self.prox(x,self.nu*self.step)        
@@ -135,7 +146,7 @@ def L1(scaling=1.0,step=1.0):
     Stepsize : float,optional
         Defaluts to 1.0
     '''
-    out = Regularizer(L1val,L1prox,scaling,step)    
+    out = Regularizer(L1prox,L1val,scaling,step)    
     return out 
 
 def partialL1(dimension,groups,scaling = 1.0):

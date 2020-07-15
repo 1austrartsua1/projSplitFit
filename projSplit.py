@@ -416,12 +416,20 @@ class ProjSplitFit(object):
         currentLoss,Hz = self.__getLoss(self.z)
         
         for reg in self.allRegularizers:
-            Hiz = reg.linearOp.matvec(self.z[1:])              
-            currentLoss += reg.evaluate(Hiz)
+            Hiz = reg.linearOp.matvec(self.z[1:]) 
+            getVal = reg.evaluate(Hiz)
+            if getVal is None:
+                raise Exception("Regularizer added without defining its value method")
+            else:                    
+                currentLoss += getVal
                 
         if self.embeddedRegInUse:
-            reg = self.embedded         
-            currentLoss += self.embeddedScaling*reg.evaluate(Hz)/reg.getScaling()
+            reg = self.embedded      
+            getVal = reg.evaluate(Hz)
+            if getVal is None:
+                raise Exception("Regularizer added without defining its value method")
+            else:
+                currentLoss += self.embeddedScaling*getVal/reg.getScaling()
         
         return currentLoss
         
@@ -939,6 +947,11 @@ class ProjSplitFit(object):
     def __getLoss(self,z):
         Hz = self.dataLinOp.matvec(z)
         AHz = self.A.dot(Hz)
+        getVal = self.loss.value(AHz,self.yresponse)
+        if getVal is None:
+            print("ERROR: If you don't implement a losses value func, set getHistory to")
+            print("False and do not compute objective values")            
+            raise Exception("Losses value function is not implemented. Cannot compute objective values.")
         currentLoss = (1.0/self.nrowsOfA)*sum(self.loss.value(AHz,self.yresponse))     
         return currentLoss,Hz
     
