@@ -47,18 +47,17 @@ class Regularizer(object):
             array x. Must returns a float which is the value of h(x). Default is None,
             meaning not defined. 
         
-        nu : float,optional
+        nu : obj:`float`,optional
             Scaling to use with this regularizer. Defaults to 1.0
             
-        step : float,optional
+        step : obj:`float`,optional
             Stepsize to use in the proximal steps with this regularizer. 
             Defaults to 1.0
         '''
         try:
             test = ones(100)  
             
-            if value is not None:
-                print(test) 
+            if value is not None:                
                 output = value(test)
                 output = float(output)
                            
@@ -85,7 +84,7 @@ class Regularizer(object):
         
         Parameters
         ----------
-        nu : float
+        nu : obj:`float`
             scaling
         '''
         self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
@@ -95,8 +94,8 @@ class Regularizer(object):
         Set stepsize
         
         Parameters
-        -------
-        step : float
+        ------------
+        step : obj:`float`
             stepsize
         '''
         self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
@@ -107,7 +106,7 @@ class Regularizer(object):
         
         Returns
         -------
-        float : scaling
+        obj:`float` : scaling
         '''
         return self.nu
     
@@ -117,7 +116,7 @@ class Regularizer(object):
         
         Returns
         ------
-        float : stepsize
+        obj:`float` : stepsize
         '''
         return self.step 
     
@@ -130,30 +129,30 @@ class Regularizer(object):
     def getProx(self,x):                        
         return self.prox(x,self.nu*self.step)        
     
-def L1val(x):
-    return norm(x,1)
 
-def L1prox(x,scale):    
-    out = (x> scale)*(x-scale)
-    out+= (x<-scale)*(x+scale)
-    return out
 
 def L1(scaling=1.0,step=1.0):
     '''
     Create the L1 regularizer.
     
     Parameters
-    Scaling : float,optional
+    -----------
+    
+    Scaling : :obj:`float`,optional
         Defaults to 1.0
-    Stepsize : float,optional
+    Stepsize : obj:`float`,optional
         Defaluts to 1.0
     '''
+    def L1val(x):
+        return norm(x,1)
+
+    def L1prox(x,scale):    
+        out = (x> scale)*(x-scale)
+        out+= (x<-scale)*(x+scale)
+        return out
+    
     out = Regularizer(L1prox,L1val,scaling,step)    
     return out 
 
-def partialL1(dimension,groups,scaling = 1.0):
-    pass
 
-def groupL2(dimension,groups,scaling = 1.0):
-    pass
     

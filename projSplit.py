@@ -981,4 +981,22 @@ class ProjSplitFit(object):
             print("ERROR: If you don't implement a losses value func, set getHistory to")
             print("False and do not compute objective values")            
             raise Exception("Losses value function is not implemented. Cannot compute objective values.")
-        currentLoss = (1.0/self.nrowsOfA)*sum(self.loss.value(AHz,self.yresponse))  
+        currentLoss = (1.0/self.nrowsOfA)*sum(self.loss.value(AHz,self.yresponse))     
+        return currentLoss,Hz
+    
+    def __updatew(self,tau):        
+            if len(self.wreg) == 0:               
+                # if no regularizers, the linearOp corresponding to the 
+                # data block must be the identity
+                self.wdata[0:(self.nDataBlocks-1)] = self.wdata[0:(self.nDataBlocks-1)] - tau*self.udata
+                self.wdata[-1] = -npsum(self.wdata[0:(self.nDataBlocks-1)],axis=0)
+            else:
+                self.wdata = self.wdata - tau*self.udata                        
+                negsumw = -npsum(self.wdata,axis=0)
+                GstarNegSumw = self.dataLinOp.rmatvec(negsumw)                        
+                for i in range(self.numRegs - 1):
+                    self.wreg[i] = self.wreg[i] - tau*self.ureg[i]
+                    Gstarw = self.allRegularizers[i].linearOp.rmatvec(self.wreg[i])
+                    GstarNegSumw -= concatenate((array([0.0]),Gstarw))
+                
+                self.wreg[-1] = GstarNegSumw
