@@ -90,7 +90,7 @@ class LossPlugIn(object):
         derivative : function
             Function of two NumPy arrays of the same length. 
             Must output an array of the same shape
-            as the input. 
+            as the input which is the component-wise derivative wrt the loss. 
             
         value : function,optional
             Must handle onw ndarray input and output a float. Defaults to None, not supported.             
