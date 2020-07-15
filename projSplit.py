@@ -34,31 +34,34 @@ class ProjSplitFit(object):
 
     * arxiv.org/abs/1803.07043 (algorithm definition page 9)
     * arxiv.org/abs/1902.09025 (algorithm definiteion pages 10-11)
-    - To create an object, call
+
+    To create an object, call::
+
         psobj = ProjSplitFit(dualScaling)
-        dualScaling (defaults to 1.0) is gamma in the above algorithm definitions. 
+
+    dualScaling (defaults to 1.0) is gamma in the algorithm definitions from the above papers.
     
     The general optimization objective this can solve is
-    
-    min_(z,z_int){ (1.0/n)*sum_{i=1}^n loss(z_int + a_i^T (H z),y_i)
-                        + sum_{i = 1}^{numReg} h_i(G_i z) }
-    
-    
+
+    .. math::
+       \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}} \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}h_j(G_j z)
+
     where
-        - a_1...a_n are feature vectors forming the rows of a data matrix A
-        - y_1...y_n are the response values
-        - loss is the loss function dealt with via the Loss class defined in losses.py 
-         (see the addData method)
-        - H,G_1...G_{numReg} are linear operators (possibly the identity)
-        - h_i are generic functions dealt with via the Regularizer class defined 
-            in Regularizer.py (see also addRegularizer)
-        - z_int is the intercept variable to be fit
-        - z is a vector of parameters to be fit
-            
-    The data (A,y), loss, and linear operator H are added via the addData method.
-    
-    Each regularizer must be added individually via a call to the addRegularizer
-    method, along with the linear operators G_i. 
+
+    * :math:`z_0\in\mathbb{R}` is the intercept variable
+    * :math:`z\in\mathbb{R}^d` is the parameter vector
+    * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
+    * :math:`y_i` for :math:`i=1,\ldots,n` are the labels
+    * :math:`H\in\mathbb{R}^{p \times d}` is a matrix (typically the identity)
+    * :math:`a_i\in\mathbb{R}^p` are the observations, forming the rows of the :math:`n\times p` observation/data matrix :math:`A`
+    * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
+    * :math:`G_j` for :math:`j=1,\ldots,n_r` are matrices, typically the identity.
+
+    Data is added via the addData method.
+
+    regularizers are added via the addRegularizer method.
+
+    The algorithm is run via the run() method.
         
     '''
     def __init__(self,dualScaling=1.0):
