@@ -3,7 +3,7 @@
 Created on Wed Apr 29 16:16:24 2020
 """
 
-getNewOptVals = False  
+getNewOptVals = False
 import sys
 sys.path.append('../')
 import projSplit as ps 

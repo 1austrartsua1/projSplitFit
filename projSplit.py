@@ -31,8 +31,9 @@ class ProjSplitFit(object):
     it with projective splitting. 
     
     Please refer to 
-    [1] arxiv.org/abs/1803.07043 (algorithm definition page 9)
-    [2] arxiv.org/abs/1902.09025 (algorithm definiteion pages 10-11)
+
+    * arxiv.org/abs/1803.07043 (algorithm definition page 9)
+    * arxiv.org/abs/1902.09025 (algorithm definiteion pages 10-11)
     - To create an object, call
         psobj = ProjSplitFit(dualScaling)
         dualScaling (defaults to 1.0) is gamma in the above algorithm definitions. 
