@@ -100,7 +100,7 @@ class LossPlugIn(object):
         try:
             test = ones(100)
             if value is not None:
-                output = value(test)
+                output = value(3.7,4.5)
                 output = float(output)
             output = derivative(test,test)                        
             if len(output)!= 100:
