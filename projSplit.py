@@ -403,7 +403,10 @@ class ProjSplitFit(object):
         Returns the current objective value 
         
         Evaluated at the current primal iterate z^k. 
-        If the method has not been run yet, raises an exception
+        If the method has not been run yet, raises an exception.
+        
+        If a loss or regularizer was added without defining a value method,
+        calling getObjective raises an Exception. 
         
         Returns
         -------
@@ -535,6 +538,9 @@ class ProjSplitFit(object):
         
         If run() has not yet been called with keepHistory set to True, 
         this function will raise an Exception when called.
+        
+        If keepHistory is set to True and a regularizer or the loss is added without 
+        implementing its value method, an Exception will be raised. 
         
         Returns
         -------
