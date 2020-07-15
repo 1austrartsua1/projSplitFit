@@ -766,7 +766,7 @@ class ProjSplitFit(object):
         if self.embeddedRegInUse == False:
             # if no embedded reg added, create an artificial embedded reg
             # with a "pass-through" prox
-            self.embedded = Regularizer(lambda x:0,(lambda x,scale:x))
+            self.embedded = Regularizer(lambda x,scale:x,lambda x:0)
         else:
             if self.embedded.getStepsize() != self.process.getStep():
                 print("WARNING: embedded regularizer must use the same stepsize as the Loss update process")
@@ -785,7 +785,7 @@ class ProjSplitFit(object):
                 # if there are no regularizers and the data term is composed 
                 # with a linear operator, we must add a dummy regularizer
                 # which has a pass-through prox and 0 value
-                self.addRegularizer(Regularizer(lambda x: 0, lambda x,scale: x))                 
+                self.addRegularizer(Regularizer(lambda x,scale: x, lambda x: 0))                 
         
         if self.numRegs != 0:                
             # if all nonembedded regularizers have a linear op
@@ -806,7 +806,7 @@ class ProjSplitFit(object):
                 i += 1
                     
             if allRegsHaveLinOps:
-                self.addRegularizer(Regularizer(lambda x: 0, lambda x,scale: x))                
+                self.addRegularizer(Regularizer(lambda x,scale: x, lambda x: 0))                
                             
             self.numPSblocks = self.nDataBlocks + self.numRegs
             

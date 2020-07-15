@@ -56,11 +56,13 @@ class Regularizer(object):
         '''
         try:
             test = ones(100)  
+            
             if value is not None:
+                print(test) 
                 output = value(test)
                 output = float(output)
-                
-            output = prox(test,1.1)
+                           
+            output = prox(test,1.1)            
             if len(output) != 100:
                 print("Error: make sure prox outputs an array of same length as first input")
                 raise Exception("Error: prox method passed into Regularizer invalid")

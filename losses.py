@@ -88,11 +88,12 @@ class LossPlugIn(object):
         Parameters
         ----------
         derivative : function
-            Must handle ndarray inputs and output ndarrays of the same shape
+            Function of two NumPy arrays of the same length. 
+            Must output an array of the same shape
             as the input. 
             
         value : function,optional
-            Must handle ndarray inputs and output a float. Defaults to None, not supported.             
+            Must handle onw ndarray input and output a float. Defaults to None, not supported.             
             
     
         '''
@@ -101,7 +102,7 @@ class LossPlugIn(object):
             if value is not None:
                 output = value(test)
                 output = float(output)
-            output = derivative(output,output)
+            output = derivative(test,test)                        
             if len(output)!= 100:
                 raise Exception
         except:
