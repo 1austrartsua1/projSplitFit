@@ -75,11 +75,9 @@ class Forward2Fixed(LossProcessor):
     '''
     Two forward steps with a fixed stepsize. Updates of the form
         
-    .. math::
-        \\begin{align}
+    .. math::        
         x_i^k &= H z^k - \\rho (\\nabla f_i(H z^k) - w_i^k) \\\\
         y_i^k &= \\nabla f_i(x_i^k)
-        \\end{align}
     
     where the stepsize :math:`\\rho` is fixed and 
     
@@ -119,11 +117,10 @@ class Forward2Backtrack(LossProcessor):
     
     Updates of the form 
     
-    .. math::
-        \\begin{align}
+    .. math::        
         x_i^k &= H z^k - \\rho (\\nabla f_i(H z^k) - w_i^k) \\\\
         y_i^k &= \\nabla f_i(x_i^k)
-        \\end{align}
+
     
     where the stepsize :math:`\\rho` is discovered by backtracking and
     
@@ -239,11 +236,10 @@ class  Forward1Fixed(LossProcessor):
 
     Updates of the form 
     
-    .. math::
-        \\begin{align}
+    .. math::        
         x_i^k &= (1-\\alpha)x_i^{k-1} + \\alpha H z^k - \\rho (y_i^{k-1} - w_i^k) \\\\
         y_i^k &= \\nabla f_i(x_i^k)
-        \\end{align}
+
     
     where the stepsize :math:`\\rho` is constant and 
     
@@ -298,11 +294,10 @@ class Forward1Backtrack(LossProcessor):
     
     Updates of the form 
     
-    .. math::
-        \\begin{align}
+    .. math::        
         x_i^k &= (1-\\alpha)x_i^{k-1} + \\alpha H z^k - \\rho (y_i^{k-1} - w_i^k) \\\\
         y_i^k &= \\nabla f_i(x_i^k)
-        \\end{align}
+
     
     where the stepsize :math:`\\rho` is discovered by backtracking and 
     
@@ -442,11 +437,10 @@ class BackwardExact(LossProcessor):
     
     Updates of the form 
     
-    .. math::
-        \\begin{align}
+    .. math::        
         x_i^k &= \\text{prox}_{\\rho f_i}( H z^k +\\rho w_i^k) \\\\
         y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)
-        \\end{align}
+
     
     where
     
@@ -556,10 +550,8 @@ class BackwardCG(LossProcessor):
     Updates of the form 
     
     .. math::
-        \\begin{align}
         x_i^k &= \\text{prox}_{\\rho f_i}( H z^k +\\rho w_i^k) \\\\
-        y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)
-        \\end{align}
+        y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)        
     
     where
     
@@ -639,6 +631,10 @@ class BackwardCG(LossProcessor):
             rTr = r.T.dot(r)            
             Ap = Acg(p)
             denom = p.T.dot(Ap)
+            if denom == 0:
+                gradfx = (1.0/self.step)*(Acgx - x) - (1/psObj.nrowsOfA)*self.Aty[block]
+                break
+            
             alpha = rTr/denom
             
             x = x + alpha*p
@@ -676,11 +672,9 @@ class BackwardLBFGS(LossProcessor):
     
     Updates of the form 
     
-    .. math::
-        \\begin{align}
+    .. math::        
         x_i^k &= \\text{prox}_{\\rho f_i}( H z^k +\\rho w_i^k) \\\\
         y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)
-        \\end{align}
     
     where
     

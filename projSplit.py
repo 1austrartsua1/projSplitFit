@@ -640,8 +640,8 @@ class ProjSplitFit(object):
                 the blocks would be 5 blocks of 11 and 5 blocks of 10, i.e.
                 
                     [
-                    [0,1,...,10]
-                    [11,12,..22]
+                    [0,1,...,10],
+                    [11,12,..22],
                     ...
                     [44,45,...,54],
                     [55,56,...,64],
