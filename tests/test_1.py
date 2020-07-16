@@ -14,7 +14,7 @@ import numpy as np
 import pytest 
 from scipy.sparse.linalg import aslinearoperator
 
-class ProcessDummy(lp.ProjSplitLossProcessor):
+class ProcessDummy(lp.LossProcessor):
         def __init__(self):
             self.embedOK = True
             

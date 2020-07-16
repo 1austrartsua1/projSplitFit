@@ -17,20 +17,13 @@ from numpy import ones
     
 class Loss(object):
     '''
-    Loss class for defining the loss in ProjSplitFit.addRegularizer method. 
+    Loss class for defining the loss in ProjSplitFit.addRegularizer method.
     
+    Used internally within the addRegularizer method. 
+        
     '''
     def __init__(self,p):      
-        '''
-        Parameters
-        ----------
-        p : string or int or LossPlugIn
-            May be 'logistic' to create logistic loss. An int>=1 to create the
-            absolute loss of power p>=1. May be an object of class LossPlugIn
-            if the user wishes to define their own method for derivative and 
-            value.
-        '''
-        
+
         if(p == 'logistic'):  
             self.value = lambda yhat,y: LR_loss(yhat,y)
             self.derivative = lambda yhat,y: LR_derivative(yhat,y)            
@@ -74,15 +67,16 @@ def LR_derivative(yhat,y):
     
 class LossPlugIn(object):
     '''
-    For user-defined losses. 
+    Objects of this class may be used as the input ``loss`` to the 
+    ``ProjSplitFit.addData`` method to define custom losses. 
     
     '''
     def __init__(self,derivative,value=None):
         '''
         Only implement value if you wish to compute objective function values 
-        of the outputs of ProjSplitFit. It is not necessary for the operation
-        of ProjSplitFit. However, if the value function is 
-        set to None, but then the ProjSplit.getObjective() method is called, 
+        of the outputs of ``ProjSplitFit``. It is not necessary for the operation
+        of ``ProjSplitFit``. However, if the value function is 
+        set to None, but then the ``ProjSplit.getObjective()`` method is called, 
         then it will raise an Exception.
         
         Parameters
@@ -90,10 +84,26 @@ class LossPlugIn(object):
         derivative : function
             Function of two NumPy arrays of the same length. 
             Must output an array of the same shape
-            as the input which is the component-wise derivative wrt the loss. 
+            as the two inputs which is the component-wise derivative wrt the first argument of 
+            the loss. 
+            That is, output
+            
+            ..  math::
+                
+                \\frac{\\partial}{\\partial x}\\ell(x,y)
+            
+            If x and y are numpy arrays, return an array of same length of derivatives at each 
+            component. 
             
         value : function,optional
-            Must handle onw ndarray input and output a float. Defaults to None, not supported.             
+            Must handle two float inputs and output a float. Defaults to None, not supported. 
+            Outputs
+
+            .. math::            
+                
+                \ell(x,y)
+            
+            for inputs x and y. 
             
     
         '''
