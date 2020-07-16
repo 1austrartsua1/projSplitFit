@@ -63,9 +63,9 @@ class ProjSplitFit(object):
 
     The data :math:`A` and :math:`y` are added via the ``addData`` method.
 
-    regularizers are added via the addRegularizer method.
+    regularizers are added via the ``addRegularizer`` method.
 
-    The algorithm is run via the run() method.
+    The algorithm is run via the ``run`` method.
 
     '''
     def __init__(self,dualScaling=1.0):
@@ -130,13 +130,13 @@ class ProjSplitFit(object):
         Parameters
         ----------
         observations : 2d ndarray or matrix
-            each row being :math:`a_i` above
+            each row of the observations matrix being :math:`a_i` above
 
         responses : 1d ndarray or :obj:`list` or numpy array
             each element equal to :math:`y_i` above
 
         loss : :obj:`int` or :obj:`string` or :obj:`losses.LossPlugIn`
-            May be an :obj:`int`greater than or equal to 1, 'logistic' or an object of class :obj:`losses.LossPlugIn`
+            May be an :obj:`int` greater than or equal to 1, the :obj:`string` 'logistic', or an object of class :obj:`losses.LossPlugIn`
 
         process : :obj:`lossProcessors.LossProcessor`, optional
             An object of a class derived from :obj:`lossProcessors.LossProcessor`.
@@ -150,7 +150,7 @@ class ProjSplitFit(object):
             whether to normalize columns of the data matrix to have unit norm.
             If True, data matrix will be copied. Default is True.
 
-        linearOp : :obj:`scipy.sparse.linalg.LinearOperator`, optional
+        linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or similar, optional
             adds matrix H in Eq. (1). Defaults to the identity.
 
         '''
@@ -288,7 +288,7 @@ class ProjSplitFit(object):
 
     def numPrimalVars(self):
         '''
-        Retrieve the number of primal variables.
+        Retrieve the number of primal variables (possibly including the intercept).
 
         After the ``addData`` method has been called, one may call this method.
 
@@ -297,7 +297,7 @@ class ProjSplitFit(object):
         Returns
         ------
             nPrimalVars: :obj:`int`
-                Number of primal variables not including the intercept
+                Number of primal variables including the intercept if that option is taken
 
         '''
         if self.dataAdded == False:
@@ -340,10 +340,9 @@ class ProjSplitFit(object):
         Parameters
         ----------
             regObj : :obj:`regularizers.Regularizer`
-                object of class :obj:`regularizers.Regularizer` defined in
-                regularizers.py
-
-            linearOp : obj`scipy.sparse.linalg.LinearOperator` or similar,optional
+                object of class :obj:`regularizers.Regularizer`
+                
+            linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or similar,optional
                 adds matrix :math:`G_j` in above
 
             embed : :obj:`bool`,optional
@@ -410,13 +409,11 @@ class ProjSplitFit(object):
 
     def getObjective(self):
         '''
-        Returns the current objective value
-
-        Evaluated at the current primal iterate :math:`z^k`.
+        Returns the current objective value evaluated at the current primal iterate :math:`z^k`.
         If the method has not been run yet, raises an exception.
 
         If a loss or regularizer was added without defining a value method,
-        calling getObjective raises an Exception.
+        calling ``getObjective`` raises an Exception.
 
         Returns
         -------
@@ -458,9 +455,9 @@ class ProjSplitFit(object):
         If the ``normalize`` argument is set to True in ``addData``, the scaling which
         was applied to each feature is applied to the entries of :math:`Hz^k`, so the
         same results can be obtained with the original non-normalized data matrix.
-        Note that the scaling is not applied to :math`z^k`, the second output.
+        Note that the scaling is not applied to :math:`z^k`, the second output.
 
-        If the run() method has not been called yet, raises an exception.
+        If the ``run`` method has not been called yet, raises an exception.
 
         If the ``intercept`` argument was True in ``addData``, the intercept coefficient is the
         first entry of both :math:`z^k` and :math:`Hz^k`.
@@ -495,9 +492,18 @@ class ProjSplitFit(object):
         '''
         Returns the current primal violation.
 
-        After at least one call to the method run(), returns a float
+        After at least one call to the method ``run``, returns a :obj:`float`
         equal to the primal violation.
-        If run has not been called yet, raises an exception.
+        
+        The primal violation is 
+        
+        .. math::
+            \max_i \|G_i z^k - x_i^k\|_2
+        
+        where, with some abuse of notation, :math:`G_i` is the linear operator
+        associated with the ith block. 
+
+        If ``run`` has not been called yet, raises an exception.
 
         Returns
         -------
@@ -515,6 +521,12 @@ class ProjSplitFit(object):
 
         After at least one call to the method run(), returns a float
         equal to the dual violation.
+        
+        The dual violation is
+        
+        .. math::
+            \max_i \|y_i^k - w_i^k\|_2
+        
         If run has not been called yet, raises an exception.
 
         Returns
@@ -538,9 +550,8 @@ class ProjSplitFit(object):
         returns a two-dimensional five-row NumPy array with each column
         corresponding to an iteration for which the history statistics were
         recorded. The total number of columns is num iterations divided by the
-        ``historyFreq`` parameter, which can be set in run() and defaults to 10.
-        In each row of this array, the rows have the following interpretation:
-        Row Number Interpretation
+        ``historyFreq`` parameter, which can be set as an argument to ``run`` and defaults to 10.
+        In each row of this array, the rows have the following interpretation:        
 
         0. Objective value
         1. Cumulative run time
@@ -548,7 +559,7 @@ class ProjSplitFit(object):
         3. Dual violation
         4. Value of :math:`\phi(p^k)` used in hyperplane construction
 
-        If run() has not yet been called with ``keepHistory`` set to True,
+        If ``run`` has not yet been called with ``keepHistory`` set to True,
         this function will raise an Exception when called.
 
         If ``keepHistory`` is set to True and a regularizer or the loss is added without
@@ -600,7 +611,7 @@ class ProjSplitFit(object):
 
             maxIterations : :obj:`int`,optional
                 Terminate algorithm if ran for more than ``maxIterations`` iterations.
-                Default is None meaning never terminate.
+                Default is None meaning do not terminate until primalTol and dualTol are reached.
 
             keepHistory : :obj:`bool`,optional
                 If True, record the history (see ``getHistory`` method). Default False.
@@ -611,7 +622,7 @@ class ProjSplitFit(object):
                 which may be slow for large problems.
 
             nBlocks : :obj:`int`,optional
-                number of blocks in the projective splitting decomposition
+                Number of blocks in the projective splitting decomposition
                 of the loss. Defaults to 1. Blocks are contiguous indices and the 
                 number of indices in each block varies by at-most one. 
                 

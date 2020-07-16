@@ -70,30 +70,48 @@ class LossPlugIn(object):
     Objects of this class may be used as the input ``loss`` to the 
     ``ProjSplitFit.addData`` method to define custom losses. 
     
+    The user may set the argument ``loss`` to ``ProjSplitFit.addData`` to an
+    integer :math:`p\geq 1` to use the :math:`\ell_p^p` loss, or they may set it to
+    "logistic" to use the logistic loss. 
+    
+    However, if the user would like to define their own loss, then they must 
+    write a function for computing the derivative of the loss and pass it into 
+    the constructor to get an object of this class. This can then be used as 
+    the input ``loss`` to ``ProjSplitFit.addData``.
+    
     '''
     def __init__(self,derivative,value=None):
         '''
         Only implement value if you wish to compute objective function values 
-        of the outputs of ``ProjSplitFit``. It is not necessary for the operation
+        of the outputs of ``ProjSplitFit`` to monitor progress. It is not necessary for the operation
         of ``ProjSplitFit``. However, if the value function is 
-        set to None, but then the ``ProjSplit.getObjective()`` method is called, 
-        then it will raise an Exception.
+        set to None, but then the ``ProjSplitFit.getObjective`` method is called, 
+        then it will raise an Exception. Similarly if ``ProjSplitFit.run`` is called 
+        with the ``keepHistory`` argument set to True.
         
         Parameters
         ----------
         derivative : function
-            Function of two NumPy arrays of the same length. 
-            Must output an array of the same shape
-            as the two inputs which is the component-wise derivative wrt the first argument of 
-            the loss. 
-            That is, output
+            Function of two 1D NumPy arrays of the same length. 
+            Must output an array of the same length
+            as the two inputs which is the derivative wrt the first argument of 
+            the loss evaluated at each pair of elements in the input arrays. 
+            That is, for inputs::
+                
+                [x_1,x_2,...,x_n], [y_1,y_2,...,y_n]
+                        
+            output:: 
+                
+                [z_1,z_2,...,z_n]
+                
+            where 
             
             ..  math::
                 
-                \\frac{\\partial}{\\partial x}\\ell(x,y)
+                z_i = \\frac{\\partial}{\\partial x}\\ell(x_i,y_i)
             
-            If x and y are numpy arrays, return an array of same length of derivatives at each 
-            component. 
+            and the partial derivative is w.r.t. the first argument to :math:`\ell`.
+                        
             
         value : function,optional
             Must handle two float inputs and output a float. Defaults to None, not supported. 

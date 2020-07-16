@@ -81,7 +81,7 @@ class Forward2Fixed(LossProcessor):
         y_i^k &= \\nabla f_i(x_i^k)
         \\end{align}
     
-    where 
+    where the stepsize :math:`\\rho` is fixed and 
     
     .. math::
         f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j)
@@ -433,6 +433,10 @@ class BackwardExact(LossProcessor):
     '''
     Exact backward step for quadratics via matrix inversion. Only works with the squared loss, i.e. p=2.
     Appropriate matrix inverses are cached before the first iteration. 
+    
+    If the involed matrices are wide (number of rows less than half number of cols), 
+    the matrix inversion lemma is used,
+    see Sec. 4.2.4 of https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
     
     See https://arxiv.org/abs/1902.09025.    
     
