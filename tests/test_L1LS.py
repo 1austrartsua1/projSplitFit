@@ -190,7 +190,7 @@ def test_user_defined(processor,testNumber):
         projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
         nu = 5.5
         step = 1e0
-        regObj = Regularizer(prox,val,nu = nu,step=step)
+        regObj = Regularizer(prox,val,scaling = nu,step=step)
         projSplit.addRegularizer(regObj)        
         projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
                       resetIterate=True,primalTol=1e-12,dualTol=1e-12)
@@ -254,11 +254,11 @@ def test_user_defined(processor,testNumber):
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     nu1 = 0.01
     step = 1e0
-    regObj = Regularizer(prox1,val1,nu = nu1,step=step)
+    regObj = Regularizer(prox1,val1,scaling = nu1,step=step)
     projSplit.addRegularizer(regObj)        
     nu2 = 0.05
     step = 1e0
-    regObj = Regularizer(prox2,val2,nu = nu2,step=step)
+    regObj = Regularizer(prox2,val2,scaling = nu2,step=step)
     projSplit.addRegularizer(regObj)            
     step = 1e0
     regObj = Regularizer(prox3,val3,step=step)

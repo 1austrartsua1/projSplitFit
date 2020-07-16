@@ -37,7 +37,7 @@ class Regularizer(object):
       to the constructor to create a ``Regularizer`` object. 
       
     '''
-    def __init__(self,prox,value=None,nu=1.0,step=1.0):
+    def __init__(self,prox,value=None,scaling=1.0,step=1.0):
         '''
             Only define *value* if you wish to compute objective function values
             within ``ProjSplitFit`` to monitor progress, as its not necessary for the
@@ -59,14 +59,14 @@ class Regularizer(object):
                 Default is None, meaning not defined. Note that this is the value
                 of the *unscaled* function. In other words, with a scaling of 1.
 
-            nu : :obj:`float`,optional
+            scaling : :obj:`float`,optional
                 Scaling to use with this regularizer in the objective.
                 The function will appear in the objective as
 
                 .. math::
                   \\nu h(x)
 
-                Defaults to 1.0
+                for a scaling :math:`\\nu`. Defaults to 1.0
 
             step : :obj:`float`,optional
                 Stepsize to use in the proximal steps of projective splitting
@@ -93,23 +93,23 @@ class Regularizer(object):
         self.value = value
         self.prox = prox
 
-        self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
+        self.nu = ui.checkUserInput(scaling,float,'float','scaling',default=1.0,low=0.0,lowAllowed=True)
         self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
 
-    def setScaling(self,nu):
+    def setScaling(self,scaling):
         '''
-        Set the scaling :math:`\\nu`. That is, in the objective, the regularizer will
-        be scaled by nu. It will appear as
+        Set the scaling. That is, in the objective, the regularizer will
+        be scaled by scaling=nu. It will appear as
 
         .. math::
           \\nu h(x)
 
         Parameters
         ----------
-        nu : :obj:`float`
+        scaling : :obj:`float`
             scaling
         '''
-        self.nu = ui.checkUserInput(nu,float,'float','nu',default=1.0,low=0.0,lowAllowed=True)
+        self.nu = ui.checkUserInput(scaling,float,'float','scaling',default=1.0,low=0.0,lowAllowed=True)
 
     def setStep(self,step):
         '''

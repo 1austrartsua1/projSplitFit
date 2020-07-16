@@ -10,5 +10,5 @@ References
   Mathematical Programming 111.1-2 (2008): 173-199.
 
 .. [for1] Johnstone, Patrick R., and Jonathan Eckstein.
-  "Projective splitting with forward steps: asynchronous and block-iterative operator splitting."
+  "Projective splitting with forward steps: Asynchronous and block-iterative operator splitting."
   arXiv preprint arXiv:1803.07043 (2018).

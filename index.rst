@@ -11,20 +11,6 @@ Welcome to projSplitFit's documentation!
 
    docs/intro
    docs/install
-   docs/examples   
+   docs/examples
    docs/complete_doc
    docs/refs
-
-
-
-
-
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

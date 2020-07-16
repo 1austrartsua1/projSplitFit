@@ -2,7 +2,7 @@
 Introduction
 ##############
 
-*ProjFitSplit* is a *Python* package for solving general linear data fitting problems
+*ProjSplitFit* is a *Python* package for solving general linear data fitting problems
 involving multiple regularizers and compositions with linear operators. The solver is
 the *projective splitting* algorithm, which is a highly-flexible and scalable first-order solver.
 This package implements most variants of projective splitting including
@@ -39,4 +39,4 @@ where
 * Any user-defined convex regularizer.
 
 The matrices :math:`H` and :math:`G_j` may be any linear operator. An easy way to define them is to use the
-*scipy.sparse.linalg.LinearOperator* class. The *aslinearoperator* function comes in handy for this.
+*scipy.sparse.linalg.LinearOperator* class, or simply 2D NumPy arrays.

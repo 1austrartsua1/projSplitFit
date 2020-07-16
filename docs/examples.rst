@@ -11,8 +11,8 @@ Consider the least-squares problem defined as
   \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2_2
   :label: eqLS
 
-Assume the matrix :math:`A` is a 2D *NumPy* array, and :math:`y` is a 1D *NumPy* array, or list.
-To solve this problem with projSplitFit, use
+Assuming the matrix :math:`A` is a 2D *NumPy* array, and :math:`y` is a 1D *NumPy* array, or list, then
+to solve this problem with projSplitFit, use
 the following code ::
 
   import projSplitFit as ps
@@ -78,12 +78,13 @@ where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, before calling 
 
 The built-in method ``L1`` returns an object of class ``regularizers.Regularizer`` which may be used
 to describe any convex function to be used as a regularizer. Other built-in regularizers include
-XX.
+``regularizers.L2sq`` which creates the regularizer :math:`0.5\|x\|_2^2` and ``regularizers.L2``,
+which creates the regularizer :math:`\|x\|_2`.
 
 User-Defined and Multiple Regularizers
 ========================================
 
-The user may define their own regularizers. in *ProjSplitFit*, a regularizer is defined
+In addition to these built-in regularizers, the user may define their own. In *ProjSplitFit*, a regularizer is defined
 by a *prox* method and a *value* method. The *prox* method must be defined. The *value* method
 is optional and is only used if the user wants to calculate function values for performance tracking.
 The *prox* method returns the proximal operator for the function scaled by some amount.
@@ -129,6 +130,7 @@ follows::
   projSplit.addRegularizer(regObj)
   projSplit.run()
 
+The proximal operator is just the projection onto the constraint set.
 Note that ``prox_g`` must still have a second argument for the scaling even though
 for this particular function it is not used.
 
@@ -146,7 +148,7 @@ Consider the problem
 for some linear operator (matrix) :math:`G`. The linear operator can be added as an
 argument to the ``addRegularizer`` method as follows::
 
-  regObj = L1(scale=lam1)
+  regObj = L1(scaling=lam1)
   projSplit.addRegularizer(regObj,linearOp=G)
   projSplit.run()
 
@@ -161,7 +163,7 @@ User-Defined Losses
 Just as the user may define their own regularizers, they may define their own loss. This is achieved
 via the ``losses.LossPlugIn`` class. Objects of this class can be passed into ``addData`` as the ``process``
 argument. To define a loss, one needs to define its derivative method. Optionally, one may also define
-its value method.
+its value method if one would like to compute function values for performance tracking.
 
 For example, consider the one-sided :math:`\ell_2^2` loss:
 
@@ -213,14 +215,13 @@ can be composed with the loss, meaning the *ProjSplitFit* handles it
 internally and does not explicitly compute the matrix product.
 This option is controlled via the ``linearOp`` argument to ``addData``.
 
-With the ``linearOp`` option, the loss is dealt with as follows::
+Taking this option, the loss is dealt with as follows::
 
   import projSplitFit as ps
   projSplit = ps.ProjSplitFit()
-  projSplit.addData(X,y,loss=2,linearOp=H)
+  projSplit.addData(X,y,loss=2,linearOp=H,normalize=False)
 
-Note that, by default, the intercept term :math:`\gamma_0` is added, and the columns
-of the data matrix are normalized.
+Note that, by default, the intercept term :math:`\gamma_0` is added.
 
 The first regularizer needs to be custom-coded, as it leaves out the first variable,
 which is the root of the tree. It is dealt with as follows::
@@ -232,7 +233,7 @@ which is the root of the tree. It is dealt with as follows::
     temp[1:] += (gamma[1:]<-sigma)*(gamma[1:]+sigma)
     temp[0]=gamma[0]
     return temp
-  regObj = Regularizer(prox,nu=lam*mu)
+  regObj = Regularizer(prox,scaling=lam*mu)
   projSplit.addRegularizer(regObj)
 
 The second regularizer is more straightforward and may be dealt with via the
@@ -246,6 +247,15 @@ as follows::
 Finally we are ready to run the method via::
 
   projSplit.run()
+
+One can obtain the final objective value and solution via::
+
+  optimalVal = projSplit.getObjective()
+  Hgammastar,gammastar = projSplit.getSolution()
+
+Note that ``getSolution`` returns both the primal variable and the image of the
+primal variable under the linear operator composed with the data term.
+
 
 Loss Process Objects
 =====================
@@ -264,7 +274,7 @@ This argument must be a class derived from ``lossProcessors.LossProcessor``.
 * ``Forward2Fixed`` two-forward-step update with fixed stepsize, see [for1]_
 * ``Forward2Backtrack`` two-forward-step update with backtracking stepsize, see [for1]_.
   Note this is the *default* loss processor if the `process` argument is ommitted from
-  ``addData``.
+  ``addData``
 * ``Forward2Affine`` two-forward-step with the affine trick, see [for1]_. Only available
   when ``loss=2``
 * ``Forward1Fixed`` one-forward-step with fixed stepsize, see [coco]_
@@ -314,7 +324,7 @@ Options for the ``run()`` Method
 ==================================
 The ``run`` method has several important options which we briefly discuss.
 The first is ``nblocks``. This controls how many blocks projective splitting
-breaks the loss up into for processing. Recall the loss is
+breaks the loss into for processing. Recall the loss is
 
 .. math::
   \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
@@ -325,6 +335,16 @@ need to process every observation at each iteration. Instead, it may break the
 ``nblocks`` may be anything from ``1``, meaning all observations are processed at
 each iteration, to ``n``, meaning every observation is treated as a block.
 ``nblocks`` defaults to 1.
+
+The blocks are contiguous runs of indices. If :math:`nblocks` does not divide the
+number of rows/observations, then we use the formula
+
+.. math::
+  n = \lceil n/n_b \rceil n\%n_b + \lfloor n/n_b \rfloor(n_b - n \%n_b).
+
+so that there are two groups of blocks, those with :math:`\lceil n/n_b\rceil`
+number of indices and those with :math:`\lfloor n/n_b\rfloor`. That way,
+the number of indices in any two blocks differs by at most 1.
 
 The number of blocks processed per iteration is controlled via the argument ``blocksPerIteration``
 which defaults to 1.

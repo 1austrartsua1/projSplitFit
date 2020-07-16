@@ -63,10 +63,18 @@ class LossProcessor(object):
         
         self.step = step
     
-    def initialize(self,psObj):        
+    def initialize(self,psObj):
+        # must be implemented by derived class. 
+        # initialize runs once before the first iteration of ProjSplitFit.run()
+        # and allows one to set up any data structures that the loss processor needs. 
+        # Many loss processors don't need to store anything, and so can just leave
+        # this method as a no op. 
         pass 
     
     def update(self,psObj,block):
+        # implements the actual update which is run at each iteration. 
+        # update:
+        #  psObj.xdata[block] and psObj.ydata[block]
         pass
         
         

@@ -111,8 +111,7 @@ class LossPlugIn(object):
                 z_i = \\frac{\\partial}{\\partial x}\\ell(x_i,y_i)
             
             and the partial derivative is w.r.t. the first argument to :math:`\ell`.
-                        
-            
+                                  
         value : function,optional
             Must handle two float inputs and output a float. Defaults to None, not supported. 
             Outputs
