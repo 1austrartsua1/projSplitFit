@@ -15,17 +15,17 @@ The most important file here is the [user guide](user_guide.pdf). Your first ste
 Here are the key modules related to the package
 
 * [projSplit.py](projSplit.py), the main module including the key class *ProjSplitFit*
-* *losses.py* classes for defining the loss
-* *lossProcessors.py* classes for instructing *ProjSplitFit* how to process the loss
-* *regularizers.py* classes for adding regularizers to the model.
+* [losses.py](losses.py) classes for defining the loss
+* [lossProcessors.py](lossProcessors.py) classes for instructing *ProjSplitFit* how to process the loss
+* [regularizers.py](regularizers.py) classes for adding regularizers to the model.
 
 The following are helper modules used internally in *ProjSplitFit*
 
-* *userInputVal.py* User input validation code
-* *projSplitUtils.py* Miscellaneous utilities.
+* [userInputVal.py](userInputVal.py) User input validation code
+* [projSplitUtils.py](projSplitUtils.py) Miscellaneous utilities.
 
 The following files are used to generate the documentation: *index.rst*, *conf.py*, *make.bat*, *MakeFile*, the *docs* directory and its contents.
 
-Test files are in the *tests* directory. You will need `pytest` installed to run the tests.
+Test files are in the [tests](tests) directory. You will need `pytest` installed to run the tests.
 
-The *tests/results* directory has cached optimal values used in the tests.
+The [tests/results](tests/results) directory has cached optimal values used in the tests.
