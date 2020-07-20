@@ -56,8 +56,8 @@ class ProjSplitFit(object):
     * :math:`z\in\mathbb{R}^d` is the parameter vector
     * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
     * :math:`y_i` for :math:`i=1,\ldots,n` are the labels
-    * :math:`H\in\mathbb{R}^{p \times d}` is a matrix (typically the identity)
-    * :math:`a_i\in\mathbb{R}^p` are the observations, forming the rows of the :math:`n\times p` observation/data matrix :math:`A`
+    * :math:`H\in\mathbb{R}^{d' \times d}` is a matrix (typically the identity)
+    * :math:`a_i\in\mathbb{R}^{d'}` are the observations, forming the rows of the :math:`n\times d'` observation/data matrix :math:`A`
     * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
     * :math:`G_j` for :math:`j=1,\ldots,n_r` are matrices, typically the identity.
 
@@ -125,7 +125,9 @@ class ProjSplitFit(object):
 
         .. math::
 
-            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}h_j(G_j z)
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
+              \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) 
+                + \sum_{j=1}^{n_r}h_j(G_j z)
 
         Parameters
         ----------
@@ -135,8 +137,8 @@ class ProjSplitFit(object):
         responses : 1d ndarray or :obj:`list` or numpy array
             each element equal to :math:`y_i` above
 
-        loss : :obj:`int` or :obj:`string` or :obj:`losses.LossPlugIn`
-            May be an :obj:`int` greater than or equal to 1, the :obj:`string` 'logistic', or an object of class :obj:`losses.LossPlugIn`
+        loss : :obj:`float` or :obj:`string` or :obj:`losses.LossPlugIn`
+            May be a :obj:`float` greater than 1, the :obj:`string` 'logistic', or an object of class :obj:`losses.LossPlugIn`
 
         process : :obj:`lossProcessors.LossProcessor`, optional
             An object of a class derived from :obj:`lossProcessors.LossProcessor`.
