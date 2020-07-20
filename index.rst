@@ -13,4 +13,6 @@ Welcome to projSplitFit's documentation!
    docs/install
    docs/examples
    docs/complete_doc
-   docs/refs
+
+
+.. bibliography:: refs.bib

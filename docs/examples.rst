@@ -21,7 +21,7 @@ the following code ::
   projSplit.run()
 
 The argument ``loss`` is set to 2 in order to use the :math:`\ell_2^2` loss. Other possible choices
-are any :math:`p\geq 1` for the :math:`\ell_p^p` loss and the string "logistic" for the logistic loss.
+are any :math:`p> 1` for the :math:`\ell_p^p` loss and the string "logistic" for the logistic loss.
 The user may also define their own loss via the ``losses.LossPlugIn`` class (see below).
 
 Dual Scaling
@@ -192,7 +192,7 @@ To use this loss::
 Complete Example: Rare Feature Selection
 ==========================================
 
-Let's look at a complete example from page 34 of our paper [coco]_. The problem of interest is
+Let's look at a complete example from page 34 of our paper :cite:`coco`. The problem of interest is
 
 .. math::
   \min_{\substack{\gamma_0\in \mathbb{R} \\ \gamma\in \mathbb{R}^{|\mathcal{T}|}}}
@@ -260,10 +260,10 @@ primal variable under the linear operator composed with the data term.
 Loss Process Objects
 =====================
 Projective splitting comes with a rich array of ways to update the hyperplane
-at each iteration. In the original paper [proj1]_, the computation was based
+at each iteration. In the original paper :cite:`proj1`, the computation was based
 on the *prox*. Since then, several new calculations have been devised based on
 *forward steps*, i.e. *gradient* calculations, making projective splitting a
-true first-order method [for1]_, [coco]_.
+true first-order method :cite:`for1`, :cite:`coco`.
 
 In *ProjSplitFit*, there are a large number of options for which update method to
 use with respect to the blocks of variables associated with the *loss*.
@@ -271,14 +271,14 @@ This is controlled by the ``process`` argument to the ``addData`` method.
 This argument must be a class derived from ``lossProcessors.LossProcessor``.
 *ProjSplitFit* supports the following built-in loss processing classes defined in ``lossProcessors.py``:
 
-* ``Forward2Fixed`` two-forward-step update with fixed stepsize, see [for1]_
-* ``Forward2Backtrack`` two-forward-step update with backtracking stepsize, see [for1]_.
+* ``Forward2Fixed`` two-forward-step update with fixed stepsize, see :cite:`for1`
+* ``Forward2Backtrack`` two-forward-step update with backtracking stepsize, see :cite:`for1`.
   Note this is the *default* loss processor if the `process` argument is ommitted from
   ``addData``
-* ``Forward2Affine`` two-forward-step with the affine trick, see [for1]_. Only available
+* ``Forward2Affine`` two-forward-step with the affine trick, see :cite:`for1`. Only available
   when ``loss=2``
-* ``Forward1Fixed`` one-forward-step with fixed stepsize, see [coco]_
-* ``Forward1Backtrack`` one-forward-step with backtracking stepsize, see [coco]_
+* ``Forward1Fixed`` one-forward-step with fixed stepsize, see :cite:`coco`
+* ``Forward1Backtrack`` one-forward-step with backtracking stepsize, see :cite:`coco`
 * ``BackwardExact`` Exact backward step for :math:`\ell_2^2` loss via matrix inversion.
   Only available with ``loss=2``
 * ``BackwardCG`` Backward step via conjugate gradient, only available when ``loss=2``
@@ -354,7 +354,7 @@ controlled with the ``blockActivation`` argument and may be set to
 
 * "random", randomly selected block
 * "cyclic", cycle through the blocks
-* "greedy", (default) use the greedy heuristic of [for1]_ page 24 to select blocks.
+* "greedy", (default) use the greedy heuristic of :cite:`for1` page 24 to select blocks.
 
 Other Important Methods of ProjSplitFit
 ========================================

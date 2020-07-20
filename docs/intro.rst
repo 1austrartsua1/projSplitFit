@@ -20,14 +20,14 @@ where
 * :math:`z\in\mathbb{R}^d` is the parameter vector
 * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
 * :math:`y_i` for :math:`i=1,\ldots,n` are the labels
-* :math:`H\in\mathbb{R}^{p \times d}` is a matrix (typically the identity)
-* :math:`a_i\in\mathbb{R}^p` are the observations, forming the rows of the :math:`n\times p` observation/data matrix :math:`A`
+* :math:`H\in\mathbb{R}^{d' \times d}` is a matrix (typically the identity)
+* :math:`a_i\in\mathbb{R}^{d'}` are the observations, forming the rows of the :math:`n\times d'` observation/data matrix :math:`A`
 * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
 * :math:`G_j` for :math:`j=1,\ldots,n_r` are matrices, typically the identity.
 
 *ProjSplitFit* supports the following choices for the loss :math:`\ell`:
 
-* :math:`\ell_p^p`, i.e. :math:`\ell(a,b)=\frac{1}{p}|a-b|^p` for any :math:`p\geq 1`
+* :math:`\ell_p^p`, i.e. :math:`\ell(a,b)=\frac{1}{p}|a-b|^p` for any :math:`p > 1`
 * logistic, i.e. :math:`\ell(a,b)=\log(1+\exp(-ab))`
 * Any user-defined convex loss.
 

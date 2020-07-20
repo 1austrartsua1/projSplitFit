@@ -26,7 +26,7 @@ import userInputVal as ui
 
 
 class ProjSplitFit(object):
-    '''
+    r'''
     ProjSplitFit is the class used for creating a data-fitting problem and solving
     it with projective splitting.
 
@@ -45,21 +45,21 @@ class ProjSplitFit(object):
 
     .. math::
 
-      \\min_{z\\in\\mathbb{R}^d,z_0\\in \\mathbb{R}}
-                \\frac{1}{n}\\sum_{i=1}^n\\ell (z_0 + a_i^\\top H z,y_i)
-                   + \\sum_{j=1}^{n_r}h_j(G_j z)
+      \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
+                \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,y_i)
+                   + \sum_{j=1}^{n_r}h_j(G_j z)
 
 
     where
 
-    * :math:`z_0\\in\\mathbb{R}` is the intercept variable
-    * :math:`z\\in\mathbb{R}^d` is the parameter vector
-    * :math:`\\ell:\\mathbb{R}\\times\\mathbb{R}\\to\\mathbb{R}_+` is the loss
-    * :math:`y_i` for :math:`i=1,\\ldots,n` are the labels
-    * :math:`H\\in\\mathbb{R}^{p \\times d}` is a matrix (typically the identity)
-    * :math:`a_i\\in\\mathbb{R}^p` are the observations, forming the rows of the :math:`n\\times p` observation/data matrix :math:`A`
-    * :math:`h_j` for :math:`j=1,\\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
-    * :math:`G_j` for :math:`j=1,\\ldots,n_r` are matrices, typically the identity.
+    * :math:`z_0\in\mathbb{R}` is the intercept variable
+    * :math:`z\in\mathbb{R}^d` is the parameter vector
+    * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
+    * :math:`y_i` for :math:`i=1,\ldots,n` are the labels
+    * :math:`H\in\mathbb{R}^{p \times d}` is a matrix (typically the identity)
+    * :math:`a_i\in\mathbb{R}^p` are the observations, forming the rows of the :math:`n\times p` observation/data matrix :math:`A`
+    * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
+    * :math:`G_j` for :math:`j=1,\ldots,n_r` are matrices, typically the identity.
 
     The data :math:`A` and :math:`y` are added via the ``addData`` method.
 
@@ -118,14 +118,14 @@ class ProjSplitFit(object):
 
     def addData(self,observations,responses,loss,process=lp.Forward2Backtrack(),
                 intercept=True,normalize=True,linearOp = None):
-        '''
+        r'''
         Adds data for the data fitting model.
 
         Recall that the general optimization objective solved by this package is
 
         .. math::
 
-            \\min_{z\\in\\mathbb{R}^d,z_0\\in \\mathbb{R}}\\frac{1}{n}\\sum_{i=1}^n \\ell (z_0 + a_i^\\top H z,y_i) + \\sum_{j=1}^{n_r}h_j(G_j z)
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}h_j(G_j z)
 
         Parameters
         ----------
@@ -326,14 +326,14 @@ class ProjSplitFit(object):
             return self.nrowsOfA
 
     def addRegularizer(self,regObj, linearOp=None, embed = False):
-        '''
+        r'''
         adds a regularizer to the optimization problem.
 
         Recall the optimization problem
 
         .. math::
 
-            \\min_{z\\in\\mathbb{R}^d,z_0\\in \\mathbb{R}}\\frac{1}{n}\\sum_{i=1}^n \\ell (z_0 + a_i^\\top H z,y_i) + \\sum_{j=1}^{n_r}h_j(G_j z)
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}h_j(G_j z)
 
         This method adds each :math:`h_j` and :math:`G_j` above
 
@@ -581,7 +581,7 @@ class ProjSplitFit(object):
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False,
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1,
             resetIterate=False,verbose=False):
-        '''
+        r'''
         Run projective splitting.
 
         Parameters
@@ -652,8 +652,8 @@ class ProjSplitFit(object):
                 This uses the formula
                 
                 .. math::
-                    n = \\lceil n/n_b \\rceil n\\%n_b
-                         + \\lfloor n/n_b \\rfloor(n_b - n\\%n_b).
+                    n = \lceil n/n_b \rceil n\%n_b
+                         + \lfloor n/n_b \rfloor(n_b - n\%n_b).
                 
                 
                 

@@ -66,7 +66,7 @@ def LR_derivative(yhat,y):
 
     
 class LossPlugIn(object):
-    '''
+    r'''
     Objects of this class may be used as the input ``loss`` to the 
     ``ProjSplitFit.addData`` method to define custom losses. 
     
@@ -81,7 +81,7 @@ class LossPlugIn(object):
     
     '''
     def __init__(self,derivative,value=None):
-        '''
+        r'''
         Only implement value if you wish to compute objective function values 
         of the outputs of ``ProjSplitFit`` to monitor progress. It is not necessary for the operation
         of ``ProjSplitFit``. However, if the value function is 
@@ -108,7 +108,7 @@ class LossPlugIn(object):
             
             ..  math::
                 
-                z_i = \\frac{\\partial}{\\partial x}\\ell(x_i,y_i)
+                z_i = \frac{\partial}{\partial x}\ell(x_i,y_i)
             
             and the partial derivative is w.r.t. the first argument to :math:`\ell`.
                                   

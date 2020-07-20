@@ -14,16 +14,16 @@ from numpy import ones
 #-----------------------------------------------------------------------------
 
 class Regularizer(object):
-    '''
+    r'''
       Regularizer class to use as an input to the ``ProjSplitFit.addRegularizer`` method.
 
       Recall the objective function
 
       .. math::
 
-        \\min_{z\\in\\mathbb{R}^d,z_0\\in \\mathbb{R}}
-               \\frac{1}{n}\\sum_{i=1}^n \\ell (z_0 + a_i^\\top H z,y_i)
-                  + \\sum_{j=1}^{n_r}h_j(G_j z)
+        \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
+               \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
+                  + \sum_{j=1}^{n_r}h_j(G_j z)
 
       The regularizer class essentially defines each :math:`h_i(G_i z)`` term via
       methods for evaluating the prox of :math:`h_i` and the function itself.
@@ -38,7 +38,7 @@ class Regularizer(object):
       
     '''
     def __init__(self,prox,value=None,scaling=1.0,step=1.0):
-        '''
+        r'''
             Only define *value* if you wish to compute objective function values
             within ``ProjSplitFit`` to monitor progress, as its not necessary for the
             actual operation of ``ProjSplitFit``. However, if the value function is
@@ -50,8 +50,8 @@ class Regularizer(object):
             prox : function
                 must be a function of two parameters: a numpy-style array
                 and a float which is the multiple applied to the function.
-                That is, this function must return :math:`\\text{prox}_{\eta h}(x)``
-                for arbitrary inputs :math:`x` and :math:`\\eta`.
+                That is, this function must return :math:`\text{prox}_{\eta h}(x)``
+                for arbitrary inputs :math:`x` and :math:`\eta`.
 
             value : function,optional
                 must be a function of one parameter:  a numpy-style
@@ -64,9 +64,9 @@ class Regularizer(object):
                 The function will appear in the objective as
 
                 .. math::
-                  \\nu h(x)
+                  \nu h(x)
 
-                for a scaling :math:`\\nu`. Defaults to 1.0
+                for a scaling :math:`\nu`. Defaults to 1.0
 
             step : :obj:`float`,optional
                 Stepsize to use in the proximal steps of projective splitting
@@ -97,12 +97,12 @@ class Regularizer(object):
         self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
 
     def setScaling(self,scaling):
-        '''
+        r'''
         Set the scaling. That is, in the objective, the regularizer will
         be scaled by scaling=nu. It will appear as
 
         .. math::
-          \\nu h(x)
+          \nu h(x)
 
         Parameters
         ----------
@@ -158,15 +158,15 @@ class Regularizer(object):
 
 
 def L1(scaling=1.0,step=1.0):
-    '''
+    r'''
     Create the L1 regularizer. The output is an object of class ``regularizers.Regularizer``
     which may be input to ``ProjSplitFit.addRegularizer``.
 
-    Scaling is the coefficient :math:`\\nu` that will
+    Scaling is the coefficient :math:`\nu` that will
     be applied to the function in the objective. That is, it will appear as
 
     .. math::
-      \\nu\|z\|_1
+      \nu\|z\|_1
 
     step is the stepsize that projective splitting will use for the proximal steps
     w.r.t. this regularizer.
@@ -195,15 +195,15 @@ def L1(scaling=1.0,step=1.0):
     return out
 
 def L2sq(scaling=1.0,step=1.0):
-    '''
+    r'''
     Create the L2 squared regularizer. The output is an object of class ``regularizers.Regularizer``
     which may be input to ``ProjSplitFit.addRegularizer``.
 
-    Scaling is the coefficient :math:`\\nu` that will
+    Scaling is the coefficient :math:`\nu` that will
     be applied to the function in the objective. That is, it will appear as
 
     .. math::
-      \\frac{\\nu}{2}\\|z\\|_2^2.
+      \frac{\nu}{2}\|z\|_2^2.
 
     Note the factor of 0.5.
     
@@ -232,18 +232,18 @@ def L2sq(scaling=1.0,step=1.0):
     return out
 
 def L2(scaling=1.0,step=1.0):
-    '''
+    r'''
     Create the L2 norm regularizer. Not to be confused with the L2sq regularizer,
     which is this function *squared*.
 
     The output is an object of class ``regularizers.Regularizer``
     which may be input to ``ProjSplitFit.addRegularizer``.
 
-    Scaling is the coefficient :math:`\\nu` that will
+    Scaling is the coefficient :math:`\nu` that will
     be applied to the function in the objective. That is, it will appear as
 
     .. math::
-      \\nu\\|z\\|_2
+      \nu\|z\|_2
 
     step is the stepsize that projective splitting will use for the proximal steps
     w.r.t. this regularizer.

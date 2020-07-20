@@ -80,17 +80,17 @@ class LossProcessor(object):
         
 #############
 class Forward2Fixed(LossProcessor):
-    '''
+    r'''
     Two forward steps with a fixed stepsize. Updates of the form
         
     .. math::        
-        x_i^k &= H z^k - \\rho (\\nabla f_i(H z^k) - w_i^k) \\\\
-        y_i^k &= \\nabla f_i(x_i^k)
+        x_i^k &= H z^k - \rho (\nabla f_i(H z^k) - w_i^k) \\
+        y_i^k &= \nabla f_i(x_i^k)
     
-    where the stepsize :math:`\\rho` is fixed and 
+    where the stepsize :math:`\rho` is fixed and 
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
     
     See https://arxiv.org/abs/1803.07043.    
     
@@ -120,20 +120,20 @@ class Forward2Fixed(LossProcessor):
         psObj.ydata[block] = a + gradx        
         
 class Forward2Backtrack(LossProcessor):
-    '''    
+    r'''    
     Two forward steps with backtracking linesearch stepsize. 
     
     Updates of the form 
     
     .. math::        
-        x_i^k &= H z^k - \\rho (\\nabla f_i(H z^k) - w_i^k) \\\\
-        y_i^k &= \\nabla f_i(x_i^k)
+        x_i^k &= H z^k - \rho (\nabla f_i(H z^k) - w_i^k) \\
+        y_i^k &= \nabla f_i(x_i^k)
 
     
-    where the stepsize :math:`\\rho` is discovered by backtracking and
+    where the stepsize :math:`\rho` is discovered by backtracking and
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
     
     See https://arxiv.org/abs/1803.07043.    
     
@@ -239,33 +239,33 @@ class Forward2Affine(LossProcessor):
         
     
 class  Forward1Fixed(LossProcessor):
-    '''    
+    r'''    
     One forward step with a fixed stepsize. See https://arxiv.org/abs/1902.09025.
 
     Updates of the form 
     
     .. math::        
-        x_i^k &= (1-\\alpha)x_i^{k-1} + \\alpha H z^k - \\rho (y_i^{k-1} - w_i^k) \\\\
-        y_i^k &= \\nabla f_i(x_i^k)
+        x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho (y_i^{k-1} - w_i^k) \\
+        y_i^k &= \nabla f_i(x_i^k)
 
     
-    where the stepsize :math:`\\rho` is constant and 
+    where the stepsize :math:`\rho` is constant and 
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j)    
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)    
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
     
     '''
     def __init__(self,stepsize=1.0, blendFactor=0.1):
-        '''
+        r'''
         Parameters
         ----------
             stepsize : :obj:`float`,optional
                 stepsize, defaults to 1.0
             
             blendFactor : :obj:`float`,optional
-                Averaging parameter :math:`\\alpha` in one forward step update. Defaults to 0.1.
+                Averaging parameter :math:`\alpha` in one forward step update. Defaults to 0.1.
                 Must be between 0 and 1. 
                         
         '''
@@ -296,28 +296,28 @@ class  Forward1Fixed(LossProcessor):
   
     
 class Forward1Backtrack(LossProcessor):
-    '''
+    r'''
     One forward step with a backtracking line-search stepsize. 
     See https://arxiv.org/abs/1902.09025.    
     
     Updates of the form 
     
     .. math::        
-        x_i^k &= (1-\\alpha)x_i^{k-1} + \\alpha H z^k - \\rho (y_i^{k-1} - w_i^k) \\\\
-        y_i^k &= \\nabla f_i(x_i^k)
+        x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho (y_i^{k-1} - w_i^k) \\
+        y_i^k &= \nabla f_i(x_i^k)
 
     
-    where the stepsize :math:`\\rho` is discovered by backtracking and 
+    where the stepsize :math:`\rho` is discovered by backtracking and 
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j)    
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)    
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
         
     '''
     def __init__(self,initialStep=1.0, blendFactor=0.1,backTrackFactor = 0.7, 
                  growFactor = 1.0, growFreq = None):
-        '''
+        r'''
         
         Parameters
         ----------
@@ -325,7 +325,7 @@ class Forward1Backtrack(LossProcessor):
                 Stepsize in first iteration, defaults to 1.0                            
             
             blendFactor : :obj:`float`,optional
-                Averaging parameter :math:`\\alpha` in one forward step update. Defaults to 0.1.
+                Averaging parameter :math:`\alpha` in one forward step update. Defaults to 0.1.
                 Must be between 0 and 1.
                 
             backtrackFactor : :obj:`float`,optional
@@ -433,7 +433,7 @@ class Forward1Backtrack(LossProcessor):
             
         
 class BackwardExact(LossProcessor):
-    '''
+    r'''
     Exact backward step for quadratics via matrix inversion. Only works with the squared loss, i.e. p=2.
     Appropriate matrix inverses are cached before the first iteration. 
     
@@ -446,17 +446,17 @@ class BackwardExact(LossProcessor):
     Updates of the form 
     
     .. math::        
-        x_i^k &= \\text{prox}_{\\rho f_i}( H z^k +\\rho w_i^k) \\\\
-        y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)
+        x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
+        y_i^k &= \rho^{-1}(H z^k + \rho w_i^k - x_i^k)
 
     
     where
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
         
     and the proximal operator is computed exactly by solving the appropriate linear equation.
-    Only available when the loss is the :math:`\\ell_2^2` loss. 
+    Only available when the loss is the :math:`\ell_2^2` loss. 
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
     
@@ -549,7 +549,7 @@ class BackwardExact(LossProcessor):
         
         
 class BackwardCG(LossProcessor):
-    '''
+    r'''
     Backward step via conjugate gradient for quadratics. Only works for the squared
     loss, i.e. p=2. 
     
@@ -558,13 +558,13 @@ class BackwardCG(LossProcessor):
     Updates of the form 
     
     .. math::
-        x_i^k &= \\text{prox}_{\\rho f_i}( H z^k +\\rho w_i^k) \\\\
-        y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)        
+        x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
+        y_i^k &= \rho^{-1}(H z^k + \rho w_i^k - x_i^k)        
     
     where
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j).
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
         
     The proximal operator is only computed approximately via a conjugate gradient method.
     This only works for the :math:`\ell_2^2` loss, in which case computing the prox
@@ -578,11 +578,11 @@ class BackwardCG(LossProcessor):
     
     '''
     def __init__(self,relativeErrorFactor=0.9,stepsize=1.0,maxIter=100):
-        '''
+        r'''
         Parameters
         ----------
             relativeErrorFactor : :obj:`float`,optional
-                :math:`\\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
+                :math:`\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
         
             stepsize : :obj:`float`,optional
                 stepsize, defaults to 1.0
@@ -673,7 +673,7 @@ class BackwardCG(LossProcessor):
         
         
 class BackwardLBFGS(LossProcessor):
-    '''
+    r'''
     Backward step via the L-BFGS solver. 
     
     See https://arxiv.org/abs/1902.09025.    
@@ -681,13 +681,13 @@ class BackwardLBFGS(LossProcessor):
     Updates of the form 
     
     .. math::        
-        x_i^k &= \\text{prox}_{\\rho f_i}( H z^k +\\rho w_i^k) \\\\
-        y_i^k &= \\rho^{-1}(H z^k + \\rho w_i^k - x_i^k)
+        x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
+        y_i^k &= \rho^{-1}(H z^k + \rho w_i^k - x_i^k)
     
     where
     
     .. math::
-        f_i(t) = \\frac{1}{n}\\sum_{j\in\\text{block }i}\\ell (t_0 + a_j^T t,y_j).
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
         
     The proximal operator is computed approximately via the L-BFGS solver until the 
     relative error criteria of https://arxiv.org/abs/1902.09025 are met, or a max 
@@ -699,14 +699,14 @@ class BackwardLBFGS(LossProcessor):
     def __init__(self,step=1.0,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
                  c2 = 0.9,shrinkFactor = 0.7, growFactor = 1.1,
                  maxiter=100,lineSearchIter = 20):
-        '''
+        r'''
         Parameters
         ----------
             step : :obj:`float`,optional
                 Stepsize, defaults to 1.0                            
             
             relativeErrorFactor : :obj:`float`,optional
-                :math:`\\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
+                :math:`\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
         
             memory : :obj:`int`,optional
                 how many iterations of memory in L-BFGS. Defaults to 10. Must be at least one.
