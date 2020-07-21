@@ -62,6 +62,8 @@ def test_bad_getParams():
         
     
         testing = projSplit.getPrimalViolation()
+        
+        testing = projSplit.getScale()
         noExcept = True
     except:
         noExcept = False

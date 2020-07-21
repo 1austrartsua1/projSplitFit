@@ -365,4 +365,7 @@ These may be extracted later via the ``getHistory()`` method.
 scaling vector used to scale each column of the data matrix is applied to the elements of :math:`z^k`.
 That way, the coefficient vector can be used with unnormalized data such as new test data.
 However the method ``getScaling()`` returns this scaling vector. This scaling vector can then be applied to normalize new test
-data. 
+data. To normalize a new test datapoint ``xtest``::
+
+  scaling = projSplit.getScaling()
+  x_test_normalized = xtest/scaling 

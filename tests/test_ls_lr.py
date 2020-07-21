@@ -51,6 +51,11 @@ def test_f1backtrack(gf):
     
     projSplit.setDualScaling(1e-1)
     projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
+    
+    vec = projSplit.getScaling()
+    assert len(vec) == d
+    
+    
     projSplit.run(maxIterations = None,keepHistory = True,
                   primalTol=1e-3,dualTol=1e-3,nblocks=5)
     ps_val = projSplit.getObjective()
@@ -261,6 +266,7 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
     projSplit.run(maxIterations = 5000,keepHistory = True,nblocks = 10,primalTol=0.0,
                   dualTol=0.0)
     ps_sol = projSplit.getSolution()
+    
     
     if getNewOptVals:
         LSval = cache.get((inter,norm,'lsIntNormOpt'))

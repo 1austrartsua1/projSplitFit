@@ -80,6 +80,17 @@ def test_user_defined_embedded(processor,testNumber):
     gamma = 1e0        
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
+    
+    try:
+        scaling = projSplit.getScale()
+        exceptMade = False
+    except:
+        exceptMade = True
+    if exceptMade==False:
+        raise Exception 
+        
+    
+    
         
     regObj = []
     nu = [0.01,0.03,0.1]
