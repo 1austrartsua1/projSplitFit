@@ -11,6 +11,15 @@ class ExceptLow(Exception):
 class ExceptHigh(Exception):
     pass
 
+def checkUserBool(arg,argname):
+    if arg not in [False,True]:
+        print(f"Warning: {argname} should be a bool")
+        print("setting it to False")
+        return False
+    else:
+        return arg 
+    
+
 def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,
                    low=None,lowAllowed=False,high=None,highAllowed=False):
     try:
@@ -35,14 +44,22 @@ def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,
         if default == None:
             raise Exception(f"ERROR: {inputName} is meant to be greater than {low}") 
         else:
-            print(f"WARNING: {inputName} is meant to be greater than {low}")
+            if lowAllowed == False:
+                print(f"WARNING: {inputName} is meant to be greater than {low}")
+            else:
+                print(f"WARNING: {inputName} is meant to be at least {low}")
+                
             print(f"Setting it to default {default}")
             return default
     except(ExceptHigh):
         if default == None:
             raise Exception(f"ERROR: {inputName} is meant to be less than {high}") 
         else:
-            print(f"WARNING: {inputName} is meant to be less than {high}")
+            if highAllowed == False:
+                print(f"WARNING: {inputName} is meant to be less than {high}")
+            else:
+                print(f"WARNING: {inputName} is meant to be at most {high}")
+                
             print(f"Setting it to default {default}")
             return default
     except:        
