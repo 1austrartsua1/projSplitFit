@@ -10,23 +10,29 @@ from regularizers import L2sq
 import numpy as np 
 import pickle 
 import pytest 
-import cvxpy as cvx
+
+m = 10
+d = 50
 
 if getNewOptVals:        
+    import cvxpy as cvx
     cache = {}
+    xcvx = cvx.Variable(d)
+    fL2sq = 5.5*0.5*cvx.norm(xcvx,2)**2
+    fL2 = 3.7*cvx.norm(xcvx,2)
 else:    
+    xcvx = None
+    fL2sq = None
+    fL2 = None 
     with open('results/cache_BuiltInRegs','rb') as file:
         cache = pickle.load(file)
 
 
 L2sqReg = L2sq(scaling=5.5)
 L2reg = L2(scaling = 3.7)
-m = 10
-d = 50
 
-xcvx = cvx.Variable(d)
-fL2sq = 5.5*0.5*cvx.norm(xcvx,2)**2
-fL2 = 3.7*cvx.norm(xcvx,2)
+
+
 
 @pytest.mark.parametrize("builtInReg,cvxf,testNum",[(L2sqReg,fL2sq,0),(L2reg,fL2,1)])
 def test_a_reg(builtInReg,cvxf,testNum):
