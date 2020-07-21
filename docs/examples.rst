@@ -251,11 +251,7 @@ Finally we are ready to run the method via::
 One can obtain the final objective value and solution via::
 
   optimalVal = projSplit.getObjective()
-  Hgammastar,gammastar = projSplit.getSolution()
-
-Note that ``getSolution`` returns both the primal variable and the image of the
-primal variable under the linear operator composed with the data term.
-
+  gammastar = projSplit.getSolution()
 
 Loss Process Objects
 =====================
@@ -363,5 +359,10 @@ The ``keepHistory`` and ``historyFreq`` arguments to ``run()`` allow you to choo
 the algorithm in terms of objective function values, running time, primal and dual residuals, and hyperplane values.
 These may be extracted later via the ``getHistory()`` method.
 
-``getObjective()`` simply returns the objective value at the current primal iterate. ``getSolution()`` returns
-the primal iterate :math:`z^k` as well as :math:`H z^k`.
+``getObjective()`` simply returns the objective value at the current primal iterate.
+
+``getSolution()`` returns the primal iterate :math:`z^k`. If the ``descale`` argument is set to True, then the
+scaling vector used to scale each column of the data matrix is applied to the elements of :math:`z^k`.
+That way, the coefficient vector can be used with unnormalized data such as new test data.
+However the method ``getScaling()`` returns this scaling vector. This scaling vector can then be applied to normalize new test
+data. 

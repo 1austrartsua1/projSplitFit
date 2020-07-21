@@ -260,7 +260,7 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
     projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)    
     projSplit.run(maxIterations = 5000,keepHistory = True,nblocks = 10,primalTol=0.0,
                   dualTol=0.0)
-    ps_sol,_ = projSplit.getSolution()
+    ps_sol = projSplit.getSolution()
     
     if getNewOptVals:
         LSval = cache.get((inter,norm,'lsIntNormOpt'))
@@ -327,7 +327,7 @@ def test_ls_blocks(processor):
     projSplit.addData(A,y,2,processor,normalize=False)    
     projSplit.run(maxIterations = 1000,keepHistory = True,nblocks = 10)
     assert projSplit.getObjective() >= 0, "objective is not >= 0"
-    sol,_ = projSplit.getSolution()
+    sol = projSplit.getSolution()
     assert sol.shape == (d+1,)
     
     if getNewOptVals:

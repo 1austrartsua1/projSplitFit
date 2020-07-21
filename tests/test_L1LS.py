@@ -124,7 +124,7 @@ def test_user_defined_embedded(processor,testNumber):
     else:
         xopt=cache['xoptembedded']
         
-    xps,_ = projSplit.getSolution()
+    xps = projSplit.getSolution()
     print("Norm error = {}".format(np.linalg.norm(xopt-xps,2)))
     assert(np.linalg.norm(xopt-xps,2)<1e-2)
     
@@ -226,7 +226,7 @@ def test_user_defined(processor,testNumber):
             
         
         if i == 0:
-            xps,_ = projSplit.getSolution()
+            xps = projSplit.getSolution()
             print(np.linalg.norm(xopt-xps,2))            
             assert(np.linalg.norm(xopt-xps,2)<1e-2)    
         else:
@@ -266,7 +266,7 @@ def test_user_defined(processor,testNumber):
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,
                   resetIterate=True,primalTol=1e-12,dualTol = 1e-12)
     ps_val = projSplit.getObjective()
-    xps,_ = projSplit.getSolution()
+    xps = projSplit.getSolution()
     
     if getNewOptVals and (testNumber==0):
         x_cvx = cvx.Variable(d)

@@ -445,49 +445,94 @@ class ProjSplitFit(object):
 
         return currentLoss
 
-
-    def getSolution(self):
+    
+    def getScaling(self):
+        r'''
+        Returns the scaling vector. For the :math:`n\times d'` data matrix
+        :math:`A`, the scaling vector is :math:`d'\times 1` vector containing the 
+        scaling factors used for each feature. This scaling vector can be used with 
+        new test data to normalize the features. 
+        If the ``normalize`` argument to ``addData`` was set to False,
+        then an exception will be raised.
+        
+        If no data have been added yet, raises an exception. 
+        
+        Returns         
+        --------
+          scaling : 1D NumPy array
+            scaling vector or None if ``normalize`` set to False in 
         '''
-        Returns the current solution vector.
+        if self.dataAdded==False:
+            raise Exception("No data added yet so cannot return scale vector")
+        
+        if self.normalize == False:
+            raise Exception("No normalization applied so cannot return a scale vector")
+        
+        return self.scaling 
+        
 
-        Returns :math:`(Hz^k, z^k)` where :math:`z^k` is the current primal Solution
-        and :math:`H` is the linear operator added with the data (typically the identity, which
-        is the default).
+    def getSolution(self,descale=False):
+        r'''
+        Returns the current primal solution vector. Recall the objective function
+        
+        .. math::
 
-        If the ``normalize`` argument is set to True in ``addData``, the scaling which
-        was applied to each feature is applied to the entries of :math:`Hz^k`, so the
-        same results can be obtained with the original non-normalized data matrix.
-        Note that the scaling is not applied to :math:`z^k`, the second output.
-
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
+                \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,y_i)
+                   + \sum_{j=1}^{n_r}h_j(G_j z)
+        
+        Returns the current primal solution :math:`z^k`.
+        
+        If the ``intercept`` argument was True in ``addData``, the intercept coefficient is the
+        first entry of :math:`z^k`.
+        
         If the ``run`` method has not been called yet, raises an exception.
 
-        If the ``intercept`` argument was True in ``addData``, the intercept coefficient is the
-        first entry of both :math:`z^k` and :math:`Hz^k`.
-
+        Parameters
+        ----------
+        
+            descale : :obj:`bool`,optional
+                    Defaults to False. 
+                    If the ``normalize`` argument to ``addData`` was set to True
+                    and the ``descale`` argument here is True, the normalization
+                    that was applied to the columns of the data matrix is applied 
+                    to the entries of :math:`z^k`, meaning that the user may 
+                    use the original unnormalized data matrix with this new feature,
+                    and also may use it on new data. However, if a linear operator
+                    was added with ``addData`` via argument ``linOp``, then a warning
+                    message will be printed and the solution vector will not be descaled. 
+            
         Returns
         -------
-            out : :obj:`tuple` of two 1D numpy arrays
-                ( :math:`Hz^k`, :math:`z^k` )
+            z : 1D numpy array
+                :math:`z^k` 
 
         '''
 
         if self.runCalled == False:
             raise Exception("Method not run yet, no solution to return. Call run() first.")
-
-
-        Hz = self.dataLinOp.matvec(self.z)
-        out = zeros(self.ncolsOfA+1)
-
-        if self.normalize:
-            out[1:] = Hz[1:]/self.scaling
+        
+            
+        if descale:
+            if self.normalize:
+                if self.linOpUsedWithLoss:
+                    print("Warning: Cannot descale because of the presence of a linear operator")
+                    print("composed with the data. Just returning the unnormalized solution vector")
+                    out = self.z 
+                else:
+                    out = self.z[1:]/self.scaling[1:]
+                    out = concatenate((array(self.z[0]),out))
+            else:
+                out  = self.z 
         else:
-            out[1:] = Hz[1:]
-
-        if self.intercept:
-            out[0] = self.z[0]
-            return out,self.z
-        else:
-            return out[1:],self.z
+            out  = self.z 
+            
+        if (self.intercept==False):
+            out = out[1:]
+            
+        
+        return out
+        
 
 
     def getPrimalViolation(self):
