@@ -736,9 +736,10 @@ class ProjSplitFit(object):
                 self.internalResetIterate = True
 
         self.nDataBlocks = numBlocks
+        
+        blocksPerIteration = ui.checkUserInput(blocksPerIteration,int,'int','blocksPerIteration',default=1,low=1,lowAllowed=True)
 
-        try:
-            blocksPerIteration = int(blocksPerIteration)
+        try:            
             if blocksPerIteration >= self.nDataBlocks:
                 blocksPerIteration = self.nDataBlocks
         except:
