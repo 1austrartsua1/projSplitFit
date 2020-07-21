@@ -820,6 +820,8 @@ class ProjSplitFit(object):
             self.historyArray.append(dualErrs)
             self.historyArray.append(phis)
             self.historyArray = array(self.historyArray)
+        else:
+            self.historyArray = None
 
 
 
