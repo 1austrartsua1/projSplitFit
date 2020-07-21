@@ -11,6 +11,15 @@ class ExceptLow(Exception):
 class ExceptHigh(Exception):
     pass
 
+def checkUserBool(arg,argname):
+    if arg not in [False,True]:
+        print(f"Warning: {argname} should be a bool")
+        print("setting it to False")
+        return False
+    else:
+        return arg 
+    
+
 def checkUserInput(userInput,rightType,typeAsString,inputName,default=None,
                    low=None,lowAllowed=False,high=None,highAllowed=False):
     try:

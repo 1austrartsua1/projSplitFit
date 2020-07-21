@@ -702,11 +702,6 @@ class ProjSplitFit(object):
                     n = \lceil n/n_b \rceil n\%n_b
                          + \lfloor n/n_b \rfloor(n_b - n\%n_b).
                 
-                
-                
-                
-                
-
             blockActivation : :obj:`string`,optional
                 Strategy for selecting blocks of the loss to process at each iteration.
                 Defaults to "greedy". Other valid choices are "random" and "cyclic".
@@ -742,21 +737,40 @@ class ProjSplitFit(object):
 
         self.nDataBlocks = numBlocks
 
-        if blocksPerIteration >= self.nDataBlocks:
-            blocksPerIteration = self.nDataBlocks
+        try:
+            blocksPerIteration = int(blocksPerIteration)
+            if blocksPerIteration >= self.nDataBlocks:
+                blocksPerIteration = self.nDataBlocks
+        except:
+            print("Warning: blocksPerIteration should be a positive int")
+            print("Setting blocksPerIteartion to 1")
+            blocksPerIteration =1
 
         self.partition = ut.createApartition(self.nrowsOfA,self.nDataBlocks)
 
         self.__setUpRegularizers()
 
         self.nDataBlockVars = self.ncolsOfA + 1 # extra 1 for the intercept term
-
+        
+        
+        resetIterate = ui.checkUserBool(resetIterate,"resetIterate")
+                    
         if resetIterate or self.internalResetIterate:
             self.internalResetIterate = False
             self.__initializeVariables()
-
+            
+        keepHistory = ui.checkUserBool(keepHistory,"keepHistory")
+        verbose = ui.checkUserBool(verbose,"verbose")                
+            
+        if maxIterations != None:            
+            maxIterations = ui.checkUserInput(maxIterations,int,'int','maxIterations',default=1000,low=1,lowAllowed=True)
+             
         if maxIterations is None:
             maxIterations = float('Inf')
+            
+        historyFreq = ui.checkUserInput(historyFreq,int,'int','historyFreq',default=10,low=1,lowAllowed=True)
+        primalTol = ui.checkUserInput(primalTol,float,'float','primalTol',default=1e-6,low=0.0,lowAllowed=True)
+        dualTol = ui.checkUserInput(dualTol,float,'float','dualTol',default=1e-6,low=0.0,lowAllowed=True)
 
         self.k = 0
         objective = []
