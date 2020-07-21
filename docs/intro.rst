@@ -2,41 +2,80 @@
 Introduction
 ##############
 
-*ProjSplitFit* is a *Python* package for solving general linear data fitting problems
+``ProjSplitFit`` is a Python package for solving general linear data fitting problems
 involving multiple regularizers and compositions with linear operators. The solver is
-the *projective splitting* algorithm, which is a highly-flexible and scalable first-order solver.
+the *projective splitting* algorithm, a highly flexible and scalable first-order solver
+framework.
 This package implements most variants of projective splitting including
-*backward steps* (proximal steps), *forward steps* (gradient steps), and *block-iterative operation*.
-The implementation is based on *NumPy*.
+*backward steps* (proximal steps), various kinds of 
+*forward steps* (gradient steps), and *block-iterative operation*.
+The implementation is based on ``NumPy``.
 
 The basic optimization problem that this code solves is the following:
 
 .. math::
-   \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}} \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}h_j(G_j z)
+   \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}} \left\{ \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r} \nu_j h_j(G_j z) \right\}
 
 where
 
-* :math:`z_0\in\mathbb{R}` is the intercept variable
-* :math:`z\in\mathbb{R}^d` is the parameter vector
+* :math:`z_0\in\mathbb{R}` is the intercept variable (which may be optionally fixed to zero)
+* :math:`z\in\mathbb{R}^d` is the regression parameter vector
 * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
-* :math:`y_i` for :math:`i=1,\ldots,n` are the labels
+* :math:`y_i` for :math:`i=1,\ldots,n` are the responses (or labels)
 * :math:`H\in\mathbb{R}^{d' \times d}` is a matrix (typically the identity)
 * :math:`a_i\in\mathbb{R}^{d'}` are the observations, forming the rows of the :math:`n\times d'` observation/data matrix :math:`A`
 * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
 * :math:`G_j` for :math:`j=1,\ldots,n_r` are matrices, typically the identity.
+* :math:`\nu_j` are positive scalar penalty parameters that multiply the regularizer functions.
 
-*ProjSplitFit* supports the following choices for the loss :math:`\ell`:
+The first summation in this formulation is the *loss*, measuring how well the
+predictions :math:`z_0 + a_i^\top H z` obtained from the dataset using the 
+regression parameters :math:`(z_0,z)` match the observed responses
+:math:`y_i`.  ``ProjSplitFit`` supports the following choices for the loss :math:`\ell`:
 
-* :math:`\ell_p^p`, i.e. :math:`\ell(a,b)=\frac{1}{p}|a-b|^p` for any :math:`p > 1`
-* logistic, i.e. :math:`\ell(a,b)=\log(1+\exp(-ab))`
+* :math:`\ell_p^p`, that is, :math:`\ell(a,b)=\frac{1}{p}|a-b|^p` for any :math:`p > 1`
+* logistic, that is, :math:`\ell(a,b)=\log(1+\exp(-ab))`
 * Any user-defined convex loss.
 
-*ProjSplitFit* supports the following choices for the regularizers:
+The second summation consists of regularizers that encourage specific
+structural properties in the :math:`z` vector, most typically some form of
+sparsity. ``ProjSplitFit`` supports the following choices for the
+regularizers:
 
-* The :math:`\ell_1` norm, i.e. :math:`\|x\|_1=\sum_i |x_i|`
-* The :math:`\ell_2^2` norm, i.e. :math:`\|x\|_2^2`
-* The :math:`\ell_2` norm i.e. :math:`\|x\|_2`
+* The :math:`\ell_1` norm, that is, :math:`\|x\|_1=\sum_i |x_i|`
+* The :math:`\ell_2^2` squared norm, that is, :math:`\|x\|_2^2`
+* The :math:`\ell_2` norm that is, :math:`\|x\|_2`
 * Any user-defined convex regularizer.
 
-The matrices :math:`H` and :math:`G_j` may be any linear operator. An easy way to define them is to use the
-*scipy.sparse.linalg.LinearOperator* class, or simply 2D NumPy arrays.
+The package does not impose any limits on the number of regularizers present
+in a single problem formulation.
+
+The linear transformations :math:`H` and :math:`G_j` may be any linear operators. 
+They may be passed to ``projSplitFit`` as 2D ``NumPy`` arrays or abstract linear opertors
+as defined by the ``scipy.sparse.linalg.LinearOperator`` class.
+
+
+Brief technical overview
+==================================
+
+The project splitting algorithm is a primal-dual algorithm based on separating
+hyperplanes.  A *dual solution* is a tuple of vectors :math:`w = (w_1, \ldots,
+w_{n + n_r})` that certify the optimality of the "primal" vector :math:`z` for
+the problem above.  At each iteration, the algorithm maintains an estimate
+:math:`(z,w)` of primal and dual solutions.  Each iteration has two phases:
+first, the algorithm "processes" some of the summation terms in the
+problem formulation.  The results of the processing step allow the
+algorithm to construct a hyperplane that separates the current primal-dual
+solution estimate from the set of optimal primal-dual pairs.  The next
+iterate is then obtained by projecting the current solution pair estimate
+onto this hyperplane.
+
+Within this overall framework, there are many alternatives for processing the
+various summation terms in the formulation.  ``ProjSplitFit`` processes all
+the regularizer terms at every iteration, using a standard proximal step (see
+below for more information).  For the loss terms, however, it provides
+considerable flexibility: the terms in the loss summation may be divided into
+blocks, and only a subset of these blocks need be processed at each iteration
+-- this mode of operation is called *block iterative*.  Furthermore, there are
+numerous options for processing each block, including approximate backward
+(proximal) steps and various kinds of forward steps.
