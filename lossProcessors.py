@@ -145,7 +145,7 @@ class Forward2Backtrack(LossProcessor):
         '''
         Parameters
         ----------
-            step : :obj:`float`,optional
+            initialStep : :obj:`float`,optional
                 stepsize, defaults to 1.0
                 
             Delta : :obj:`float`,optional
@@ -169,7 +169,7 @@ class Forward2Backtrack(LossProcessor):
         self.step = ui.checkUserInput(initialStep,float,'float','stepsize',default=1.0,low=0.0)                     
         self.Delta = ui.checkUserInput(Delta,float,'float','Delta',default=1.0,low=0.0)                     
         self.decFactor = ui.checkUserInput(backtrackFactor,float,'float','backtrackFactor',default=0.7,low=0.0,high=1.0)                     
-        self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.1,low=1.0,lowAllowed=True)
+        self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.0,low=1.0,lowAllowed=True)
         if growFreq == None:
             self.growFreq = None
         else:
@@ -344,8 +344,6 @@ class Forward1Backtrack(LossProcessor):
         self.embedOK = True 
         self.step = ui.checkUserInput(initialStep,float,'float','initialStep',default=1.0,low=0.0)             
         self.alpha = ui.checkUserInput(blendFactor,float,'float','blendFactor',default=0.1,low=0.0,high=1.0)
-        
-        self.delta = backTrackFactor
         self.delta = ui.checkUserInput(backTrackFactor,float,'float','backTrackFactor',default=0.7,low=0.0,high=1.0)
         self.growFac = ui.checkUserInput(growFactor,float,'float','growFactor',default=1.0,low=1.0,lowAllowed=True)
         
@@ -741,7 +739,7 @@ class BackwardLBFGS(LossProcessor):
         self.sigma = ui.checkUserInput(relativeErrorFactor,float,'float',
                                        'relativeErrorFactor',default=0.9,low=0.0,high=1.0,lowAllowed=True)     
         
-        self.m = ui.checkUserInput(memory,int,'int','memory',default=10,low=1)
+        self.m = ui.checkUserInput(memory,int,'int','memory',default=10,low=1,lowAllowed=True)
         self.c1 = ui.checkUserInput(c1,float,'float','c1',default=1e-4,low=0.0,high=1.0)
         self.c2 = ui.checkUserInput(c2,float,'float','c2',default=1e-4,low=0.0,high=1.0)
         if self.c1 >= self.c2:
@@ -753,7 +751,7 @@ class BackwardLBFGS(LossProcessor):
                                               default=0.7,low=0.0,high=1.0)
 
         self.growFactor = ui.checkUserInput(growFactor,float,'float','growFactor',
-                                         default=1.0,low=1.0,lowAllowed=True)
+                                         default=1.1,low=1.0)
         
         self.maxiter = ui.checkUserInput(maxiter,int,'int','maxiter',default=100,low=0)
         self.lineSearchIter = ui.checkUserInput(lineSearchIter,int,'int','maxiter',default=20,low=0)
