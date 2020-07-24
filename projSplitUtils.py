@@ -19,14 +19,8 @@ def dropFirst(n):
     pass
 
 class MyLinearOperator():
-    '''
-    Because scipy's linear operator requires passing in the shape
-    of a linear operator, we had to create my own "dumb" linear operator class.
-    This is used because a regularizer may be created with no composed linear operator,
-    and to deal with this we create an identity linear operator which just passes
-    through the input to output. But we don't necessarily know the dimensions at
-    that point, because addData() may not yet have been called. 
-    '''
+    # MyLinearOperator allows us to define "pass through" identity operators
+    # for when there really is no operator. 
     def __init__(self,matvec,rmatvec):
         self.matvec=matvec
         self.rmatvec=rmatvec
