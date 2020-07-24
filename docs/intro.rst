@@ -9,7 +9,7 @@ framework.
 This package implements most variants of projective splitting including
 *backward steps* (proximal steps), various kinds of 
 *forward steps* (gradient steps), and *block-iterative operation*.
-The implementation is based on ``NumPy``.
+The implementation is based on ``numpy``.
 
 The basic optimization problem that this code solves is the following:
 
@@ -47,7 +47,7 @@ regularizers:
 * The :math:`\ell_2` norm that is, :math:`\|x\|_2`
 * Any user-defined convex regularizer.
 
-The package does not impose any limits on the number of regularizers present
+The package does not impose any limits on the number of regularizers presepunt
 in a single problem formulation.
 
 The linear transformations :math:`H` and :math:`G_j` may be any linear operators. 
@@ -60,7 +60,7 @@ Brief technical overview
 
 The project splitting algorithm is a primal-dual algorithm based on separating
 hyperplanes.  A *dual solution* is a tuple of vectors :math:`w = (w_1, \ldots,
-w_{n + n_r})` that certify the optimality of the "primal" vector :math:`z` for
+w_d)` that certify the optimality of the "primal" vector :math:`z` for
 the problem above.  At each iteration, the algorithm maintains an estimate
 :math:`(z,w)` of primal and dual solutions.  Each iteration has two phases:
 first, the algorithm "processes" some of the summation terms in the
