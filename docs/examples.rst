@@ -2,40 +2,75 @@
 Tutorial
 ###############
 
-Adding Data
-==============
+Solving a problem with ``projSplitFit`` requires the following fundamental steps:
 
-Consider the least-squares problem defined as
+#.  Create an empty object from the ``ProjSplitFit`` class
+#.  Add data to set up the object's data/loss term
+#.  Add regularizers to the object
+#.  Run the optimization
+#.  Retrieve the solution and/or optimal value.
+
+This chapter gives simple examples of each of these operations.  Full
+descriptions of the methods used are in the following chapter.
+
+Note that ``projSplitFit`` with a lower-case initial 'p' denotes the name of
+the ``projSplitFit`` Python package, whereas ``ProjSplitFit`` with an
+upper-case initial 'P' denotes the primary class defined in that package.
+
+
+Basic Setup with a Quadratic Loss Term
+=======================================================================
+
+Assume that the matrix :math:`A` is a 2D ``NumPy`` array whose rows are the
+observations of some dataset and :math:`y` is a list or 1D ``NumPy`` array
+containing the corresponding response values. Consider the classical
+least-squares problem defined as
 
 .. math::
   \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2_2
   :label: eqLS
 
-Assuming the matrix :math:`A` is a 2D *NumPy* array, and :math:`y` is a 1D *NumPy* array, or list, then
-to solve this problem with projSplitFit, use
+to solve this problem with ``projSplitFit``, one would use
 the following code ::
 
   import projSplitFit as ps
   projSplit = ps.ProjSplitFit()
   projSplit.addData(A,y,loss=2,intercept=False)
   projSplit.run()
+  optimalVal = projSplit.getObjective()
+  z = projSplit.getSolution()
 
-The argument ``loss`` is set to 2 in order to use the :math:`\ell_2^2` loss. Other possible choices
-are any :math:`p> 1` for the :math:`\ell_p^p` loss and the string "logistic" for the logistic loss.
-The user may also define their own loss via the ``losses.LossPlugIn`` class (see below).
+The first line after the ``import`` statement calls the contructor to set up
+an empty ``ProjSplitFit`` object.  Next, the invocation of the ``addData``
+method provides the object with the model data and defines the loss term.
+
+In the ``addData`` call, the argument ``loss`` is set to 2 in order to use the
+:math:`\ell_2^2` loss. Other possible choices are any :math:`p > 1` for the
+:math:`\ell_p^p` loss and the string "logistic" for the logistic loss. The
+user may also define their own loss via the ``losses.LossPlugIn`` class
+(see below).  The ``intercept=False`` argument specifies that the model
+does not have an intercept (constant) term.
+
+This classical model has no regularizers, so it is not necessary to add
+regularizers.  The ``run`` method then solves the optimization problem. After
+solving the problem, the ``getObjective`` method returns the optimal solution
+value and the ``getSolution`` value returns the solution vector :math:`z`.
 
 Dual Scaling
 =============
 
-The dual scaling parameter, called :math:`\gamma` in most projective splitting papers,
-plays an important role in the empirical convergence rate of the method. It must be selected carefully.
-There are two ways to set :math:`\gamma`. Set it when calling the constructor::
+The dual scaling parameter, called :math:`\gamma` in most projective splitting
+papers, plays an important role in the empirical convergence rate of the
+method. It must be selected carefully. There are two ways to set
+:math:`\gamma`. It may be set when calling the ``projSplitfit`` constructor, as in::
 
   projSplit = ps.ProjSplitFit(dualScaling=gamma)
 
-(the default value is 1), or via the ``setDualScaling`` method::
+(the default value is 1).  It may also modified later through the
+``setDualScaling`` method::
 
   projSplit.setDualScaling(gamma)
+
 
 Including an Intercept Variable
 ================================
@@ -47,17 +82,20 @@ It is common in machine learning to fit an intercept for a linear model. That is
   \min_{z_0\in\mathbb{R},z\in\mathbb{R}^d}\frac{1}{2n}\|z_0 e + Az - y\|^2
 
 where :math:`e` is a vector of all ones. To do this, set the ``intercept`` argument to
-the ``addData`` method to True (which is the default). Note that added regularizers
+the ``addData`` method to ``True`` (which is the default). Note that regularizers
 never apply to the intercept variable.
+
 
 Normalization
 ================================
 
-The performance of first-order methods is effected by the scaling of the features. A common tactic
-to improve performance is to scale the features so that they have commensurate size. This is controlled
-by setting the ``normalize`` argument of ``addData`` to True (which is the default). If this is done,
-then the observations matrix :math:`A` is copied and the columns of the copy are normalized
-to have unit :math:`\ell_2` norm.
+The performance of first-order methods is effected by the scaling of the
+features. A common tactic to improve performance is to scale the features so
+that they have commensurate size. This is controlled by setting the
+``normalize`` argument of ``addData`` to ``True`` (which is the default). If this
+is done, then the observations matrix :math:`A` is copied and the columns of
+the copy are normalized to have unit :math:`\ell_2` norm.
+
 
 Adding a Regularizer
 ================================
@@ -65,118 +103,229 @@ Adding a Regularizer
 A common strategy in machine learning is to add a regularizer to the model. Consider the lasso
 
 .. math::
-  \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1
+  \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1 ,
+  :label: lasso
 
 
-where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, before calling ``run()`` we can invoke the
-``addRegularizer`` method::
+where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, we call the 
+``addRegularizer`` method of the ``ProjSplitFit`` object before invoking 
+``run()``::
 
   from regularizers import L1
   regObj = L1(scaling=lam1)
   projSplit.addRegularizer(regObj)
-  projSplit.run()
 
-The built-in method ``L1`` returns an object of class ``regularizers.Regularizer`` which may be used
-to describe any convex function to be used as a regularizer. Other built-in regularizers include
-``regularizers.L2sq`` which creates the regularizer :math:`0.5\|x\|_2^2` and ``regularizers.L2``,
-which creates the regularizer :math:`\|x\|_2`.
+The built-in method ``L1`` returns an object derived from the class
+``regularizers.Regularizer`` The ``regularizers.Regularizer`` class may be
+used to describe any convex function to be used as a regularizer. Other
+built-in regularizers include ``regularizers.L2sq`` which creates the
+regularizer :math:`0.5\|x\|_2^2` and ``regularizers.L2``, which creates the
+regularizer :math:`\|x\|_2`.
+
+To recap, the entire code to solve :eq:`lasso` with
+:math:`\lambda_1=0.1` and the default dual scaling of :math:`\gamma=1` is ::
+
+  import projSplitFit as ps
+  from regularizers import L1
+  lam1 = 0.1
+  projSplit = ps.ProjSplitFit()
+  projSplit.addData(A,y,loss=2,intercept=False)
+  regObj = L1(scaling=lam1)
+  projSplit.addRegularizer(regObj)
+  projSplit.run()
+  optimalVal = projSplit.getObjective()
+  z = projSplit.getSolution()
+
+If an intercept variable is desired, the keyword argument ``intercept`` should
+be set to ``True`` or omitted.
+
+
 
 User-Defined and Multiple Regularizers
 ========================================
 
-In addition to these built-in regularizers, the user may define their own. In *ProjSplitFit*, a regularizer is defined
-by a *prox* method and a *value* method. The *prox* method must be defined. The *value* method
-is optional and is only used if the user wants to calculate function values for performance tracking.
-The *prox* method returns the proximal operator for the function scaled by some amount.
-That is
+In addition to these built-in regularizers, the user may define their own. In
+``projSplitFit``, a regularizer is defined by a ``prox`` method and a
+``value`` method. The ``prox`` method must be defined. The ``value`` method is
+optional and is only used if the user specifies calculation of function values
+for performance tracking, or uses the ``getObjective`` method. The ``prox``
+method returns the proximal operator of :math:`\sigma f`, where :math:`f` is
+the regularizer function and :math:`\sigma` is a positive scaling factor. That
+is, the ``prox`` method should be defined so that
 
 .. math::
-  \text{prox}_{\sigma f}(t)=\arg\min_x\left\{ \sigma f(x) + \frac{1}{2}\|x-t\|^2_2\right\}.
+  f.\mathtt{prox(}t,\sigma\mathtt{)} = \text{prox}_{\sigma f}(t)=\arg\min_x\left\{ \sigma f(x) + \frac{1}{2}\|x-t\|^2_2\right\}.
+  :label: proxDef
 
-The value function simply returns the value :math:`f(x)`. Both of these functions must
-handle NumPy arrays. Value must return a float and prox must return a NumPy array
-with the same length as the input.
+The ``prox`` method should expect its first argument to be a 1D ``numpy``
+array and its second argument to be a positive ``float``; it should return a ``numpy`` array of the same dimensions as the first argument. 
 
-Adding multiple regularizers in *projSplitFit* is easy. Suppose one wants to solve
-the lasso with an additional constraint that each component of the solution must be non-negative.
-That is solve
+The ``value`` method
+*f*\ ``.value``\ (:math:`x`), if defined, should simply returns the function value
+:math:`f(x)`; it should expect its argument to be a 1D ``numpy`` array and
+return a ``float``.
+
+Using multiple regularizers in ``projSplitFit`` is straightforward:  one simply
+calls ``addRegularizer`` multiple times before calling ``run``. Suppose one
+wants to solve the lasso with an additional constraint that each component of
+the solution must be non-negative.  That is, one wishes to solve
 
 .. math::
   \min_{z\in\mathbb{R}^d, z\geq 0}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1.
+  :label: posLasso
 
-The non-negativity constraint can be thought of as another regularizer. That is
+The non-negativity constraint can be formulated as a second regularizer. That is, one may rewrite :eq:`posLasso` as
 
 .. math::
-  \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1 + g(z)
+  \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1 + g(z) ,
 
 where
 
 .. math::
   g(z)=\left\{
-  \begin{array}{cc}
-    \infty & \text{if some }z_i<0\\
-    0 & \text{else}
+  \begin{array}{ll}
+    +\infty & \text{if }z_i<0\text{ for any } i\\
+    0 & \text{otherwise.}
   \end{array}
   \right.
 
-To solve this problem with *projSplitFit* the user must define the regularizer object
-for :math:`g` and then add it to the model with ``addRegularizer``. This is done as
-follows::
+The proximal operator :eq:proxDef for this function is simply projection onto
+the nonnegative orthant, and is independent of :math:`\sigma`. To include this
+regularizer in ``projSplitFit`` object, one defines the regularizer object for
+:math:`g` and then adds it to the model with ``addRegularizer``.  These
+operations may be accomplished as follows:
 
-  from regularizers import Regularizer
+.. raw:: latex
+
+   \newpage
+
+::
+
+  from regularizer import Regularizer
   def prox_g(z,sigma):
     return (z>=0)*z
-  regObj = Regularizer(prox_g)
-  projSplit.addRegularizer(regObj)
-  projSplit.run()
+  def value_g(x):
+    if any(x < 0):
+       return float('Inf')
+    return 0.0
+  regObjNonneg = Regularizer(prox=prox_g, value=value_g)
+  projSplit.addRegularizer(regObjNonneg)
 
-The proximal operator is just the projection onto the constraint set.
-Note that ``prox_g`` must still have a second argument for the scaling even though
-for this particular function it is not used.
+Note that ``prox`` function must still have a second argument ``sigma`` even
+in cases, like this one, where the returned value is independent of ``sigma``.
+
+In summary, the entire code to solve :eq:`posLasso` with (for example)
+:math:`\lambda_1 = 0.1` and the default dual scaling of :math:`\gamma=1` would
+be ::
+
+  import projSplitFit as ps
+  from regularizers import L1, Regularizer
+
+  def prox_g(z,sigma):
+    return (z>=0)*z
+
+  def value_g(x):
+    if any(x < -1e-7):
+       return float('Inf')
+    return 0.0
+
+  lam1 = 0.1
+
+  projSplit = ps.ProjSplitFit()
+  projSplit.addData(A,y,loss=2,intercept=False)
+  regObj = L1(scaling=lam1)
+  projSplit.addRegularizer(regObj)
+    regObjNonneg = Regularizer(prox=prox_g, value=value_g)
+  projSplit.addRegularizer(regObjNonneg)
+  projSplit.run()
+  optimalVal = projSplit.getObjective()
+  z = projSplit.getSolution()
+
+Here, for numerical reasons, we have slightly modified the ``value_g``
+function to treat very small-magnitude negative numbers as if they were zero.
 
 
 Linear Operator Composed with a Regularizer
 ============================================
 
-Sometimes, one would like to compose a regularizer with a linear operator. This occurs
-in Total Variation deblurring for example. *ProjSplitFit* handles this with ease.
+Sometimes, one would like to compose a regularizer with a linear operator. Total variation deblurring is an example of such a situation. ``ProjSplitFit`` handles this with ease.
 Consider the problem
 
 .. math::
   \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|G z\|_1
 
-for some linear operator (matrix) :math:`G`. The linear operator can be added as an
-argument to the ``addRegularizer`` method as follows::
+for some linear operator  or matrix :math:`G`. The linear operator can be added
+as an argument to the ``addRegularizer`` method as follows, assuming the
+matrix variable ``G`` has been defined::
 
   regObj = L1(scaling=lam1)
   projSplit.addRegularizer(regObj,linearOp=G)
-  projSplit.run()
 
-:math:`G` must be a 2D NumPy array (or similar). The number of columns of
-:math:`G` must equal the number of primal variables,
-as defined by the matrix :math:`A` which is input to ``addData``. If not, *ProjSplitFit*
-will raise an Exception.
+:math:`G` must be a 2D ``numpy`` array ``scipy`` linear operator.   If
+:math:`G` is an array The number of columns of
+:math:`G` must equal the dimension of the solution vector :math:`z`.
+
+Documentation for ``scipy`` linear operators may be found in the package
+``scipy.sparse.linalg``.  When used with ``projSplitFit``, such operators
+should have a ``shape`` :math:`(m,n)` and define the methods ``matvec`` and
+``rmatvec``, which respectively compute the actions of the linear operator and
+its adjoint (the equivalent of multiplication by the matrix transpose).
+Consider the 1D total variation operator on :math:`\mathbb{R}^n` given by
+
+.. math::
+   [x_1 \;\;\; x_2 \;\;\; \cdots \;\;\; x_n] \;\;\; \mapsto \;\;\;
+   [x_1 - x_2 \;\;\; x_2 - x_3 \;\;\; \cdots \;\;\; x_{n-1} - x_n].
+
+The adjoint of this operator is the map
+
+.. math::
+   [u_1 \;\;\; u_2 \;\;\; \cdots \;\;\; u_{n-1}] \;\;\; \mapsto \;\;\;
+   [u_1 \;\;\; u_2 - u_1 \;\;\; 
+               u_3 - u_2 \;\;\; \cdots \;\;\; u_{n-1} - u_{n-2} \;\;\; -u_{n-1}].
+
+Calling ``varop1d(n)`` as defined in the code below will create such an operator::
+
+   import numpy
+   import scipy
+
+   def applyOperator(x):
+      return x[:(len(x)-1)] - x[1:]
+
+   def applyAdjoint(u):
+      v = numpy.zeros(len(u) + 1)
+      for i in range(len(u)):
+        v[i] += u[i]
+        v[i+1] -= u[i]
+      return v
+
+   def varop1d(n):
+      return scipy.sparse.linalg.LinearOperator(shape=(n-1,n),
+                                                matvec=applyOperator,
+                                                rmatvec=applyAdjoint)
+
 
 User-Defined Losses
 ====================
 
-Just as the user may define their own regularizers, they may define their own loss. This is achieved
-via the ``losses.LossPlugIn`` class. Objects of this class can be passed into ``addData`` as the ``process``
-argument. To define a loss, one needs to define its derivative method. Optionally, one may also define
-its value method if one would like to compute function values for performance tracking.
+Just as the you may define their own regularizers, you may define your own
+loss function, using the ``losses.LossPlugIn`` class. Objects of this class
+can be passed into ``addData`` as the ``loss`` argument. To define a loss, you
+need to define its ``derivative`` method. Optionally, you may also define its
+``value`` method if you would like to compute function values (either for
+performance tracking or to call the ``getObjective`` method).
 
 For example, consider the one-sided :math:`\ell_2^2` loss:
 
 .. math::
   \ell(x,y) =
   \left\{
-  \begin{array}{cc}
-    0 & x\leq y\\
-    \frac{1}{2}(x-y)^2 &\text{ else}
+  \begin{array}{ll}
+    0 & \text{if }x\leq y\\
+    \frac{1}{2}(x-y)^2 &\text{otherwise.}
   \end{array}
   \right.
 
-To use this loss::
+To use this loss, you would proceed as follows::
 
   import losses as ls
 
@@ -185,7 +334,7 @@ To use this loss::
   def val(x,y):
     return (x>=y)*(x-y)**2
 
-  loss = ls.LossPlugIn(deriv,val)
+  loss = ls.LossPlugIn(derivative=deriv,value=val)
   projSplit.addData(A,y,loss=loss)
 
 
