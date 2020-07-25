@@ -20,7 +20,7 @@ def dropFirst(n):
 
 class MyLinearOperator():
     # MyLinearOperator allows us to define "pass through" identity operators
-    # for when there really is no operator. 
+    # for when there really is no operator.
     def __init__(self,matvec,rmatvec):
         self.matvec=matvec
         self.rmatvec=rmatvec
