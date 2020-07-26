@@ -24,6 +24,9 @@ def dropFirst(n):
 class MyLinearOperator():
     # MyLinearOperator allows us to define "pass through" identity operators
     # for when there really is no operator.
+    # I did not use scipy's linear operator because this requires you to know the
+    # shape, but if this is being used with a regularizer one might not know
+    # the shape yet.
     def __init__(self,matvec,rmatvec,shape=None):
         self.matvec=matvec
         self.rmatvec=rmatvec
