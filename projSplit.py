@@ -376,16 +376,19 @@ class ProjSplitFit(object):
 
         if (linearOp is not None) & self.dataAdded:
             try:
-                #check the dimensions make sense
-                if linearOp.shape[1] != self.nPrimalVars:
-                    print("ERROR: linear operator added with this regularizer")
-                    print("has number of columns which is inconsistent with the added data")
-                    print("Added data has {} columns".format(self.nPrimalVars))
-                    print("This linear operator has {} columns".format(linearOp.shape[1]))
-                    print("These must be equal, aborting addRegularizer")
-                    raise Exception("Invalid col number in added linear op")
+                linopCols = linearOp.shape[1]
             except:
                 raise Exception("Invalid linearOp does not support shape")
+
+            #check the dimensions make sense
+            if linopCols != self.nPrimalVars:
+                print("ERROR: linear operator added with this regularizer")
+                print("has number of columns which is inconsistent with the added data")
+                print("Added data has {} columns".format(self.nPrimalVars))
+                print("This linear operator has {} columns".format(linopCols))
+                print("These must be equal, aborting addRegularizer")
+                raise Exception("Invalid col number in added linear op")
+
 
         if embed:
             OK2Embed = True

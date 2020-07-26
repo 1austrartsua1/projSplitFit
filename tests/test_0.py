@@ -11,7 +11,8 @@ import sys
 sys.path.append('../')
 import projSplit as ps
  
-import pytest 
+import pytest
+import numpy as np
 #--------------------------------------------------------------------
 # Create a ProjSplitFit object
 def test_getGamma1():    
@@ -69,6 +70,15 @@ def test_bad_getParams():
         noExcept = False
         
     assert noExcept == False
+
+ToDo = [([1]),([1,1,1]),([1,1,1,1,1,1,1]),([])]
+@pytest.mark.parametrize("y",ToDo)
+def test_bad_dims(y):
+    psObj = ps.ProjSplitFit()
+    obs = np.array([[1,2,3],[4,5,6]])
+    with pytest.raises(Exception):
+        psObj.addData(obs,y,2)
+
     
     
 

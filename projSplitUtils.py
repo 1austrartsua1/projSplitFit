@@ -24,9 +24,10 @@ def dropFirst(n):
 class MyLinearOperator():
     # MyLinearOperator allows us to define "pass through" identity operators
     # for when there really is no operator.
-    def __init__(self,matvec,rmatvec):
+    def __init__(self,matvec,rmatvec,shape=None):
         self.matvec=matvec
         self.rmatvec=rmatvec
+        self.shape = shape
         
 def expandOperator(linearOp):
     if not issparse(linearOp):
@@ -44,7 +45,8 @@ def MySparseLinearOperator(linearOp):
     linearOp = csr_matrix(linearOp)
     matvec = lambda x : linearOp.dot(x)
     rmatvec = lambda x : linearOp.T.dot(x)
-    return MyLinearOperator(matvec,rmatvec)
+    shape = linearOp.shape
+    return MyLinearOperator(matvec,rmatvec,shape)
 
 def createApartition(nrows,n_partitions):
     
