@@ -11,6 +11,9 @@ Utilities Methods
 from numpy import concatenate
 from numpy import array
 
+from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse import issparse
+from scipy.sparse import csr_matrix
         
 def totalVariation1d(n):
     pass
@@ -26,10 +29,23 @@ class MyLinearOperator():
         self.rmatvec=rmatvec
         
 def expandOperator(linearOp):
-    expandMatVec = lambda x: concatenate((array([x[0]]),linearOp.matvec(x[1:])))
-    expandrMatVec = lambda x: concatenate((array([x[0]]),linearOp.rmatvec(x[1:])))
+    if not issparse(linearOp):
+        linearOp = aslinearoperator(linearOp)
+        expandMatVec = lambda x: concatenate((array([x[0]]),linearOp.matvec(x[1:])))
+        expandrMatVec = lambda x: concatenate((array([x[0]]),linearOp.rmatvec(x[1:])))
+    else:
+        linearOp = csr_matrix(linearOp)
+        expandMatVec = lambda x: concatenate((array([x[0]]), linearOp.dot(x[1:])))
+        expandrMatVec = lambda x: concatenate((array([x[0]]), linearOp.T.dot(x[1:])))
+
     return expandMatVec,expandrMatVec
-    
+
+def MySparseLinearOperator(linearOp):
+    linearOp = csr_matrix(linearOp)
+    matvec = lambda x : linearOp.dot(x)
+    rmatvec = lambda x : linearOp.T.dot(x)
+    return MyLinearOperator(matvec,rmatvec)
+
 def createApartition(nrows,n_partitions):
     
     if nrows%n_partitions == 0:

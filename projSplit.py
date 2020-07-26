@@ -226,7 +226,6 @@ class ProjSplitFit(object):
                     # expandOperator to deal with the intercept term
                     # the first entry of the input is the intercept which is
                     # just passed through
-                    linearOp = aslinearoperator(linearOp)
                     matvec,rmatvec = ut.expandOperator(linearOp)
                     self.dataLinOp = ut.MyLinearOperator(matvec,rmatvec)
                     self.nPrimalVars = linearOp.shape[1]
@@ -857,10 +856,13 @@ class ProjSplitFit(object):
             regObj.linearOpUsed = False
         else:
             try:
-                regObj.linearOp = aslinearoperator(linearOp)
+                if not issparse(linearOp):
+                    regObj.linearOp = aslinearoperator(linearOp)
+                else:
+                    regObj.linearOp = ut.MySparseLinearOperator(linearOp)
                 regObj.linearOpUsed = True
             except:
-                raise Exception("linearOp invalid. Use scipy.sparse.linalg.aslinearoperator or similar")
+                raise Exception("linearOp invalid. Use scipy.sparse.linalg.aslinearoperator or a scipy sparse matrix format")
 
     def __initializeVariables(self):
         self.z = zeros(self.nPrimalVars+1)
