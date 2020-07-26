@@ -10,8 +10,13 @@ from numpy import ones
 from numpy import concatenate
 from numpy import array
 from numpy.random import choice
+from numpy import ndarray
 
 from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse import issparse
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import norm as sparse_norm
+from scipy.sparse import hstack
 
 from time import time
 from random import sample
@@ -164,6 +169,15 @@ class ProjSplitFit(object):
             print("NumPy arrays. They must have a shape attribute. Aborting, did not add data")
             raise Exception("Observations and responses should be 2D numpy-like arrays")
 
+        if issparse(observations):
+            #sparse matrix format
+            observations = csr_matrix(observations)
+            sparseMtx = True
+        elif isinstance(observations,ndarray) == False:
+            raise Exception("Observations must be either a numpy ndarray or a scipy.sparse matrix")
+        else:
+            sparseMtx = False
+
         try:
             if (self.nrowsOfA!=len(responses)):
                 raise Exception("Error: len(responses) != num observations. Aborting. Data not added")
@@ -178,7 +192,6 @@ class ProjSplitFit(object):
             raise Exception("responses must be a list or a 1D array")
 
         if (self.nrowsOfA == 0) | (self.ncolsOfA == 0):
-            self.A = None
             self.yresponse = None
             raise Exception("Error. A dimension of the observation matrix is 0. Must be 2D.")
 
@@ -206,7 +219,6 @@ class ProjSplitFit(object):
                     print("Error! number of columns of the data matrix is {}".format(self.ncolsOfA))
                     print("while number of rows of the composed linear operator is {}".format(linearOp.shape[0]))
                     print("These must be equal! Aborting addData call")
-                    self.A = None
                     self.yresponse = None
                     self.nPrimalVars = None
                     raise Exception("Error! number of columns of the data matrix must equal number rows of composed linear operator")
@@ -223,7 +235,6 @@ class ProjSplitFit(object):
                 print("Error: linearOp must be a linear operator and must have ")
                 print("a shape member and support matvec and rmatvec methods")
                 print("Aborting add data")
-                self.A = None
                 self.yresponse = None
                 self.nPrimalVars = None
                 raise Exception("Invalid linear op")
@@ -239,7 +250,6 @@ class ProjSplitFit(object):
                     print("Added data has {} columns".format(self.nPrimalVars))
                     print("A linear operator has {} columns".format(reg.linearOp.shape[1]))
                     print("These must be equal, aborting add data")
-                    self.A = None
                     self.yresponse = None
                     self.nPrimalVars = None
                     raise Exception("Col number mismatch in linear operator")
@@ -247,18 +257,24 @@ class ProjSplitFit(object):
         if normalize:
             print("Normalizing columns of A to unit norm")
             self.normalize = True
-            self.A = npcopy(observations)
-            self.scaling = norm(self.A,axis=0)
-            self.scaling += 1.0*(self.scaling < 1e-10)
-            self.A = self.A/self.scaling
+            if sparseMtx == False:
+                self.A = npcopy(observations)
+                self.scaling = norm(self.A,axis=0)
+                self.scaling += 1.0*(self.scaling < 1e-10)
+                self.A = self.A/self.scaling
+            else:
+                self.A = csr_matrix(observations,copy=True)
+                scaling = sparse_norm(self.A,axis=0)
+                scaling += 1.0 * (scaling < 1e-10)
+                scaling = 1.0 / scaling
+                self.A = self.A.multiply(scaling)
+                self.A = csr_matrix(self.A)
         else:
             print("Not normalizing columns of A")
             self.A = observations
             self.normalize = False
 
         self.loss = Loss(loss)
-
-
 
         if self.embeddedRegInUse & (self.process.embedOK == False):
             print("WARNING: A regularizer was added with embedded = True")
@@ -277,8 +293,11 @@ class ProjSplitFit(object):
         else:
             intercept = int(intercept)
 
-        col2Add = intercept*ones((self.nrowsOfA,1))
-        self.A = concatenate((col2Add,self.A),axis=1)
+        col2Add = intercept * ones((self.nrowsOfA, 1))
+        if sparseMtx == False:
+            self.A = concatenate((col2Add,self.A),axis=1)
+        else:
+            self.A = hstack((col2Add, self.A))
 
         self.intercept = intercept
 
