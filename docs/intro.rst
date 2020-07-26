@@ -15,6 +15,7 @@ The basic optimization problem that this code solves is the following:
 
 .. math::
    \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}} \left\{ \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r} \nu_j h_j(G_j z) \right\}
+   :label: masterProb
 
 where
 
@@ -47,7 +48,7 @@ regularizers:
 * The :math:`\ell_2` norm that is, :math:`\|x\|_2`
 * Any user-defined convex regularizer.
 
-The package does not impose any limits on the number of regularizers presepunt
+The package does not impose any limits on the number of regularizers present
 in a single problem formulation.
 
 The linear transformations :math:`H` and :math:`G_j` may be any linear operators. 
@@ -61,7 +62,7 @@ Brief technical overview
 The project splitting algorithm is a primal-dual algorithm based on separating
 hyperplanes.  A *dual solution* is a tuple of vectors :math:`w = (w_1, \ldots,
 w_d)` that certify the optimality of the "primal" vector :math:`z` for
-the problem above.  At each iteration, the algorithm maintains an estimate
+:eq:`masterProb`.  At each iteration, the algorithm maintains an estimate
 :math:`(z,w)` of primal and dual solutions.  Each iteration has two phases:
 first, the algorithm "processes" some of the summation terms in the
 problem formulation.  The results of the processing step allow the
