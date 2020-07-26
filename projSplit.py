@@ -297,6 +297,7 @@ class ProjSplitFit(object):
             self.A = concatenate((col2Add,self.A),axis=1)
         else:
             self.A = hstack((col2Add, self.A))
+            self.A = csr_matrix(self.A)
 
         self.intercept = intercept
 
