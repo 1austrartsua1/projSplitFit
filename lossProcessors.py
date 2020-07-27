@@ -6,6 +6,7 @@ Created on Wed Jul  1 16:16:02 2020
 """
 
 from numpy import zeros
+from numpy import ones
 from numpy import copy as npcopy 
 from numpy import identity
 from numpy.linalg import inv as npinv
@@ -174,6 +175,10 @@ class Forward2Backtrack(LossProcessor):
             self.growFreq = None
         else:
             self.growFreq = ui.checkUserInput(growFreq,int,'int','growFreq',default=10,low = 0)
+
+    def initialize(self,psObj):
+
+        self.steps = ones(psObj.nDataBlocks) * self.step
         
     def update(self,psObj,block):
         thisSlice = psObj.partition[block]
@@ -181,14 +186,14 @@ class Forward2Backtrack(LossProcessor):
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
                 # time to grow the stepsize
-                self.step *= self.growFactor
-                psObj.embedded.setStep(self.step)
+                self.steps[block] *= self.growFactor
+        psObj.embedded.setStep(self.steps[block])
                 
         while True:
-            t = psObj.Hz - self.step*(gradHz - psObj.wdata[block])        
+            t = psObj.Hz - self.steps[block]*(gradHz - psObj.wdata[block])
             psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]        
-            a = self.step**(-1)*(t-psObj.xdata[block])
+            a = self.steps[block]**(-1)*(t-psObj.xdata[block])
             gradx = self._getAGrad(psObj,psObj.xdata[block],thisSlice)        
             psObj.ydata[block] = a + gradx  
             lhs = psObj.Hz - psObj.xdata[block]
@@ -196,8 +201,8 @@ class Forward2Backtrack(LossProcessor):
             if lhs.T.dot(rhs)>=self.Delta*norm(lhs,2)**2:
                 break
             else:
-                self.step *= self.decFactor
-                psObj.embedded.setStep(self.step)
+                self.steps[block] *= self.decFactor
+                psObj.embedded.setStep(self.steps[block])
             
         
     
@@ -356,9 +361,9 @@ class Forward1Backtrack(LossProcessor):
         
     def initialize(self,psObj):
         #this routine is used by Foward1Backtrack
-        #to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata
+        #to initialize the gradients of xdata, \hat{theta}, \hat{w}, xdata, and ydata, and the stepsizes for each block
         
-        
+        self.steps = ones(psObj.nDataBlocks)*self.step
         self.thetahat = zeros(psObj.xdata.shape)
         self.what = zeros(psObj.xdata.shape)
         self.gradxdata = zeros(psObj.xdata.shape)
@@ -378,10 +383,11 @@ class Forward1Backtrack(LossProcessor):
         if self.growFreq is not None:
             if psObj.k % self.growFreq == 0:
                 # time to grow the stepsize
-                upper_bound = (1+self.alpha*self.eta)*self.step 
-                desired_step = self.growFac*self.step
-                self.step = min([upper_bound,desired_step])                     
-                psObj.embedded.setStep(self.step)
+                upper_bound = (1+self.alpha*self.eta)*self.steps[block]
+                desired_step = self.growFac*self.steps[block]
+                self.steps[block] = min([upper_bound,desired_step])
+
+        psObj.embedded.setStep(self.steps[block])
                 
         
         thisSlice = psObj.partition[block]
@@ -395,35 +401,35 @@ class Forward1Backtrack(LossProcessor):
         t2 = npcopy(self.gradxdata[block]) 
         t2 -= psObj.wdata[block]
         while True:
-            t = t1 - self.step*t2
+            t = t1 - self.steps[block]*t2
             psObj.xdata[block][1:] = psObj.embedded.getProx(t[1:]) 
             psObj.xdata[block][0] = t[0]   
             
             self.gradxdata[block] = self._getAGrad(psObj,psObj.xdata[block],thisSlice) 
-            psObj.ydata[block] = self.step**(-1)*(t-psObj.xdata[block])+self.gradxdata[block]
+            psObj.ydata[block] = self.steps[block]**(-1)*(t-psObj.xdata[block])+self.gradxdata[block]
             
-            yhat = self.step**(-1)*( (1-self.alpha)*xold +self.alpha*psObj.Hz - psObj.xdata[block] )\
+            yhat = self.steps[block]**(-1)*( (1-self.alpha)*xold +self.alpha*psObj.Hz - psObj.xdata[block] )\
                     + psObj.wdata[block]
             phiPlus = (psObj.Hz - psObj.xdata[block]).T.dot(psObj.ydata[block] - psObj.wdata[block])
             
             lhs1 = norm(psObj.xdata[block] - self.thetahat[block],2)
             rhs1 = (1-self.alpha)*norm(xold -self.thetahat[block] ,2) \
                     + self.alpha*norm(psObj.Hz-self.thetahat[block],2) \
-                    + self.step*norm(psObj.wdata[block] - self.what[block],2)
+                    + self.steps[block]*norm(psObj.wdata[block] - self.what[block],2)
             if lhs1 <= rhs1:                
                 numer = norm(yhat-psObj.wdata[block],2)**2
                 denom = norm(psObj.ydata[block]-psObj.wdata[block],2)**2
-                rhs2_1 = 0.5*(self.step/self.alpha)*(denom + self.alpha*numer)
+                rhs2_1 = 0.5*(self.steps[block]/self.alpha)*(denom + self.alpha*numer)
                                                 
-                rhs2_2 = (1-self.alpha)*(phi - 0.5*(self.step/self.alpha)*norm(yold-psObj.wdata[block],2)**2)
+                rhs2_2 = (1-self.alpha)*(phi - 0.5*(self.steps[block]/self.alpha)*norm(yold-psObj.wdata[block],2)**2)
                 
                 if phiPlus >= rhs2_1 + rhs2_2:
                     #backtracking termination criteria satisfied
                     self.eta = numer/denom
                     break
             
-            self.step *= self.delta
-            psObj.embedded.setStep(self.step)
+            self.steps[block] *= self.delta
+            psObj.embedded.setStep(self.steps[block])
                 
                 
     
