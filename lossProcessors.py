@@ -36,9 +36,12 @@ class LossProcessor(object):
                      
     @staticmethod
     def _getAGrad(psObj,point,thisSlice):        
-        yhat = psObj.A[thisSlice].dot(point)
+        
+        yhat = psObj.A[thisSlice].dot(point)                
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
         grad = (1.0/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(gradL)        
+
+        
         return grad  
       
     def getStep(self):
@@ -873,20 +876,4 @@ class BackwardLBFGS(LossProcessor):
                    - self.step*norm(gradfx - w)
             if err2<=0:
                 return True
-            else:
-                return False
-        else:
-            return False 
-        
-    
-        
-
-#class StochTwoForwardStep(LossProcessor):
-#    def __init__(self):
-#        pass
-
-#class StochOneForwardStep(LossProcessor):
-#    def __init__(self):
-#        pass
-    
-    
+   

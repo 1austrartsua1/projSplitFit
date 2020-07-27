@@ -172,11 +172,11 @@ class ProjSplitFit(object):
         if issparse(observations):
             #sparse matrix format
             observations = csr_matrix(observations)
-            sparseMtx = True
+            self.sparseObservationMtx = True
         elif isinstance(observations,ndarray) == False:
             raise Exception("Observations must be either a numpy ndarray or a scipy.sparse matrix")
         else:
-            sparseMtx = False
+            self.sparseObservationMtx = False
 
         try:
             if (self.nrowsOfA!=len(responses)):
@@ -256,7 +256,7 @@ class ProjSplitFit(object):
         if normalize:
             print("Normalizing columns of A to unit norm")
             self.normalize = True
-            if sparseMtx == False:
+            if self.sparseObservationMtx == False:
                 self.A = npcopy(observations)
                 self.scaling = norm(self.A,axis=0)
                 self.scaling += 1.0*(self.scaling < 1e-10)
@@ -293,7 +293,7 @@ class ProjSplitFit(object):
             intercept = int(intercept)
 
         col2Add = intercept * ones((self.nrowsOfA, 1))
-        if sparseMtx == False:
+        if self.sparseObservationMtx == False:
             self.A = concatenate((col2Add,self.A),axis=1)
         else:
             self.A = hstack((col2Add, self.A))
@@ -448,6 +448,7 @@ class ProjSplitFit(object):
             raise Exception("Method not run yet, no objective to return. Call run() first.")
 
         currentLoss,Hz = self.__getLoss(self.z)
+        
 
         for reg in self.allRegularizers:
             Hiz = reg.linearOp.matvec(self.z[1:])
@@ -769,7 +770,9 @@ class ProjSplitFit(object):
             print("Setting blocksPerIteartion to 1")
             blocksPerIteration =1
 
-        self.partition = ut.createApartition(self.nrowsOfA,self.nDataBlocks)
+        self.partition = ut.createApartition(self.nrowsOfA,self.nDataBlocks,self.sparseObservationMtx)
+        
+        self.__createListOfSparseMatrices()
 
         self.__setUpRegularizers()
 
@@ -806,11 +809,19 @@ class ProjSplitFit(object):
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################
+                        
         while(self.k < maxIterations):
+            #if self.k == 0:
+            #    fprobe = self.getObjective()
+            #    print(f"all zero fprobe = {fprobe}")
+                                    
             if verbose and (self.k%historyFreq == 0):
                 print('iteration = {}'.format(self.k))
             t0 = time()
             self.__updateLossBlocks(blockActivation,blocksPerIteration)
+            #self.allRegularizers[0].setStep(self.process.getStep())
+            #self.allRegularizers[1].setStep(self.process.getStep())
+            #self.allRegularizers[2].setStep(self.process.getStep())
             self.__updateRegularizerBlocks()
 
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
@@ -853,6 +864,22 @@ class ProjSplitFit(object):
             self.embedded.setScaling(self.embeddedScaling)
 
 
+    def __createListOfSparseMatrices(self):
+        # for sparse matrices, it is much more efficient (faster) to preslice the 
+        # matrices and store a list of pre-sliced matrices. 
+        # To make this backwards compatible, we need to replace partition with just range(nBlocks)
+        # so that calls like thisSlice = partition[block] just return the block. 
+        if self.sparseObservationMtx:
+            self.Afull = self.A 
+            self.yresponseFull = self.yresponse 
+            self.A = []
+            self.yresponse = []
+            for part in self.partition:
+                self.A.append(self.Afull[part])
+                self.yresponse.append(self.yresponseFull[part])
+            self.partition = range(len(self.partition))
+    
+    
     @staticmethod
     def __addLinear(regObj,linearOp=None):
         if linearOp is None:
@@ -1111,14 +1138,19 @@ class ProjSplitFit(object):
         return phi
 
     def __getLoss(self,z):
-        Hz = self.dataLinOp.matvec(z)
-        AHz = self.A.dot(Hz)
-        getVal = self.loss.value(AHz,self.yresponse)
+        Hz = self.dataLinOp.matvec(z)        
+        if self.sparseObservationMtx:
+            AHz = self.Afull.dot(Hz)            
+            
+            getVal = self.loss.value(AHz,self.yresponseFull)
+        else:
+            AHz = self.A.dot(Hz)
+            getVal = self.loss.value(AHz,self.yresponse)
         if getVal is None:
             print("ERROR: If you don't implement a losses value func, set getHistory to")
             print("False and do not compute objective values")
             raise Exception("Losses value function is not implemented. Cannot compute objective values.")
-        currentLoss = (1.0/self.nrowsOfA)*sum(self.loss.value(AHz,self.yresponse))
+        currentLoss = (1.0/self.nrowsOfA)*sum(getVal)
         return currentLoss,Hz
 
     def __updatew(self,tau):

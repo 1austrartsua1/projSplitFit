@@ -32,7 +32,7 @@ class Loss(object):
             self.derivative = p.derivative 
         else:
             
-            try:
+            try:                
                 if (p>=1):
                     self.value = lambda yhat,y: (1.0/p)*abs(yhat-y)**p         
                     if(p>1):

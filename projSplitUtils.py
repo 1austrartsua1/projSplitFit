@@ -51,19 +51,31 @@ def MySparseLinearOperator(linearOp):
     shape = linearOp.shape
     return MyLinearOperator(matvec,rmatvec,shape)
 
-def createApartition(nrows,n_partitions):
+def createApartition(nrows,n_partitions,sparseMtx):
     
     if nrows%n_partitions == 0:
         partition_size = nrows // n_partitions
-        partition_list = [range(i*partition_size,(i+1)*partition_size) for i in range(0,n_partitions)]
+        if sparseMtx:
+            partition_list = [list(range(i*partition_size,(i+1)*partition_size)) for i in range(0,n_partitions)]
+        else:
+            partition_list = [range(i*partition_size,(i+1)*partition_size) for i in range(0,n_partitions)]
     else:
         n_with_ceil = nrows%n_partitions
         flr = nrows//n_partitions
         ceil = flr+1
-        partition_list = [range(i*ceil,(i+1)*ceil) for i in range(0,n_with_ceil)]            
+        if sparseMtx:
+            partition_list = [list(range(i*ceil,(i+1)*ceil)) for i in range(0,n_with_ceil)]            
+        else:
+            partition_list = [range(i*ceil,(i+1)*ceil) for i in range(0,n_with_ceil)]            
+            
         endFirstPart = n_with_ceil*ceil
-        partition_list.extend([range(endFirstPart + i*flr, endFirstPart + (i+1)*flr) 
+        if sparseMtx:
+            partition_list.extend([list(range(endFirstPart + i*flr, endFirstPart + (i+1)*flr)) 
                                 for i in range(0,n_partitions - n_with_ceil)])
+        else:
+            partition_list.extend([range(endFirstPart + i*flr, endFirstPart + (i+1)*flr) 
+                                for i in range(0,n_partitions - n_with_ceil)])
+    
 
     return partition_list
 
