@@ -810,18 +810,12 @@ class ProjSplitFit(object):
         # BEGIN MAIN ALGORITHM LOOP
         ################################
                         
-        while(self.k < maxIterations):
-            #if self.k == 0:
-            #    fprobe = self.getObjective()
-            #    print(f"all zero fprobe = {fprobe}")
+        while(self.k < maxIterations):            
                                     
             if verbose and (self.k%historyFreq == 0):
                 print('iteration = {}'.format(self.k))
             t0 = time()
             self.__updateLossBlocks(blockActivation,blocksPerIteration)
-            #self.allRegularizers[0].setStep(self.process.getStep())
-            #self.allRegularizers[1].setStep(self.process.getStep())
-            #self.allRegularizers[2].setStep(self.process.getStep())
             self.__updateRegularizerBlocks()
 
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
