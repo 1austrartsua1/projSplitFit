@@ -71,7 +71,7 @@ class LossPlugIn(object):
     ``ProjSplitFit.addData`` method to define custom losses. 
     
     The user may set the argument ``loss`` to ``ProjSplitFit.addData`` to an
-    integer :math:`p\geq 1` to use the :math:`\ell_p^p` loss, or they may set it to
+    integer :math:`p > 1` to use the :math:`\ell_p^p` loss, or they may set it to
     "logistic" to use the logistic loss. 
     
     However, if the user would like to define their own loss, then they must 

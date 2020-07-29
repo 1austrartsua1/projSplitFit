@@ -23,9 +23,9 @@ class Regularizer(object):
 
         \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
                \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
-                  + \sum_{j=1}^{n_r}h_j(G_j z)
+                  + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
-      The regularizer class essentially defines each :math:`h_i(G_i z)`` term via
+      The regularizer class essentially defines each :math:`\nu_j h_i(G_i z)`` term via
       methods for evaluating the prox of :math:`h_i` and the function itself.
       Note the matrix :math:`G_i` is added in the addRegularizer method of projSplitFit.
       
@@ -49,7 +49,7 @@ class Regularizer(object):
             ----------
             prox : function
                 must be a function of two parameters: a numpy-style array
-                and a float which is the multiple applied to the function.
+                and a float which is any multiple applied to the function.
                 That is, this function must return :math:`\text{prox}_{\eta h}(x)``
                 for arbitrary inputs :math:`x` and :math:`\eta`.
 
@@ -60,7 +60,7 @@ class Regularizer(object):
                 of the *unscaled* function. In other words, with a scaling of 1.
 
             scaling : :obj:`float`,optional
-                Scaling to use with this regularizer in the objective.
+                Scaling :math:`nu` to use with this regularizer in the objective.
                 The function will appear in the objective as
 
                 .. math::
@@ -99,7 +99,7 @@ class Regularizer(object):
     def setScaling(self,scaling):
         r'''
         Set the scaling. That is, in the objective, the regularizer will
-        be scaled by scaling=nu. It will appear as
+        be scaled by scaling=:math:`nu`. It will appear as
 
         .. math::
           \nu h(x)

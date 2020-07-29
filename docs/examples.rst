@@ -7,7 +7,7 @@ Solving a problem with ``projSplitFit`` requires the following fundamental steps
 #.  Create an empty object from the ``ProjSplitFit`` class
 #.  Add data to set up the object's data/loss term
 #.  Add regularizers to the object
-#.  Run the optimization
+#.  Run the algorithm to solve the optimization problem
 #.  Retrieve the solution and/or optimal value.
 
 This chapter gives simple examples of each of these operations.  Full
@@ -51,6 +51,11 @@ user may also define their own loss via the ``losses.LossPlugIn`` class
 (see below).  The ``intercept=False`` argument specifies that the model
 does not have an intercept (constant) term.
 
+We assumed :math:`A` was a 2D ``NumPy`` array. However, ``ProjSplitFit`` also supports
+*sparse* data matrices of a class derived from ``scipy.sparse.spmatrix``.
+See `here <https://docs.scipy.org/doc/scipy/reference/sparse.html>`_ for documentation
+on sparse matrices in ``scipy``.
+
 This classical model has no regularizers, so it is not necessary to add
 regularizers.  The ``run`` method then solves the optimization problem. After
 solving the problem, the ``getObjective`` method returns the optimal solution
@@ -66,7 +71,7 @@ method. It must be selected carefully. There are two ways to set
 
   projSplit = ps.ProjSplitFit(dualScaling=gamma)
 
-(the default value is 1).  It may also modified later through the
+(the default value is 1).  It may also be modified later through the
 ``setDualScaling`` method::
 
   projSplit.setDualScaling(gamma)
@@ -81,7 +86,7 @@ It is common in machine learning to fit an intercept for a linear model. That is
 .. math::
   \min_{z_0\in\mathbb{R},z\in\mathbb{R}^d}\frac{1}{2n}\|z_0 e + Az - y\|^2
 
-where :math:`e` is a vector of all ones. To do this, set the ``intercept`` argument to
+where :math:`e` is a vector of all ones of the same length as :math:`y`. To do this, set the ``intercept`` argument to
 the ``addData`` method to ``True`` (which is the default). Note that regularizers
 never apply to the intercept variable.
 
@@ -129,7 +134,7 @@ To recap, the entire code to solve :eq:`lasso` with
   from regularizers import L1
   lam1 = 0.1
   projSplit = ps.ProjSplitFit()
-  projSplit.addData(A,y,loss=2,intercept=False)
+  projSplit.addData(A,y,loss=2,intercept=False,normalize=False)
   regObj = L1(scaling=lam1)
   projSplit.addRegularizer(regObj)
   projSplit.run()
@@ -191,7 +196,7 @@ where
   \end{array}
   \right.
 
-The proximal operator :eq:proxDef for this function is simply projection onto
+The proximal operator :eq:`proxDef` for this function is simply projection onto
 the nonnegative orthant, and is independent of :math:`\sigma`. To include this
 regularizer in ``projSplitFit`` object, one defines the regularizer object for
 :math:`g` and then adds it to the model with ``addRegularizer``.  These
@@ -234,10 +239,10 @@ be ::
   lam1 = 0.1
 
   projSplit = ps.ProjSplitFit()
-  projSplit.addData(A,y,loss=2,intercept=False)
+  projSplit.addData(A,y,loss=2,intercept=False,normalize=False)
   regObj = L1(scaling=lam1)
   projSplit.addRegularizer(regObj)
-    regObjNonneg = Regularizer(prox=prox_g, value=value_g)
+  regObjNonneg = Regularizer(prox=prox_g, value=value_g)
   projSplit.addRegularizer(regObjNonneg)
   projSplit.run()
   optimalVal = projSplit.getObjective()
@@ -280,8 +285,8 @@ matrix variable ``G`` has been defined::
   regObj = L1(scaling=lam1)
   projSplit.addRegularizer(regObj,linearOp=G)
 
-:math:`G` must be a 2D ``numpy`` array ``scipy`` linear operator.   If
-:math:`G` is an array The number of columns of
+:math:`G` must be a 2D ``numpy`` array, a ``scipy`` linear operator, or a ``scipy`` sparse matrix.   If
+:math:`G` is an array, the number of columns of
 :math:`G` must equal the dimension of the solution vector :math:`z`.
 
 Documentation for ``scipy`` linear operators may be found in the package
@@ -339,7 +344,7 @@ Calling ``varop1d(n)`` as defined in the code below will create such an operator
 User-Defined Losses
 ====================
 
-Just as the you may define their own regularizers, you may define your own
+Just as you may define your own regularizers, you may define your own
 loss function, using the class ``losses.LossPlugIn``. Objects of this class
 can be passed into ``addData`` as the ``loss`` argument. To define a loss, you
 need to define its ``derivative`` method. Optionally, you may also define its
@@ -393,8 +398,9 @@ coefficients composed with a linear operator :math:`H`. There are two ways to
 deal with such situations. If the size and density of the matrices is not of
 great concern concern, one may pre-compute a new matrix through ``Xnew =
 X*H``, and use ``Xnew`` as the observation matrix passed to ``projSplitFit``.
-If forming :math:`XH` directly in this manner is prohibitive, the linear
-operator can be instead composed with the loss, meaning the ``projSplitFit``
+If forming :math:`XH` directly in this manner is prohibitive or causes an unacceptable increase in the
+number of nonzero entries, the linear
+operator can be instead composed with the loss, meaning that ``projSplitFit``
 handles the composition internally and does not explicitly compute the matrix
 product. This option is controlled via the ``linearOp`` argument to
 ``addData``.
@@ -461,16 +467,16 @@ regularizer at every iteration.  For the loss function terms, however,
 loss function to be divided into an arbitrary number of blocks, each
 containing the same number of observations (give or take one observation). You
 may determine how many of these blocks to process at each iteration, and among
-several rules to select blocks for processing.  Second, it provides nine
+several rules to select blocks for processing.  Second, it provides eight
 different options for processing each block.
 
 The number of loss blocks and their activation scheme are controlled by
 keyword arguments to the ``run`` method, as described in
 :numref:`run-options` below. The procedure used to process each block is
-determined by the optional the ``process`` argument to the ``addData`` method.
-This value of this argument must be an object whose class is derived from
+determined by the optional ``process`` argument to the ``addData`` method.
+This argument must be an object whose class is derived from
 ``lossProcessors.LossProcessor``. The file ``lossProcessors.py`` pre-defines
-the following nine classes that may be used for this purpose :
+the following eight classes that may be used for this purpose :
 
 * ``Forward2Fixed``: two-forward-step update with fixed stepsize, see :cite:`for1`
 * ``Forward2Backtrack``: two-forward-step update with backtracking stepsize,
@@ -487,8 +493,8 @@ the following nine classes that may be used for this purpose :
 * ``BackwardLBFGS``: approximate backward/proximal step computed by a
   limited-memory Broyden-Fletcher-Goldfarb-Shanno (LBFGS) solver.
 
-To select a loss processor, you create the desired class above, call its the
-constructor with the any desired parameters, and then pass the resulting
+To select a loss processor, you call the constructor of the desired class with any desired parameters,
+and then pass the resulting
 object into ``addData`` as the ``process`` argument. For example, to use
 ``BackwardLBFGS`` with its default parameters on the :math:`\ell_{1.5}^{1.5}`
 loss, you would use the code fragment ::
@@ -517,7 +523,7 @@ in this manner.
 Blocks of Observations
 =========================
 
-The ``run`` method has three important options which control the division of
+The ``run`` method of class ``ProjSplitFit`` has three important options which control the division of
 the loss function into blocks, and how these blocks are processed at each
 iteration. The first is ``nblocks``. This controls how many blocks projective
 splitting breaks the loss into for processing. Recall the loss is
@@ -588,7 +594,8 @@ loss block is processed, the loss processor also performs a backward
 (proximal) step on the embedded regularizer, and no additional working memory
 needs to allocated to the regularizer.
 
-The embedding feature is controlled by the ``embed`` keyword argument of the ``addData`` method.  To solve a standard lasso problem with this technique, using 10 loss blocks,
+The embedding feature is controlled by the ``embed`` keyword argument of the ``addData`` method.
+To solve a standard lasso problem with this technique, using 10 loss blocks,
 one would proceed as follows::
 
   import projSplitFit as ps
@@ -596,7 +603,7 @@ one would proceed as follows::
   lam1 = 0.1
   projSplit = ps.ProjSplitFit()
   regObj = L1(scaling=lam1)
-  projSplit.addData(A, y, loss=2, intercept=False, embed=regObj)
+  projSplit.addData(A, y, loss=2, intercept=False, normalize=False, embed=regObj)
   projSplit.run(nblocks=10)
   optimalVal = projSplit.getObjective()
   z = projSplit.getSolution()
@@ -608,7 +615,14 @@ needed, then those should be introduced into the problem with ``addRegularizer``
 If the loss term also contains a linear operator, that linear operator applies
 to both the loss term and regularizer.
 
-The ``embed`` feature cannot be used with the backward loss processors.
+The embedded regularizer and the loss processor
+must use the same stepsize. If they are different, a warning is printed and the
+stepsize for the regularizer is set to be the stepsize of the loss processor.
+For backtracking loss processors which modify the stepsize as the algorithm runs,
+the embedded regularizer's stepsize will be automatically set to the correct stepsize before
+it's prox operator is applied.
+
+The ``embed`` feature cannot be used with the backward loss processors nor with ``Forward2Affine``.
 
 Other Important Features
 ========================================
@@ -622,7 +636,7 @@ information is recorded: for example, setting ``historyFreq=1`` causes the
 information to be recorded every iteration, while setting ``historyFreq=10``
 causes it to be recorded once every ten iterations.
 
-The ``getObjective()`` of the ``ProjSplitFit`` class simply returns the
+The ``getObjective()`` method of the ``ProjSplitFit`` class simply returns the
 objective value at the current primal iterate.
 
 If you use either the ``keepHistory`` feature or the ``getObjective`` function
@@ -640,12 +654,12 @@ returned coefficient vector may be directly used to make predictions using
 unnormalized data, such as new test data.  The ``descale`` option is not
 available when the loss term is composed with a linear operator.
 
-If the model was formulated with an intercept term, then the intercept term is the
-first element of the vector returned by ``getSolution``.
-
-The method ``getScaling()`` returns the scaling vector used in normalization.
+The ``ProjSplitFit`` method ``getScaling()`` returns the scaling vector used in normalization.
 This scaling vector can then be applied to normalize new test data. For
 example, to normalize a new test datapoint ``xtest``, one could write::
 
   scaling = projSplit.getScaling()
   x_test_normalized = xtest/scaling
+
+If the model was formulated with an intercept term, then the intercept term is the
+first element of the vector returned by ``getSolution``.

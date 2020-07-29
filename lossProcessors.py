@@ -130,11 +130,11 @@ class Forward2Backtrack(LossProcessor):
     Updates of the form 
     
     .. math::        
-        x_i^k &= H z^k - \rho (\nabla f_i(H z^k) - w_i^k) \\
+        x_i^k &= H z^k - \rho_i (\nabla f_i(H z^k) - w_i^k) \\
         y_i^k &= \nabla f_i(x_i^k)
 
     
-    where the stepsize :math:`\rho` is discovered by backtracking and
+    where the stepsize :math:`\rho_i` is discovered by backtracking linesearch at each iteration and
     
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
@@ -260,7 +260,9 @@ class  Forward1Fixed(LossProcessor):
     where the stepsize :math:`\rho` is constant and 
     
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)    
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
+        
+    See https://arxiv.org/abs/1902.09025.
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
     
@@ -311,14 +313,17 @@ class Forward1Backtrack(LossProcessor):
     Updates of the form 
     
     .. math::        
-        x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho (y_i^{k-1} - w_i^k) \\
+        x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho_i (y_i^{k-1} - w_i^k) \\
         y_i^k &= \nabla f_i(x_i^k)
 
     
-    where the stepsize :math:`\rho` is discovered by backtracking and 
+    where the stepsize :math:`\rho_i` is discovered by a backtracking linesearch 
+    at each iteration and 
     
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)    
+    
+    See https://arxiv.org/abs/1902.09025.
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
         
@@ -444,13 +449,7 @@ class BackwardExact(LossProcessor):
     Exact backward step for quadratics via matrix inversion. Only works with the squared loss, i.e. p=2.
     Appropriate matrix inverses are cached before the first iteration. 
     
-    If the involed matrices are wide (number of rows less than half number of cols), 
-    the matrix inversion lemma is used,
-    see Sec. 4.2.4 of https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
-    
-    See https://arxiv.org/abs/1902.09025.    
-    
-    Updates of the form 
+    Updates are of the form 
     
     .. math::        
         x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
@@ -464,6 +463,10 @@ class BackwardExact(LossProcessor):
         
     and the proximal operator is computed exactly by solving the appropriate linear equation.
     Only available when the loss is the :math:`\ell_2^2` loss. 
+    
+    If the involed matrices are wide (number of rows less than half number of cols), 
+    the matrix inversion lemma is used,
+    see Sec. 4.2.4 of https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
     
@@ -558,11 +561,9 @@ class BackwardExact(LossProcessor):
 class BackwardCG(LossProcessor):
     r'''
     Backward step via conjugate gradient for quadratics. Only works for the squared
-    loss, i.e. p=2. 
+    loss, i.e. p=2. See https://arxiv.org/abs/1803.07043.
     
-    See https://arxiv.org/abs/1902.09025.    
-    
-    Updates of the form 
+    Updates are of the form 
     
     .. math::
         x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
@@ -578,7 +579,7 @@ class BackwardCG(LossProcessor):
     is equivalent to solving a linear system of equations. 
     
     The conjugate gradient method is iterated until the relative error critera of
-    https://arxiv.org/abs/1902.09025 are met, or the max number of iterations is 
+    https://arxiv.org/abs/1803.07043 are met, or the max number of iterations is 
     run. 
         
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
@@ -682,10 +683,8 @@ class BackwardCG(LossProcessor):
 class BackwardLBFGS(LossProcessor):
     r'''
     Backward step via the L-BFGS solver. 
-    
-    See https://arxiv.org/abs/1902.09025.    
-    
-    Updates of the form 
+            
+    Updates are of the form 
     
     .. math::        
         x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
@@ -697,7 +696,7 @@ class BackwardLBFGS(LossProcessor):
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
         
     The proximal operator is computed approximately via the L-BFGS solver until the 
-    relative error criteria of https://arxiv.org/abs/1902.09025 are met, or a max 
+    relative error criteria of https://arxiv.org/abs/1803.07043 are met, or a max 
     number of iterations is run. 
     
     Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.

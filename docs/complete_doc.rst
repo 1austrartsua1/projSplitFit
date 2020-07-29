@@ -45,8 +45,7 @@ These classes instruct projective splitting how to process the blocks of variabl
 associated with the loss, and are added in the ``projSplitFit.addData`` method
 as the ``process`` input.
 
-If you're not interested in playing with different loss processors, then just leave
-the ``process`` argument to ``ProjSplitFit.addData`` unused and ``ProjSplitFit`` uses the
+If you leave the ``process`` argument to ``ProjSplitFit.addData`` unused, then ``ProjSplitFit`` will use the
 default loss processor, ``Forward2Backtrack``.
 
 Forward-step (Gradient) Based Loss Processors

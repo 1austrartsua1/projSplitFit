@@ -7,7 +7,7 @@ involving multiple regularizers and compositions with linear operators. The solv
 the *projective splitting* algorithm, a highly flexible and scalable first-order solver
 framework.
 This package implements most variants of projective splitting including
-*backward steps* (proximal steps), various kinds of 
+*backward steps* (proximal steps), various kinds of
 *forward steps* (gradient steps), and *block-iterative operation*.
 The implementation is based on ``numpy``.
 
@@ -30,7 +30,7 @@ where
 * :math:`\nu_j` are positive scalar penalty parameters that multiply the regularizer functions.
 
 The first summation in this formulation is the *loss*, measuring how well the
-predictions :math:`z_0 + a_i^\top H z` obtained from the dataset using the 
+predictions :math:`z_0 + a_i^\top H z` obtained from the dataset using the
 regression parameters :math:`(z_0,z)` match the observed responses
 :math:`y_i`.  ``ProjSplitFit`` supports the following choices for the loss :math:`\ell`:
 
@@ -51,19 +51,22 @@ regularizers:
 The package does not impose any limits on the number of regularizers present
 in a single problem formulation.
 
-The linear transformations :math:`H` and :math:`G_j` may be any linear operators. 
-They may be passed to ``projSplitFit`` as 2D ``NumPy`` arrays or abstract linear opertors
-as defined by the ``scipy.sparse.linalg.LinearOperator`` class.
+The linear transformations :math:`H` and :math:`G_j` may be any linear operators.
+They may be passed to ``projSplitFit`` as 2D ``NumPy`` arrays, abstract linear opertors
+as defined by the ``scipy.sparse.linalg.LinearOperator`` class, or sparse matrices
+deriving from the ``scipy.sparse.spmatrix`` class. The data matrix :math:`A` may
+be passed in as a 2D ``NumPy`` array or a sparse matrix
+deriving from the ``scipy.sparse.spmatrix`` class.
 
 
 Brief technical overview
 ==================================
 
-The project splitting algorithm is a primal-dual algorithm based on separating
-hyperplanes.  A *dual solution* is a tuple of vectors :math:`w = (w_1, \ldots,
+The projective splitting algorithm is a primal-dual algorithm based on separating
+hyperplanes.  A *dual solution* is a tuple of vectors :math:`\mathbf{w} = (w_1, \ldots,
 w_d)` that certify the optimality of the "primal" vector :math:`z` for
 :eq:`masterProb`.  At each iteration, the algorithm maintains an estimate
-:math:`(z,w)` of primal and dual solutions.  Each iteration has two phases:
+:math:`(z,\mathbf{w})` of primal and dual solutions.  Each iteration has two phases:
 first, the algorithm "processes" some of the summation terms in the
 problem formulation.  The results of the processing step allow the
 algorithm to construct a hyperplane that separates the current primal-dual
@@ -77,7 +80,11 @@ the regularizer terms at every iteration, using a standard proximal step (see
 below for more information).  For the loss terms, however, it provides
 considerable flexibility: the terms in the loss summation may be divided into
 blocks, and only a subset of these blocks need be processed at each iteration
--- this mode of operation is called *block iterative*.  Furthermore, there are
+-- this mode of operation is called *block iterative*.
+The subset of blocks processed in each iteration may be chosen at random, cyclically,
+or using a greedy heuristic which selects those blocks most likely to yield
+the best separating hyperplane.
+Furthermore, there are
 numerous options for processing each block, including approximate backward
 (proximal) steps and various kinds of forward steps.
 
@@ -85,9 +92,9 @@ Projective splitting, generally, is an *operator splitting* method that is
 defined for "monotone inclusion" problems.  This problem class includes all
 convex optimization problems, but also other problems not representable as
 convex optimization, and which do not have objective functions.  For this
-reason, ``projSplitFit`` does not need to calculate value of the objective
+reason, ``projSplitFit`` does not need to calculate the value of the objective
 function in :eq:`masterProb` while solving the problem.  Instead, it monitors
 how closely the current primal and dual solutions estimates come to certifying
 their joint optimality.  However, if you call the ``getObjective`` method (see
 below) or elect to keep a history of the solution trajectory, ``projSplitFit``
-will attempt to computer objective function values.
+will attempt to compute objective function values.

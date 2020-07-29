@@ -52,7 +52,7 @@ class ProjSplitFit(object):
 
       \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
                 \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,y_i)
-                   + \sum_{j=1}^{n_r}h_j(G_j z)
+                   + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
 
     where
@@ -65,6 +65,7 @@ class ProjSplitFit(object):
     * :math:`a_i\in\mathbb{R}^{d'}` are the observations, forming the rows of the :math:`n\times d'` observation/data matrix :math:`A`
     * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
     * :math:`G_j` for :math:`j=1,\ldots,n_r` are matrices, typically the identity.
+    * :math:`\nu_j` are positive scalar penalty parameters that multiply the regularizer functions.
 
     The data :math:`A` and :math:`y` are added via the ``addData`` method.
 
@@ -131,7 +132,7 @@ class ProjSplitFit(object):
 
             \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
               \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) 
-                + \sum_{j=1}^{n_r}h_j(G_j z)
+                + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
         Parameters
         ----------
@@ -166,6 +167,14 @@ class ProjSplitFit(object):
             linear operator, a 2D ndarray, or a scipy sparse matrix. If it is a
             sparse matrix, it will be converted to :obj:`scipy.sparse.csr_matrix` format
             as this is most convenient for arithmetic operations. 
+            
+        embed : :obj:`regularizers.Regularizer`,optional
+            embeds the regularizer ``embed``, meaning that the proximal operator
+            is evaluated in-line with the loss processing update. Only available for 
+            the following forward-type loss processors: ``Forward1Fixed``, 
+            ``Forward1Backtrack``, ``Forward2Fixed``, ``Forward2Backtrack``. If 
+            embed is used with any other loss processor, then a warning is 
+            printed and the regularizer is added as a normal regularizer 
 
         '''
 
@@ -368,9 +377,10 @@ class ProjSplitFit(object):
 
         .. math::
 
-            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}h_j(G_j z)
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n 
+            \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
-        This method adds each :math:`h_j` and :math:`G_j` above
+        This method adds each :math:`h_j`, :math:`\nu_j`, and :math:`G_j` above
 
         Parameters
         ----------
@@ -381,12 +391,7 @@ class ProjSplitFit(object):
                 adds matrix :math:`G_j` in above. May be a scipy 
                 linear operator, a 2D ndarray, or a scipy sparse matrix. If it is a
                 sparse matrix, it will be converted to :obj:`scipy.sparse.csr_matrix` format
-                as this is most convenient for arithmetic operations.
-
-            embed : :obj:`bool`,optional
-                internal option in projective splitting. For forward-type loss process updates,
-                perform the "prox" of this regularizer in a forward-backward style update.
-                Defaults to False
+                as this is most convenient for arithmetic operations.            
 
         '''
         if isinstance(regObj,Regularizer) == False:
@@ -478,14 +483,6 @@ class ProjSplitFit(object):
 
     def getSolution(self,descale=False):
         r'''
-        Returns the current primal solution vector. Recall the objective function
-        
-        .. math::
-
-            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
-                \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,y_i)
-                   + \sum_{j=1}^{n_r}h_j(G_j z)
-        
         Returns the current primal solution :math:`z^k`.
         
         If the ``intercept`` argument was True in ``addData``, the intercept coefficient is the

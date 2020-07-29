@@ -14,7 +14,7 @@ Using Git, navigate to the directory of the desired location, type::
   $ git clone https://github.com/1austrartsua1/projSplitFit.git
 
 To use the ``projSplitFit`` module, make sure the project root directory is in
-your  Python path (given by the ``PYTHONPATH`` environment variable on unix
+your  Python path (given by the ``PYTHONPATH`` environment variable on Unix
 and Linux systems). Alternatively, run Python from the project root directory.
 
 Installing Directly into Pycharm
@@ -23,7 +23,7 @@ Installing Directly into Pycharm
 If you wish to use ``projSplitFit`` from within PyCharm, you should be able to
 use Pycharm's VCS (Version Control System) integration.
 
-Click VCS->enable VCS. Then click VCS->Clone and enter the URL https://github.com/1austrartsua1/projSplitFit.git
+Click VCS->enable VCS. Then click VCS->Clone and enter the URL https://github.com/1austrartsua1/projSplitFit.git.
 
 Running the Tests
 ==================
@@ -42,9 +42,9 @@ command defaults to Python 2.7 and later versions of Python use the
 
   $ python3 -m pytest
 
-Depending on your CPU speed, it may take 5 to 10 minuetes to run all the tests.
+Depending on your CPU speed, it may take 5 to 10 minutes to run all the tests.
 
-Specific tests can be run by specifying an individual test file.  For example,::
+Specific tests can be run by specifying an individual test file.  For example::
 
   $ pytest test_multiple_norms.py
 
@@ -54,10 +54,10 @@ the same thing on systems defaulting to Python 2.7, you would instead enter::
   $ python3 -m pytest test_multiple_norms.py
 
 To run tests from within PyCharm, issue  ``pytest`` commands as above within
-PyCharm's Python Console tool pane.
+PyCharm's Python Console tool pane, from the tests folder.
 
 Most of the tests operate by running the algorithm on an optimization problem
-and checking that ``projSplitFit`` find the optimal value of this problem to
+and checking that ``projSplitFit`` finds the optimal value of this problem to
 some desired accuracy.  The optimal values are stored in the ``tests/results``
 subdirectory that is downloaded with the distribution.
 
@@ -70,4 +70,3 @@ problems with randomly drawn data, and store their optimal values in the
 must have the `cvxpy <https://www.cvxpy.org/install/>`_ package installed,
 since the target optimal values are computed with ``cvxpy``.  Using this
 feature will also slow down the testing process.
-
