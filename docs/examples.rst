@@ -107,8 +107,8 @@ A common strategy in machine learning is to add a regularizer to the model. Cons
   :label: lasso
 
 
-where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, we call the 
-``addRegularizer`` method of the ``ProjSplitFit`` object before invoking 
+where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, we call the
+``addRegularizer`` method of the ``ProjSplitFit`` object before invoking
 ``run()``::
 
   from regularizers import L1
@@ -158,7 +158,7 @@ is, the ``prox`` method should be defined so that
   :label: proxDef
 
 The ``prox`` method should expect its first argument to be a 1D ``numpy``
-array and its second argument to be a positive ``float``; it should return a ``numpy`` array of the same dimensions as the first argument. 
+array and its second argument to be a positive ``float``; it should return a ``numpy`` array of the same dimensions as the first argument.
 
 The ``value`` method
 *f*\ ``.value``\ (:math:`x`), if defined, should simply returns the function value
@@ -307,7 +307,7 @@ This map is equivalent to the action of :math:`n-1 \times n` matrix
    & 1 & -1 \\
    && 1 & -1 \\
    &&& \ddots & \ddots \\
-   &&&& 1 & -1 
+   &&&& 1 & -1
    \end{array}
    \right].
 
@@ -316,7 +316,7 @@ transpose :math:`V^{{\scriptscriptstyle\top}}` of :math:`V`, is therefore
 
 .. math::
    [u_1 \;\;\; u_2 \;\;\; \cdots \;\;\; u_{n-1}] \;\;\; \mapsto \;\;\;
-   [u_1 \;\;\; u_2 - u_1 \;\;\; 
+   [u_1 \;\;\; u_2 - u_1 \;\;\;
                u_3 - u_2 \;\;\; \cdots \;\;\; u_{n-1} - u_{n-2} \;\;\; -u_{n-1}].
 
 Calling ``varop1d(n)`` as defined in the code below will create such an operator::
@@ -465,7 +465,7 @@ several rules to select blocks for processing.  Second, it provides nine
 different options for processing each block.
 
 The number of loss blocks and their activation scheme are controlled by
-keyword arguments to the ``run`` method, as described in 
+keyword arguments to the ``run`` method, as described in
 :numref:`run-options` below. The procedure used to process each block is
 determined by the optional the ``process`` argument to the ``addData`` method.
 This value of this argument must be an object whose class is derived from
@@ -536,7 +536,7 @@ performance is often observed for larger values.
 At present, blocks may only be contiguous spans of observation indices.
 Suppose that ``nblocks`` is set to some value :math:`b`.  If :math:`n` is divisible by
 :math:`b`, then each block simply contains :math:`n/b` contiguous indices.  If
-:math:`b` does not divide the number of observations, then the first 
+:math:`b` does not divide the number of observations, then the first
 :math:`n\!\!\mod b` blocks have :math:`\lceil n / b \rceil` observations and
 the remaining blocks have :math:`\lfloor n / b \rfloor` observations.
 
@@ -559,7 +559,7 @@ by (assuming that ``projSplit`` is a ``projSplitFit`` object) ::
 
    projSplit.run(nBlocks=10, blockActivation='greedy', blocksPerIteration=1)
 
-However, greedy activation and one block per iteration being the defaults, 
+However, greedy activation and one block per iteration being the defaults,
 the above could be shortened to ::
 
    projSplit.run(nBlocks=10)
@@ -567,7 +567,7 @@ the above could be shortened to ::
 For some problem classes, it has been empirically been observed that
 processing one or two blocks per iteration, selected in this greedy manner,
 yields similar convergence to processing the entire loss term, but with much
-lower time required per iteration.  
+lower time required per iteration.
 
 
 ..  JE moved the section below because I think it makes more sense after we discuss blocks.
@@ -586,7 +586,7 @@ single regularizer into each loss block; please see :numref:`run-options`
 above for a discussion of dividing the loss function into blocks.  Each time a
 loss block is processed, the loss processor also performs a backward
 (proximal) step on the embedded regularizer, and no additional working memory
-needs to allocated to the regularizer.  
+needs to allocated to the regularizer.
 
 The embedding feature is controlled by the ``embed`` keyword argument of the ``addData`` method.  To solve a standard lasso problem with this technique, using 10 loss blocks,
 one would proceed as follows::
@@ -609,21 +609,6 @@ If the loss term also contains a linear operator, that linear operator applies
 to both the loss term and regularizer.
 
 The ``embed`` feature cannot be used with the backward loss processors.
-
-..  For example, with ``Forward2Fixed`` and embedding
-    the update would be
-
-    .. math::
-      x_i^k = \text{prox}_{\rho g}(z^k - \rho (\nabla f_i(z^k)-w_i^k))
-
-    Note that the prox is computed in-line with the forward step.
-
-    To enable this option, use the ``embed`` argument to the ``addRegularizer`` call,
-    when adding the regularizer to the method.
-
-    If ``nblocks`` is greater than 1, the prox is performed on each block.
-
-
 
 Other Important Features
 ========================================
@@ -663,4 +648,4 @@ This scaling vector can then be applied to normalize new test data. For
 example, to normalize a new test datapoint ``xtest``, one could write::
 
   scaling = projSplit.getScaling()
-  x_test_normalized = xtest/scaling 
+  x_test_normalized = xtest/scaling

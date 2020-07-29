@@ -86,8 +86,7 @@ class ProjSplitFit(object):
         self.setDualScaling(dualScaling)
 
         self.allRegularizers = []
-        self.numRegs = 0
-        self.embeddedRegInUse = False
+        self.numRegs = 0        
         self.dataAdded = False
         self.runCalled = False
 
@@ -122,7 +121,7 @@ class ProjSplitFit(object):
         return self.gamma
 
     def addData(self,observations,responses,loss,process=lp.Forward2Backtrack(),
-                intercept=True,normalize=True,linearOp = None):
+                intercept=True,normalize=True,linearOp = None,embed = None):
         r'''
         Adds data for the data fitting model.
 
@@ -219,7 +218,6 @@ class ProjSplitFit(object):
             self.dataLinOp = ut.MyLinearOperator(matvec=lambda x:x,rmatvec=lambda x:x)
             self.nPrimalVars = self.ncolsOfA
             self.linOpUsedWithLoss = False
-
         else:
             try:
 
@@ -261,6 +259,24 @@ class ProjSplitFit(object):
                     self.nPrimalVars = None
                     raise Exception("Col number mismatch in linear operator")
 
+        if embed is None:
+            self.embeddedRegInUse = False 
+        else:
+            if isinstance(embed,Regularizer) == False:
+                raise Exception("embed must be an object of class Regularizer")
+            
+            if(self.process.embedOK == False):
+                print("WARNING: addData was called with a regularizer embedded.")
+                print("But embedding is not possible with this process object.")
+                print("Moving embedded regularizer to be an ordinary regularizer.")
+                self.embeddedRegInUse = False 
+                self.addRegularizer(embed)
+            else:                
+                self.embedded = embed
+                self.embeddedRegInUse = True
+                
+
+
         if normalize:
             print("Normalizing columns of A to unit norm")
             self.normalize = True
@@ -282,17 +298,7 @@ class ProjSplitFit(object):
             self.normalize = False
 
         self.loss = Loss(loss)
-
-        if self.embeddedRegInUse & (self.process.embedOK == False):
-            print("WARNING: A regularizer was added with embedded = True")
-            print("But embedding is not possible with this process object")
-            print("Moving embedded regularizer to be an ordinary regularizer")
-            regObj = self.embedded
-            self.allRegularizers.append(regObj)
-            self.embedded = None
-            self.embeddedRegInUse = False
-            self.numRegs += 1
-
+        
         if (intercept not in [False,True]):
             print("Warning: intercept should be a bool")
             print("Setting to False, no intercept")
@@ -354,7 +360,7 @@ class ProjSplitFit(object):
         else:
             return self.nrowsOfA
 
-    def addRegularizer(self,regObj, linearOp=None, embed = False):
+    def addRegularizer(self,regObj, linearOp=None):
         r'''
         adds a regularizer to the optimization problem.
 
@@ -401,44 +407,9 @@ class ProjSplitFit(object):
                 print("These must be equal, aborting addRegularizer")
                 raise Exception("Invalid col number in added linear op")
 
-
-        if embed:
-            OK2Embed = True
-            if self.dataAdded:
-                if(self.process.embedOK == False):
-                    print("WARNING: This regularizer was added with embedded = True")
-                    print("But embedding is not possible with the process object used in addData()")
-                    print("Moving embedded regularizer to be an ordinary regularizer")
-                    self.allRegularizers.append(regObj)
-                    self.numRegs += 1
-                    OK2Embed = False
-
-            if OK2Embed & (linearOp is not None):
-                print("WARNING: embedded regularizer cannot use linearOp != None")
-                print("Moving embedded regularizer to be an ordinary regularizer")
-                self.allRegularizers.append(regObj)
-                self.numRegs += 1
-                OK2Embed = False
-
-            if OK2Embed:
-                if self.embeddedRegInUse:
-                    print("Warning: Regularizer embed option set to True")
-                    print("But an earlier regularizer is already embedded")
-                    print("Can only embed one regularizer")
-                    print("Moving old regularizer to be non-embedded, the new regularizer will be embedded")
-                    self.allRegularizers.append(self.embedded)
-                    self.numRegs += 1
-
-                self.embedded = regObj
-                self.embeddedRegInUse = True
-
-        else:
-            self.allRegularizers.append(regObj)
-            self.numRegs += 1
-
-
+        self.allRegularizers.append(regObj)
+        self.numRegs += 1
         self.__addLinear(regObj,linearOp)
-
 
         self.internalResetIterate = True # Ensures we reset the variables if we add another regularizer
 

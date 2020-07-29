@@ -46,11 +46,12 @@ def test_embedded(processor,testNumber):
     projSplit = ps.ProjSplitFit()    
     gamma = 1e0
     projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
     lam = 0.01
     step = 1.0
     regObj = L1(lam,step)
-    projSplit.addRegularizer(regObj,embed=True)
+    
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=False,embed=regObj)
+        
     if getNewOptVals and (testNumber == 0):
         opt,_ = runCVX_lasso(A,y,lam)
         cache['embed_opt1'] = opt
@@ -65,7 +66,7 @@ def test_embedded(processor,testNumber):
         assert abs(ps_val-opt)<1e-2
         
     
-    projSplit.addRegularizer(regObj,embed=True)
+    projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5)
     ps_val = projSplit.getObjective()
     
@@ -88,13 +89,14 @@ def test_embedded(processor,testNumber):
     processor = lp.Forward2Fixed(stepsize)
     gamma = 1e-2
     projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,2,processor,normalize=True,intercept=True)
     lam = 0.01
     step = 1.0
+    regObj = L1(lam,step)    
+    
+    projSplit.addData(A,y,2,processor,normalize=True,intercept=True,embed=regObj)
+    
     regObj = L1(lam,step)
-    projSplit.addRegularizer(regObj,embed=True)    
-    regObj = L1(lam,step)
-    projSplit.addRegularizer(regObj,embed=True)            
+    projSplit.addRegularizer(regObj)            
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5)
     ps_val = projSplit.getObjective()
     

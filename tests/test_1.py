@@ -77,14 +77,15 @@ def test_add_regularizer():
     regObj.setScaling(scale2)
     assert (projSplit.allRegularizers[0].getScaling()==scale2)
 
-def test_add_regularizer2():
-    projSplit = ps.ProjSplitFit()    
-    scale = 11.5
-    regObj = L1(scale)
-    projSplit.addRegularizer(regObj,embed = True)
-    scale2 = 15.7
-    regObj.setScaling(scale2)
-    assert (projSplit.embedded.getScaling()==scale2)
+# outdated test since we changed embed to be an argument of addData
+#def test_add_regularizer2():
+#    projSplit = ps.ProjSplitFit()    
+#    scale = 11.5
+#    regObj = L1(scale)
+#    projSplit.addRegularizer(regObj,embed = True)
+#    scale2 = 15.7
+#    regObj.setScaling(scale2)
+#    assert (projSplit.embedded.getScaling()==scale2)
 
 
 def test_add_linear_ops():
@@ -144,16 +145,9 @@ def test_good_embed():
     A = np.random.normal(0,1,[m,d])
     y = np.random.normal(0,1,m)
     processDummy = ProcessDummy()    
-    regObj = L1()
-    projSplit.addRegularizer(regObj,embed = True)
-    projSplit.addData(A,y,2,processDummy)
-    assert projSplit.numRegs == 0
-    
-    
-    projSplit = ps.ProjSplitFit()      
-    projSplit.addData(A,y,2,processDummy)
-    projSplit.addRegularizer(regObj,embed = True)
-    assert projSplit.numRegs == 0
+    regObj = L1()    
+    projSplit.addData(A,y,2,processDummy,embed=regObj)
+    assert projSplit.numRegs == 0    
             
 
 def test_bad_embed():
@@ -164,15 +158,10 @@ def test_bad_embed():
     y = np.random.normal(0,1,m)  
     processDummy = ProcessDummy()
     processDummy.embedOK = False 
-    regObj = L1()
-    projSplit.addRegularizer(regObj,embed = True)
-    projSplit.addData(A,y,2,processDummy)
+    regObj = L1()    
+    projSplit.addData(A,y,2,processDummy,embed=regObj)
     assert (projSplit.numRegs == 1)
-    
-    projSplit = ps.ProjSplitFit()
-    projSplit.addData(A,y,2,processDummy)
-    projSplit.addRegularizer(regObj,embed = True)
-    assert (projSplit.numRegs == 1)
+        
 
 
     

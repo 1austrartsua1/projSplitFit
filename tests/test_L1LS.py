@@ -79,7 +79,7 @@ def test_user_defined_embedded(processor,testNumber):
 
     gamma = 1e0        
     projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,2,processor,normalize=False,intercept=True)
+    
     
     try:
         scaling = projSplit.getScale()
@@ -100,10 +100,9 @@ def test_user_defined_embedded(processor,testNumber):
     regObj.append(Regularizer(prox2,val2,nu[1],step[1]))
     regObj.append(Regularizer(prox3,val3,nu[2],step[2]))
     
-    
+    projSplit.addData(A,y,2,processor,normalize=False,intercept=True,embed=regObj[2])
     projSplit.addRegularizer(regObj[0])
-    projSplit.addRegularizer(regObj[1],embed=True)
-    projSplit.addRegularizer(regObj[2],embed=True)
+    projSplit.addRegularizer(regObj[1])    
     
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 5,
                       resetIterate=True)
