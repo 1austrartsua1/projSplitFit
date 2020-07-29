@@ -80,3 +80,14 @@ blocks, and only a subset of these blocks need be processed at each iteration
 -- this mode of operation is called *block iterative*.  Furthermore, there are
 numerous options for processing each block, including approximate backward
 (proximal) steps and various kinds of forward steps.
+
+Projective splitting, generally, is an *operator splitting* method that is
+defined for "monotone inclusion" problems.  This problem class includes all
+convex optimization problems, but also other problems not representable as
+convex optimization, and which do not have objective functions.  For this
+reason, ``projSplitFit`` does not need to calculate value of the objective
+function in :eq:`masterProb` while solving the problem.  Instead, it monitors
+how closely the current primal and dual solutions estimates come to certifying
+their joint optimality.  However, if you call the ``getObjective`` method (see
+below) or elect to keep a history of the solution trajectory, ``projSplitFit``
+will attempt to computer objective function values.
