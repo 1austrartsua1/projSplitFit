@@ -136,18 +136,23 @@ class ProjSplitFit(object):
 
         Parameters
         ----------
-        observations : 2d ndarray or matrix
-            each row of the observations matrix being :math:`a_i` above
+        observations : 2d :obj:`numpy.ndarray` or :obj:`scipy.sparse.spmatrix`
+            A 2D numpy array or scipy sparse matrix. Each row of the observations 
+            matrix being :math:`a_i` above.
+            All :obj:`scipy.sparse.spmatrix` subclasses are supported. The matrix 
+            will be converted to :obj:`scipy.sparse.csr_matrix` format as this is 
+            most convenient for row slicing and arithmetic operations. 
 
         responses : 1d ndarray or :obj:`list` or numpy array
             each element equal to :math:`y_i` above
 
         loss : :obj:`float` or :obj:`string` or :obj:`losses.LossPlugIn`
-            May be a :obj:`float` greater than 1, the :obj:`string` 'logistic', or an object of class :obj:`losses.LossPlugIn`
+            May be a :obj:`float` greater than 1, the :obj:`string` 'logistic', 
+            or an object of class :obj:`losses.LossPlugIn`
 
         process : :obj:`lossProcessors.LossProcessor`, optional
             An object of a class derived from :obj:`lossProcessors.LossProcessor`.
-            Default is :obj:`Forward2Backtrack`
+            Default is :obj:`Forward2Backtrack()`
 
         intercept : :obj:`bool`,optional
             whether to include an intercept/constant term in the linear model.
@@ -157,8 +162,11 @@ class ProjSplitFit(object):
             whether to normalize columns of the data matrix to have unit norm.
             If True, data matrix will be copied. Default is True.
 
-        linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or similar, optional
-            adds matrix H in Eq. (1). Defaults to the identity.
+        linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or 2D :obj:`numpy.ndarray` or 2D :obj:`scipy.sparse.spmatrix`, optional
+            adds matrix H in Eq. (1). Defaults to the identity. May be a scipy 
+            linear operator, a 2D ndarray, or a scipy sparse matrix. If it is a
+            sparse matrix, it will be converted to :obj:`scipy.sparse.csr_matrix` format
+            as this is most convenient for arithmetic operations. 
 
         '''
 
@@ -171,7 +179,7 @@ class ProjSplitFit(object):
 
         if issparse(observations):
             #sparse matrix format
-            observations = csr_matrix(observations)
+            observations.tocsr() 
             self.sparseObservationMtx = True
         elif isinstance(observations,ndarray) == False:
             raise Exception("Observations must be either a numpy ndarray or a scipy.sparse matrix")
@@ -267,7 +275,7 @@ class ProjSplitFit(object):
                 scaling += 1.0 * (scaling < 1e-10)
                 scaling = 1.0 / scaling
                 self.A = self.A.multiply(scaling)
-                self.A = csr_matrix(self.A)
+                self.A.tocsr() 
         else:
             print("Not normalizing columns of A")
             self.A = observations
@@ -297,7 +305,7 @@ class ProjSplitFit(object):
             self.A = concatenate((col2Add,self.A),axis=1)
         else:
             self.A = hstack((col2Add, self.A))
-            self.A = csr_matrix(self.A)
+            self.A.tocsr() 
 
         self.intercept = intercept
 
@@ -363,8 +371,11 @@ class ProjSplitFit(object):
             regObj : :obj:`regularizers.Regularizer`
                 object of class :obj:`regularizers.Regularizer`
                 
-            linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or similar,optional
-                adds matrix :math:`G_j` in above
+            linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or 2D :obj:`numpy.ndarray` or 2D :obj:`scipy.sparse.spmatrix`, optional
+                adds matrix :math:`G_j` in above. May be a scipy 
+                linear operator, a 2D ndarray, or a scipy sparse matrix. If it is a
+                sparse matrix, it will be converted to :obj:`scipy.sparse.csr_matrix` format
+                as this is most convenient for arithmetic operations.
 
             embed : :obj:`bool`,optional
                 internal option in projective splitting. For forward-type loss process updates,
@@ -734,10 +745,12 @@ class ProjSplitFit(object):
 
             resetIterate : :obj:`bool`,optional
                 If True, the current values of all variables (if ``run`` has been called before)
-                in projective splitting (eg: :math:`z^k, w_i^k` etc) are erased and initialized to 0. Defaults to False.
+                in projective splitting (eg: :math:`z^k, w_i^k` etc) are erased and initialized to 0. 
+                Defaults to False.
 
             verbose : :obj:`bool`,optional
-                Verbose as in printing iteration counts etc. Defaults to False.
+                If True, will printing iteration counts every ``historyFreq`` iterations
+                . Defaults to False.
 
         '''
 
