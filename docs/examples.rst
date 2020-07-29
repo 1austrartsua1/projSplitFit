@@ -168,13 +168,15 @@ return a ``float``.
 Using multiple regularizers in ``projSplitFit`` is straightforward:  one simply
 calls ``addRegularizer`` multiple times before calling ``run``. Suppose one
 wants to solve the lasso with an additional constraint that each component of
-the solution must be non-negative.  That is, one wishes to solve
+the solution must be nonnegative.  That is, one wishes to solve
 
 .. math::
   \min_{z\in\mathbb{R}^d, z\geq 0}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1.
   :label: posLasso
 
-The non-negativity constraint can be formulated as a second regularizer. That is, one may rewrite :eq:`posLasso` as
+One possible approach to solving this problem is to formulate the
+nonnegativity constraint  as a second regularizer. That is, one may rewrite
+:eq:`posLasso` as
 
 .. math::
   \min_{z\in\mathbb{R}^d}\frac{1}{2n}\|Az - y\|^2 +\lambda_1\|z\|_1 + g(z) ,
@@ -244,6 +246,23 @@ be ::
 Here, for numerical reasons, we have slightly modified the ``value_g``
 function to treat very small-magnitude negative numbers as if they were zero.
 
+Note that we present the code above mainly for purposes of example.  A
+potentially more efficient approach to solving the nonnegative lasso problem
+would be use a single user-defined regularizer of the form
+
+.. math::
+
+   h(x) = \left\{
+          \begin{array}{ll}
+          x, & \text{if } x \geq 0 \\
+          +\infty, & \text{otherwise.}
+          \end{array}
+          \right.
+
+This regularizer imposes both :math:`\ell_1` regularization and the nonnegativity
+constraint, while having a proximal operation that is still easily evaluated.
+
+
 
 Linear Operator Composed with a Regularizer
 ============================================
@@ -270,13 +289,30 @@ Documentation for ``scipy`` linear operators may be found in the package
 should have a ``shape`` :math:`(m,n)` and define the methods ``matvec`` and
 ``rmatvec``, which respectively compute the actions of the linear operator and
 its adjoint (the equivalent of multiplication by the matrix transpose).
-Consider the 1D total variation operator on :math:`\mathbb{R}^n` given by
+Consider the 1D total variation operator :math:`\mathbb{R}^n \rightarrow
+\mathbb{R}^{n-1}` given by
 
 .. math::
    [x_1 \;\;\; x_2 \;\;\; \cdots \;\;\; x_n] \;\;\; \mapsto \;\;\;
    [x_1 - x_2 \;\;\; x_2 - x_3 \;\;\; \cdots \;\;\; x_{n-1} - x_n].
 
-The adjoint of this operator is the map
+This map is equivalent to the action of :math:`n-1 \times n` matrix
+
+.. math::
+
+   V =
+   \left[
+   \begin{array}{cccccc}
+   1 & - 1 \\
+   & 1 & -1 \\
+   && 1 & -1 \\
+   &&& \ddots & \ddots \\
+   &&&& 1 & -1 
+   \end{array}
+   \right].
+
+The adjoint of this operator is the map, equivalent to multiplication by the
+transpose :math:`V^{{\scriptscriptstyle\top}}` of :math:`V`, is therefore
 
 .. math::
    [u_1 \;\;\; u_2 \;\;\; \cdots \;\;\; u_{n-1}] \;\;\; \mapsto \;\;\;
@@ -292,11 +328,7 @@ Calling ``varop1d(n)`` as defined in the code below will create such an operator
       return x[:(len(x)-1)] - x[1:]
 
    def applyAdjoint(u):
-      v = numpy.zeros(len(u) + 1)
-      for i in range(len(u)):
-        v[i] += u[i]
-        v[i+1] -= u[i]
-      return v
+      return numpy.pad(u,(0,1)) - numpy.pad(u,(1,0))
 
    def varop1d(n):
       return scipy.sparse.linalg.LinearOperator(shape=(n-1,n),
@@ -308,7 +340,7 @@ User-Defined Losses
 ====================
 
 Just as the you may define their own regularizers, you may define your own
-loss function, using the ``losses.LossPlugIn`` class. Objects of this class
+loss function, using the class ``losses.LossPlugIn``. Objects of this class
 can be passed into ``addData`` as the ``loss`` argument. To define a loss, you
 need to define its ``derivative`` method. Optionally, you may also define its
 ``value`` method if you would like to compute function values (either for
@@ -334,14 +366,14 @@ To use this loss, you would proceed as follows::
   def val(x,y):
     return (x>=y)*(x-y)**2
 
-  loss = ls.LossPlugIn(derivative=deriv,value=val)
+  loss = ls.LossPlugIn(derivative=deriv, value=val)
   projSplit.addData(A,y,loss=loss)
 
 
 Complete Example: Rare Feature Selection
 ==========================================
 
-Let's look at a complete example from page 34 of our paper :cite:`coco`. The problem of interest is
+Let's look at a complete example from page 34 of our paper :cite:`coco`, which originated from :cite:`YB18`. The problem of interest is
 
 .. math::
   \min_{\substack{\gamma_0\in \mathbb{R} \\ \gamma\in \mathbb{R}^{|\mathcal{T}|}}}
@@ -356,21 +388,25 @@ Let's look at a complete example from page 34 of our paper :cite:`coco`. The pro
   \big)
   \right\}
 
-First let's deal with the loss. The loss is the :math:`\ell_2^2` loss. Note that
-it is composed with a linear operator :math:`H`. There are two ways to deal with this.
-If the size of the matrices is not too much of a concern, one may pre-compute a
-new observation matrix as ``Xnew = X*H``. If this is prohibitive, the linear operator
-can be composed with the loss, meaning the *ProjSplitFit* handles it
-internally and does not explicitly compute the matrix product.
-This option is controlled via the ``linearOp`` argument to ``addData``.
+The loss function here is the :math:`\ell_2^2`, but with the regression
+coefficients composed with a linear operator :math:`H`. There are two ways to
+deal with such situations. If the size and density of the matrices is not of
+great concern concern, one may pre-compute a new matrix through ``Xnew =
+X*H``, and use ``Xnew`` as the observation matrix passed to ``projSplitFit``.
+If forming :math:`XH` directly in this manner is prohibitive, the linear
+operator can be instead composed with the loss, meaning the ``projSplitFit``
+handles the composition internally and does not explicitly compute the matrix
+product. This option is controlled via the ``linearOp`` argument to
+``addData``.
 
-Taking this option, the loss is dealt with as follows::
+Taking this option, and electing not to normalized the input data, one may set
+up the loss term as follows::
 
   import projSplitFit as ps
   projSplit = ps.ProjSplitFit()
   projSplit.addData(X,y,loss=2,linearOp=H,normalize=False)
 
-Note that, by default, the intercept term :math:`\gamma_0` is added.
+Note that, by default, the intercept term :math:`\gamma_0` is incorporated into the loss.
 
 The first regularizer needs to be custom-coded, as it leaves out the first variable,
 which is the root of the tree. It is dealt with as follows::
@@ -402,119 +438,229 @@ One can obtain the final objective value and solution via::
   optimalVal = projSplit.getObjective()
   gammastar = projSplit.getSolution()
 
-Loss Process Objects
-=====================
-Projective splitting comes with a rich array of ways to update the hyperplane
-at each iteration. In the original paper :cite:`proj1`, the computation was based
-on the *prox*. Since then, several new calculations have been devised based on
-*forward steps*, i.e. *gradient* calculations, making projective splitting a
-true first-order method :cite:`for1`, :cite:`coco`.
 
-In *ProjSplitFit*, there are a large number of options for which update method to
-use with respect to the blocks of variables associated with the *loss*.
-This is controlled by the ``process`` argument to the ``addData`` method.
-This argument must be a class derived from ``lossProcessors.LossProcessor``.
-*ProjSplitFit* supports the following built-in loss processing classes defined in ``lossProcessors.py``:
+Loss Processor Objects
+=======================================
+Projective splitting offers numerous choices as to how to process the various
+operators making up a problem --- in the current setting, "operators"
+corresponding to various elements in the summation in :eq:`masterProb` --- so
+as to construct a separating hyperplane. In the original papers
+:cite:`proj1,proj1n`, all operators were processed with some form of proximal
+step, that is, essentially the calculation :eq:`proxDef` or some
+approximation thereof.  Such calculations are also called `backward
+steps`.   This feature persisted in later work such as :cite:`ACS14,CE18`.
+More recently, however, new ways of processing operators have been
+devised, based on *forward steps*, that is, simple gradient calculations
+:cite:`for1`, :cite:`coco`.  These innovations
+make projective splitting into a true first-order method.
 
-* ``Forward2Fixed`` two-forward-step update with fixed stepsize, see :cite:`for1`
-* ``Forward2Backtrack`` two-forward-step update with backtracking stepsize, see :cite:`for1`.
-  Note this is the *default* loss processor if the `process` argument is ommitted from
-  ``addData``
-* ``Forward2Affine`` two-forward-step with the affine trick, see :cite:`for1`. Only available
-  when ``loss=2``
-* ``Forward1Fixed`` one-forward-step with fixed stepsize, see :cite:`coco`
-* ``Forward1Backtrack`` one-forward-step with backtracking stepsize, see :cite:`coco`
-* ``BackwardExact`` Exact backward step for :math:`\ell_2^2` loss via matrix inversion.
-  Only available with ``loss=2``
-* ``BackwardCG`` Backward step via conjugate gradient, only available when ``loss=2``
-* ``BackwardLBFGS`` Backward step via LBFGS solver.
+``ProjSplitFit`` assumes that all regularizers employed have a computationally
+efficient proximal operation.  It invokes the proximal operation of every
+regularizer at every iteration.  For the loss function terms, however,
+``projSplitFit`` affords a large number of options.  First, it permits the
+loss function to be divided into an arbitrary number of blocks, each
+containing the same number of observations (give or take one observation). You
+may determine how many of these blocks to process at each iteration, and among
+several rules to select blocks for processing.  Second, it provides nine
+different options for processing each block.
 
-To select a loss processor, one creates an object of the appropriate class from above,
-calling the constructor with the desired parameters, and then passes the object
-into ``addData`` as the ``process`` argument. For example, to use ``BackwardLBFGS``::
+The number of loss blocks and their activation scheme are controlled by
+keyword arguments to the ``run`` method, as described in 
+:numref:`run-options` below. The procedure used to process each block is
+determined by the optional the ``process`` argument to the ``addData`` method.
+This value of this argument must be an object whose class is derived from
+``lossProcessors.LossProcessor``. The file ``lossProcessors.py`` pre-defines
+the following nine classes that may be used for this purpose :
+
+* ``Forward2Fixed``: two-forward-step update with fixed stepsize, see :cite:`for1`
+* ``Forward2Backtrack``: two-forward-step update with backtracking stepsize,
+  see :cite:`for1`. This is the default loss processor if the ``process``
+  argument is ommitted from ``addData``
+* ``Forward2Affine``:  a specialized two-forward-step update for quadratic
+  loss functions, automatically selecting a valid stepsize without
+  backtracking, see :cite:`for1`. Only available when ``loss=2``
+* ``Forward1Fixed``: one-forward-step update with fixed stepsize, see :cite:`coco`
+* ``Forward1Backtrack``: one-forward-step update with backtracking stepsize,
+  see :cite:`coco`
+* ``BackwardExact``: Exact proximal/backward step for :math:`\ell_2^2` loss via matrix factoring.    Only available with ``loss=2``
+* ``BackwardCG``:  approximate proximal/backward step computed by a conjugate gradient method, only available when ``loss=2``
+* ``BackwardLBFGS``: approximate backward/proximal step computed by a
+  limited-memory Broyden-Fletcher-Goldfarb-Shanno (LBFGS) solver.
+
+To select a loss processor, you create the desired class above, call its the
+constructor with the any desired parameters, and then pass the resulting
+object into ``addData`` as the ``process`` argument. For example, to use
+``BackwardLBFGS`` with its default parameters on the :math:`\ell_{1.5}^{1.5}`
+loss, you would use the code fragment ::
 
   import lossProcessors as lp
   processObj = lp.BackwardLBFGS()
-  projSplit.addData(A,y,loss=2,process=processObj)
+  projSplit.addData(A,y, loss=1.5, process=processObj)
 
-This will use BackwardLBFGS with all of the default parameters. See the detailed documentation
-for all of the possible parameters and settings for each loss process class.
+See the detailed documentation section below for a complete listing of the
+parameters for each loss processing class.
 
-The user may wish to define their own loss process classes. They must derive from
-``lossProcessors.LossProcessor`` and they must implement the ``initialize``
-and ``update`` methods. Of course, convergence cannot be guaranteed unless the user
-knows of a supporting mathematical theory for their process update method.
+..  It is possible to create your own loss processing classes. They must derive
+    from ``lossProcessors.LossProcessor`` and must implement the ``initialize``
+    and ``update`` methods. Of course,
+    convergence cannot be guaranteed unless you are aware of mathematical theory
+    establishing the correctness of your procedure.
 
-Embedding Regularizers
-=======================
+It is possible to create your own loss processing classes, although
+guaranteeing convergence may requires significant mathematical analysis.
+Please contact the authors for more information on extending ``projSplitFit``
+in this manner.
 
-Projective splitting handles regularizers via their proxes. A regularizer is typically
-handled by including a new block of variables. However, it is possible to embed one
-regularizer into the block that handles the loss. In this case, the loss is handled
-in a forward-backward manner, with the forward step calculated, and then the backward step
-on the same block of variables. For example, with ``Forward2Fixed`` and embedding
-the update would be
 
-.. math::
-  x_i^k = \text{prox}_{\rho g}(z^k - \rho (\nabla f_i(z^k)-w_i^k))
+.. _run-options:
 
-Note that the prox is computed in-line with the forward step.
+Blocks of Observations
+=========================
 
-To enable this option, use the ``embed`` argument to the ``addRegularizer`` call,
-when adding the regularizer to the method.
-
-If ``nblocks`` is greater than 1, the prox is performed on each block.
-
-Options for the ``run()`` Method
-==================================
-The ``run`` method has several important options which we briefly discuss.
-The first is ``nblocks``. This controls how many blocks projective splitting
-breaks the loss into for processing. Recall the loss is
+The ``run`` method has three important options which control the division of
+the loss function into blocks, and how these blocks are processed at each
+iteration. The first is ``nblocks``. This controls how many blocks projective
+splitting breaks the loss into for processing. Recall the loss is
 
 .. math::
   \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
 
-An important property of projective splitting is *block iterativeness*: It does not
+An important property of projective splitting is *block iterativeness*:  the method does not
 need to process every observation at each iteration. Instead, it may break the
-:math:`n` observations into ``nblocks`` and process as few as one block at a time.
-``nblocks`` may be anything from ``1``, meaning all observations are processed at
-each iteration, to ``n``, meaning every observation is treated as a block.
-``nblocks`` defaults to 1.
+:math:`n` observations into ``nblocks`` blocks and process as few as one block at a
+time. ``nblocks`` may be any integer ranging from ``1``, meaning all observations are
+processed at each iteration, up to ``n``, meaning every individual observation is
+treated as a block. ``nblocks`` currently defaults to 1, but better
+performance is often observed for larger values.
 
-The blocks are contiguous runs of indices. If :math:`nblocks` does not divide the
-number of rows/observations, then we use the formula
+At present, blocks may only be contiguous spans of observation indices.
+Suppose that ``nblocks`` is set to some value :math:`b`.  If :math:`n` is divisible by
+:math:`b`, then each block simply contains :math:`n/b` contiguous indices.  If
+:math:`b` does not divide the number of observations, then the first 
+:math:`n\!\!\mod b` blocks have :math:`\lceil n / b \rceil` observations and
+the remaining blocks have :math:`\lfloor n / b \rfloor` observations.
 
-.. math::
-  n = \lceil n/n_b \rceil n\%n_b + \lfloor n/n_b \rfloor(n_b - n \%n_b).
+The number of blocks processed per iteration is controlled via the argument
+``blocksPerIteration``, which defaults to 1.  It can take any integer value
+between 1 and ``nblocks``.
 
-so that there are two groups of blocks, those with :math:`\lceil n/n_b\rceil`
-number of indices and those with :math:`\lfloor n/n_b\rfloor`. That way,
-the number of indices in any two blocks differs by at most 1.
+There are three ways to choose *which* blocks are processed at each iteration.
+The selection of blocks is controlled with the ``blockActivation`` argument, which may be set to
 
-The number of blocks processed per iteration is controlled via the argument ``blocksPerIteration``
-which defaults to 1.
+* ``'random'``: select blocks at random, with equal probabilities
+* ``'cyclic'``: cycle through the blocks in a round-robin manner
+* ``'greedy'`` (the default): use the "greedy" heuristic of :cite:`for1`, page 24
+  to select blocks.  This heuristic estimates which blocks are most important
+  to process to make progress toward the optimal solution.
 
-There are three ways to choose *which* blocks are processed at each iteration. This is
-controlled with the ``blockActivation`` argument and may be set to
+For example, to use 10 blocks and evaluate one block
+per iteration using a greedy selection scheme, one would run the optimization
+by (assuming that ``projSplit`` is a ``projSplitFit`` object) ::
 
-* "random", randomly selected block
-* "cyclic", cycle through the blocks
-* "greedy", (default) use the greedy heuristic of :cite:`for1` page 24 to select blocks.
+   projSplit.run(nBlocks=10, blockActivation='greedy', blocksPerIteration=1)
 
-Other Important Methods of ProjSplitFit
+However, greedy activation and one block per iteration being the defaults, 
+the above could be shortened to ::
+
+   projSplit.run(nBlocks=10)
+
+For some problem classes, it has been empirically been observed that
+processing one or two blocks per iteration, selected in this greedy manner,
+yields similar convergence to processing the entire loss term, but with much
+lower time required per iteration.  
+
+
+..  JE moved the section below because I think it makes more sense after we discuss blocks.
+
+Embedding Regularizers
+=======================
+
+Projective splitting handles regularizers through their proximal operations
+:eq:`proxDef`. Regularizers added to a ``ProjSplitFit`` object are processed
+at every iteration.  Such regularizers cause ``projSplitFit`` to allocate
+three internal vector variables whose dimension matches the regularizer
+argument.
+
+However, the "forward" loss processors also have the option to "embed" a
+single regularizer into each loss block; please see :numref:`run-options`
+above for a discussion of dividing the loss function into blocks.  Each time a
+loss block is processed, the loss processor also performs a backward
+(proximal) step on the embedded regularizer, and no additional working memory
+needs to allocated to the regularizer.  
+
+The embedding feature is controlled by the ``embed`` keyword argument of the ``addData`` method.  To solve a standard lasso problem with this technique, using 10 loss blocks,
+one would proceed as follows::
+
+  import projSplitFit as ps
+  from regularizers import L1
+  lam1 = 0.1
+  projSplit = ps.ProjSplitFit()
+  regObj = L1(scaling=lam1)
+  projSplit.addData(A, y, loss=2, intercept=False, embed=regObj)
+  projSplit.run(nblocks=10)
+  optimalVal = projSplit.getObjective()
+  z = projSplit.getSolution()
+
+Note that when a regularizer is embedded in the loss function, it should not
+also be added to the problem with ``addRegularizer``.  But only one
+regularizer can be embedded in the loss term; if further regularizers are
+needed, then those should be introduced into the problem with ``addRegularizer``.
+If the loss term also contains a linear operator, that linear operator applies
+to both the loss term and regularizer.
+
+The ``embed`` feature cannot be used with the backward loss processors.
+
+..  For example, with ``Forward2Fixed`` and embedding
+    the update would be
+
+    .. math::
+      x_i^k = \text{prox}_{\rho g}(z^k - \rho (\nabla f_i(z^k)-w_i^k))
+
+    Note that the prox is computed in-line with the forward step.
+
+    To enable this option, use the ``embed`` argument to the ``addRegularizer`` call,
+    when adding the regularizer to the method.
+
+    If ``nblocks`` is greater than 1, the prox is performed on each block.
+
+
+
+Other Important Features
 ========================================
 
-The ``keepHistory`` and ``historyFreq`` arguments to ``run()`` allow you to choose to record the progress of
-the algorithm in terms of objective function values, running time, primal and dual residuals, and hyperplane values.
-These may be extracted later via the ``getHistory()`` method.
+The ``keepHistory`` and ``historyFreq`` arguments to ``run()`` allow you to
+record the progress of the algorithm in terms of objective function values,
+running time, primal and dual residuals, and hyperplane values. These may be
+extracted later via the ``getHistory()`` method.  Set ``keepHistory=True`` to
+record history information.  The ``historyFreq`` parameter controls how often
+information is recorded: for example, setting ``historyFreq=1`` causes the
+information to be recorded every iteration, while setting ``historyFreq=10``
+causes it to be recorded once every ten iterations.
 
-``getObjective()`` simply returns the objective value at the current primal iterate.
+The ``getObjective()`` of the ``ProjSplitFit`` class simply returns the
+objective value at the current primal iterate.
 
-``getSolution()`` returns the primal iterate :math:`z^k`. If the ``descale`` argument is set to True, then the
-scaling vector used to scale each column of the data matrix is applied to the elements of :math:`z^k`.
-That way, the coefficient vector can be used with unnormalized data such as new test data.
-However the method ``getScaling()`` returns this scaling vector. This scaling vector can then be applied to normalize new test
-data. To normalize a new test datapoint ``xtest``::
+If you use either the ``keepHistory`` feature or the ``getObjective`` function
+in conjunction with a user-defined loss function, then that loss function must
+have a ``value`` method.  Similarly, using either the ``keepHistory`` feature
+or the ``getObjective`` function in conjunction with a user-defined
+regularizer requires that the regularizer have ``value`` method.
+
+After using ``run()``, the ``getSolution()`` method of the ``ProjSplitFit``
+class returns the primal iterate :math:`z^k`. If its ``descale`` argument is
+set to ``True``, then the scaling vector used to scale each column of the data
+matrix is applied to the elements of :math:`z^k`, so that the returned vector
+of coefficients is in the coordinate system of the original data. Thus, the
+returned coefficient vector may be directly used to make predictions using
+unnormalized data, such as new test data.  The ``descale`` option is not
+available when the loss term is composed with a linear operator.
+
+If the model was formulated with an intercept term, then the intercept term is the
+first element of the vector returned by ``getSolution``.
+
+The method ``getScaling()`` returns the scaling vector used in normalization.
+This scaling vector can then be applied to normalize new test data. For
+example, to normalize a new test datapoint ``xtest``, one could write::
 
   scaling = projSplit.getScaling()
   x_test_normalized = xtest/scaling 
