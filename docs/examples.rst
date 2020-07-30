@@ -378,18 +378,19 @@ To use this loss, you would proceed as follows::
 Complete Example: Rare Feature Selection
 ==========================================
 
-Let's look at a complete example from page 34 of our paper :cite:`coco`, which originated from :cite:`YB18`. The problem of interest is
+Let's look at a complete example from page 34 of our paper :cite:`coco`, which originated from :cite:`YB18`.
+The problem of interest is
 
 .. math::
-  \min_{\substack{\gamma_0\in \mathbb{R} \\ \gamma\in \mathbb{R}^{|\mathcal{T}|}}}
+  \min_{\substack{\boldsymbol{\gamma_0}\in \mathbb{R} \\ \boldsymbol{\gamma}\in \mathbb{R}^{|\mathcal{T}|}}}
   \left\{
-  \frac{1}{2n}\|\gamma_0 e + X H\gamma - y\|_2^2
+  \frac{1}{2n}\|\boldsymbol{\gamma_0} e + X H\boldsymbol{\gamma} - y\|_2^2
   +
   \lambda
   \big(
-  \mu\|\gamma_{-r}\|_1
+  \mu\|\boldsymbol{\gamma_{-r}}\|_1
   +
-  (1-\mu)\|H\gamma\|_1
+  (1-\mu)\|H\boldsymbol{\gamma}\|_1
   \big)
   \right\}
 
@@ -412,20 +413,58 @@ up the loss term as follows::
   projSplit = ps.ProjSplitFit()
   projSplit.addData(X,y,loss=2,linearOp=H,normalize=False)
 
-Note that, by default, the intercept term :math:`\gamma_0` is incorporated into the loss.
+Note that, by default, the intercept term :math:`\boldsymbol{\gamma}_0` is incorporated into the loss.
 
-The first regularizer needs to be custom-coded, as it leaves out the first variable,
-which is the root of the tree. It is dealt with as follows::
+The first regularizer does not apply to the root node variable of :math:`\boldsymbol{\gamma}`,
+which is stored as the last entry of the vector.
+A simple way to encode this is to treat it as the :math:`\ell_1` norm composed
+with a linear operator which simply drops the last entry. That is,
+:math:`\|G \boldsymbol{\gamma}\|_1` where
 
-  from regularizers import Regularizer
-  def prox(gamma,sigma):
-    temp = numpy.zeros(gamma.shape)
-    temp[1:] = (gamma[1:]>sigma)*(gamma[1:]-sigma)
-    temp[1:] += (gamma[1:]<-sigma)*(gamma[1:]+sigma)
-    temp[0]=gamma[0]
-    return temp
-  regObj = Regularizer(prox,scaling=lam*mu)
-  projSplit.addRegularizer(regObj)
+.. math::
+  G\boldsymbol{\gamma} = [\boldsymbol{\gamma}_1 \quad \boldsymbol{\gamma}_2 \quad \ldots\quad \boldsymbol{\gamma}_{|\mathcal{T}|-1}]
+
+i.e.
+
+.. math::
+  G = \left[\begin{array}{ccccc}
+        1 &   & & & 0 \\
+          & 1 & & & 0\\
+          &   & \ddots & & \vdots \\
+          &   &        & 1 & 0
+      \end{array}
+      \right]
+      \quad
+      \text{and}
+      \quad 
+  G^\top = \left[
+    \begin{array}{cccc}
+    1 &   & & \\
+      & 1 & & \\
+      &   & \ddots &  \\
+      &   &        & 1 \\
+    0 & 0 &\hdots & 0
+    \end{array}
+           \right].
+
+
+
+This can be included in the model with the ``scipy.sparse.linalg.LinearOperator`` class
+as follows::
+
+  from scipy.sparse.linalg import LinearOperator
+  import numpy as np
+
+  def applyG(x):
+    return x[:-1]
+
+  def applyGtranspose(v):
+    return np.concatenate((v,np.array([0])))
+
+  (_,ngamma) = H.shape
+  shape = (ngamma-1,ngamma)
+  G = LinearOperator(shape,matvec=applyG,rmatvec = applyGtranspose)
+  psObj.addRegularizer(regularizers.L1(scaling = mu*lam),linearOp=G)
 
 The second regularizer is more straightforward and may be dealt with via the
 built-in ``L1`` function and composing with the linear operator :math:`H`
