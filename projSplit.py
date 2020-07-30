@@ -287,7 +287,7 @@ class ProjSplitFit(object):
 
 
         if normalize:
-            print("Normalizing columns of A to unit norm")
+            print("Normalizing columns of A to have square norm equal to num rows")
             self.normalize = True
             if self.sparseObservationMtx == False:
                 self.A = npcopy(observations)
