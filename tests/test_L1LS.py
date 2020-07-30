@@ -4,7 +4,7 @@ Created on Sat May  9 14:24:06 2020
 
 @author: pjohn
 """
-getNewOptVals = False
+getNewOptVals = False   
 
 
 import sys
@@ -17,7 +17,7 @@ import lossProcessors as lp
 import numpy as np
 import pickle 
 import pytest 
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 if getNewOptVals:
     from utils import runCVX_lasso
@@ -422,10 +422,11 @@ def test_l1_intercept_and_normalize(processor,inter,norm):
         opt = cache.get((inter,norm,'l1opt'))
         if opt is None:
             if norm:
-                Anorm = np.copy(A)            
+                Anorm = np.copy(A) 
+                n = A.shape[0]
                 scaling = np.linalg.norm(Anorm,axis=0)
                 scaling += 1.0*(scaling < 1e-10)
-                Anorm = Anorm/scaling
+                Anorm = np.sqrt(n)*Anorm/scaling
             else:
                 Anorm = A
             

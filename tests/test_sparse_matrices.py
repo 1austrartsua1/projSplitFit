@@ -1,4 +1,4 @@
-getNewOptVals = False
+getNewOptVals = False 
 
 import sys
 sys.path.append('../')
@@ -31,10 +31,9 @@ for mat in sparse_types:
 
 @pytest.mark.parametrize("sparse_type,INT,Norm,reg",ToDo)
 def test_ls_with_lin_op(sparse_type,INT,Norm,reg):
-    if Norm:
-        gamma = 1e-3
-    else:
-        gamma = 1e0
+    
+    gamma = 1e0
+    
     psObj = ps.ProjSplitFit(gamma)
     m = 25
     d = 15
@@ -77,9 +76,10 @@ def test_ls_with_lin_op(sparse_type,INT,Norm,reg):
             xcvx = cvx.Variable(d2+1)
             H = H.toarray()
             if Norm:
+                n = A.shape[0]
                 scaling = np.linalg.norm(A, axis=0)
                 scaling += 1.0 * (scaling < 1e-10)
-                A = A / scaling
+                A = np.sqrt(n)*A / scaling
             col2Add = int(INT) * np.ones((m, 1))
             A = np.concatenate((col2Add, A), axis=1)
 

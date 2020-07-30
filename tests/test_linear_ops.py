@@ -2,7 +2,7 @@
 """
 Created on Mon May 11 16:31:38 2020
 """
-getNewOptVals = False
+getNewOptVals = False 
 
 import sys
 sys.path.append('../')
@@ -79,7 +79,7 @@ def test_linear_op_l1(norm,inter):
                 Anorm = A            
                 scaling = np.linalg.norm(Anorm,axis=0)
                 scaling += 1.0*(scaling < 1e-10)
-                Anorm = Anorm/scaling
+                Anorm = np.sqrt(m)*Anorm/scaling
                 A = Anorm
             if inter:
                 AwithIntercept = np.zeros((m,d+1))
@@ -169,10 +169,11 @@ def test_multi_linear_op_l1(norm,inter,testNumber,numblocks):
     
     if getNewOptVals:
         if norm:
-            Anorm = A            
+            Anorm = A 
+            m = Anorm.shape[0]
             scaling = np.linalg.norm(Anorm,axis=0)
             scaling += 1.0*(scaling < 1e-10)
-            Anorm = Anorm/scaling
+            Anorm = np.sqrt(m)*Anorm/scaling
             A = Anorm
         
         if inter:
@@ -318,7 +319,7 @@ def test_linear_op_data_term(norm,inter,addL1,add2L1,processor,testNumber):
             if norm == True:         
                 scaling = np.linalg.norm(A,axis=0)
                 scaling += 1.0*(scaling < 1e-10)
-                A = A/scaling
+                A = np.sqrt(A.shape[0])*A/scaling
             if inter == True:
                 AwithIntercept = np.zeros((m,d+1))
                 AwithIntercept[:,0] = np.ones(m)

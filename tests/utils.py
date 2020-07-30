@@ -31,11 +31,12 @@ def runCVX_LR(A,y,lam,intercept=False):
     return opt, xopt
 
 def runCVX_lasso(Ain,y,lam,intercept = False,normalize = False):
-    if normalize:
+    if normalize:        
         A = np.copy(Ain)            
+        n = A.shape[0]
         scaling = np.linalg.norm(A,axis=0)
         scaling += 1.0*(scaling < 1e-10)
-        A = A/scaling
+        A = np.sqrt(n)*A/scaling
     else:
         A = Ain
         

@@ -4,7 +4,7 @@ Created on Mon May 11 15:11:50 2020
 
 @author: pjohn
 """
-getNewOptVals = False
+getNewOptVals = False  
 
 import sys
 sys.path.append('../')
@@ -74,10 +74,11 @@ def test_L1LR(processor,nrm,inter,testNumber):
         opt = cache.get((nrm,inter,'opt'))
         if opt is None:        
             if nrm:
-                Anorm = A            
+                Anorm = A  
+                n = A.shape[0]
                 scaling = np.linalg.norm(Anorm,axis=0)
                 scaling += 1.0*(scaling < 1e-10)
-                A = Anorm/scaling
+                A = np.sqrt(n)*Anorm/scaling
                 
             if inter:
                  AwithIntercept = np.zeros((m,d+1))

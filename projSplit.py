@@ -11,6 +11,7 @@ from numpy import concatenate
 from numpy import array
 from numpy.random import choice
 from numpy import ndarray
+from numpy import sqrt 
 
 from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse import issparse
@@ -19,8 +20,7 @@ from scipy.sparse.linalg import norm as sparse_norm
 from scipy.sparse import hstack
 
 from time import time
-from random import sample
-from random import uniform
+
 
 from regularizers import Regularizer
 from losses import Loss
@@ -293,13 +293,13 @@ class ProjSplitFit(object):
                 self.A = npcopy(observations)
                 self.scaling = norm(self.A,axis=0)
                 self.scaling += 1.0*(self.scaling < 1e-10)
-                self.A = self.A/self.scaling
+                self.A = sqrt(self.nrowsOfA)*self.A/self.scaling                
             else:
                 self.A = csr_matrix(observations,copy=True)
-                scaling = sparse_norm(self.A,axis=0)
-                scaling += 1.0 * (scaling < 1e-10)
-                scaling = 1.0 / scaling
-                self.A = self.A.multiply(scaling)
+                self.scaling = sparse_norm(self.A,axis=0)
+                self.scaling += 1.0 * (self.scaling < 1e-10)
+                self.scaling = 1.0 / self.scaling
+                self.A = self.A.multiply(sqrt(self.nrowsOfA)*self.scaling)
                 self.A = csr_matrix(self.A)
         else:
             print("Not normalizing columns of A")
