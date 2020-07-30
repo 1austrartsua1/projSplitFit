@@ -38,14 +38,14 @@ def expandOperator(linearOp):
         expandMatVec = lambda x: concatenate((array([x[0]]),linearOp.matvec(x[1:])))
         expandrMatVec = lambda x: concatenate((array([x[0]]),linearOp.rmatvec(x[1:])))
     else:
-        linearOp.tocsr() 
+        linearOp = csr_matrix(linearOp)
         expandMatVec = lambda x: concatenate((array([x[0]]), linearOp.dot(x[1:])))
         expandrMatVec = lambda x: concatenate((array([x[0]]), linearOp.T.dot(x[1:])))
 
     return expandMatVec,expandrMatVec
 
 def MySparseLinearOperator(linearOp):
-    linearOp.tocsr() 
+    linearOp = csr_matrix(linearOp)
     matvec = lambda x : linearOp.dot(x)
     rmatvec = lambda x : linearOp.T.dot(x)
     shape = linearOp.shape

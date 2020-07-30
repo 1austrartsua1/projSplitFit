@@ -187,7 +187,7 @@ class ProjSplitFit(object):
 
         if issparse(observations):
             #sparse matrix format
-            observations.tocsr() 
+            observations = csr_matrix(observations) 
             self.sparseObservationMtx = True
         elif isinstance(observations,ndarray) == False:
             raise Exception("Observations must be either a numpy ndarray or a scipy.sparse matrix")
@@ -300,7 +300,7 @@ class ProjSplitFit(object):
                 scaling += 1.0 * (scaling < 1e-10)
                 scaling = 1.0 / scaling
                 self.A = self.A.multiply(scaling)
-                self.A.tocsr() 
+                self.A = csr_matrix(self.A)
         else:
             print("Not normalizing columns of A")
             self.A = observations
@@ -320,7 +320,7 @@ class ProjSplitFit(object):
             self.A = concatenate((col2Add,self.A),axis=1)
         else:
             self.A = hstack((col2Add, self.A))
-            self.A.tocsr() 
+            self.A = csr_matrix(self.A)
 
         self.intercept = intercept
 
