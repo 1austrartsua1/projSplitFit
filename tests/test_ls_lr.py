@@ -28,7 +28,7 @@ else:
 
 
 
-    
+
     
     
 @pytest.mark.parametrize("gf",[(1.0),(1.1),(1.2),(1.5)])
@@ -266,6 +266,8 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
     projSplit.run(maxIterations = 5000,keepHistory = True,nblocks = 10,primalTol=0.0,
                   dualTol=0.0)
     ps_sol = projSplit.getSolution()
+    ps_sol_simp = projSplit.getSolution(ergodic="simple")
+    ps_sol_weight = projSplit.getSolution(ergodic="weighted")
     
     
     if getNewOptVals:
@@ -283,7 +285,8 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
             
             if norm == False:
                 assert(np.linalg.norm(xhat-ps_sol)<1e-2)
-            
+                assert (np.linalg.norm(xhat - ps_sol_simp) < 1e-2)
+                assert (np.linalg.norm(xhat - ps_sol_weight) < 1e-2)
             
             if inter:
                 LSval = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
@@ -331,7 +334,7 @@ def test_ls_blocks(processor):
     gamma = 1e-1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False)    
-    projSplit.run(maxIterations = 1000,keepHistory = True,nblocks = 10)
+    projSplit.run(maxIterations = 1500,keepHistory = True,nblocks = 10,primalTol=1e-3,dualTol=1e-3)
     assert projSplit.getObjective() >= 0, "objective is not >= 0"
     sol = projSplit.getSolution()
     assert sol.shape == (d+1,)
@@ -353,7 +356,13 @@ def test_ls_blocks(processor):
     
     PSresid = projSplit.getObjective()    
     assert abs(LSresid - PSresid) <1e-2
-    
+
+    PSresidErg = projSplit.getObjective(ergodic = "simple")
+    assert abs(LSresid - PSresidErg) < 1e-2
+
+    PsresidErgWeight = projSplit.getObjective(ergodic = "weighted")
+    assert abs(LSresid - PsresidErgWeight) < 1e-2
+
     
     
     projSplit.run(maxIterations = 1000,keepHistory = True,resetIterate=True,blockActivation="random",nblocks = 10)
@@ -507,7 +516,7 @@ def test_backward(nblk,inter,norm,processor):
     projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)
     
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = nblk,blockActivation="random",
-                  primalTol = 1e-6,dualTol = 1e-6)     
+                  primalTol = 1e-7,dualTol = 1e-7)
     
     #psvals = projSplit.getHistory()[0]
     #plt.plot(psvals)

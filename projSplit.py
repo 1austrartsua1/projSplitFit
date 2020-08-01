@@ -418,27 +418,47 @@ class ProjSplitFit(object):
 
         self.internalResetIterate = True # Ensures we reset the variables if we add another regularizer
 
-    def getObjective(self):
-        '''
+    def getObjective(self,ergodic=False):
+        r'''
         Returns the current objective value evaluated at the current primal iterate :math:`z^k`.
         If the method has not been run yet, raises an exception.
 
         If a loss or regularizer was added without defining a value method,
         calling ``getObjective`` raises an Exception.
 
+        Parameters
+        -----------
+
+           ergodic : :obj:`bool` or :obj:`string`, optional
+             Whether to compute objective at the primal iterate z^k, or one of its two averaged
+             versions. If False, use the primal iterate. If "simple", evaluate at 
+             :math:`\frac{1}{k}\sum_k z^k`, if "weighted", evaluate at
+             
+             .. math::
+               \sum_{t=1}^k \frac{\tau_t z^k}{\sum_{t=1}^k\tau_t} 
+        
+             where :math:`\tau_t` are the stepsizes used in the hyperplane projections. 
+                
         Returns
-        -------
+        ---------
         currentLoss : :obj:`float`
             the current objective value evaluated at the current iterate
         '''
         if self.runCalled == False:
             raise Exception("Method not run yet, no objective to return. Call run() first.")
 
-        currentLoss,Hz = self.__getLoss(self.z)
+        if ergodic == "simple":
+            z2use = self.zbar
+        elif ergodic == "weighted":
+            z2use = self.zbarWeighted
+        else:
+            z2use = self.z
+
+        currentLoss,Hz = self.__getLoss(z2use)
         
 
         for reg in self.allRegularizers:
-            Hiz = reg.linearOp.matvec(self.z[1:])
+            Hiz = reg.linearOp.matvec(z2use[1:])
             getVal = reg.evaluate(Hiz)
             if getVal is None:
                 raise Exception("Regularizer added without defining its value method")
@@ -481,7 +501,7 @@ class ProjSplitFit(object):
         return self.scaling 
         
 
-    def getSolution(self,descale=False):
+    def getSolution(self,descale=False,ergodic=False):
         r'''
         Returns the current primal solution :math:`z^k`.
         
@@ -502,7 +522,17 @@ class ProjSplitFit(object):
                     use the original unnormalized data matrix with this new feature,
                     and also may use it on new data. However, if a linear operator
                     was added with ``addData`` via argument ``linOp``, then a warning
-                    message will be printed and the solution vector will not be descaled. 
+                    message will be printed and the solution vector will not be descaled.
+
+            ergodic : :obj:`bool` or :obj:`string`, optional
+             Whether to return the primal iterate z^k, or one of its two averaged
+             versions. If False, use the primal iterate. If "simple", return
+             :math:`\frac{1}{k}\sum_k z^k`, if "weighted", return
+
+             .. math::
+               \sum_{t=1}^k \frac{\tau_t z^k}{\sum_{t=1}^k\tau_t}
+
+             where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
             
         Returns
         -------
@@ -513,21 +543,28 @@ class ProjSplitFit(object):
 
         if self.runCalled == False:
             raise Exception("Method not run yet, no solution to return. Call run() first.")
-        
+
+        if ergodic == "simple":
+            z2use = self.zbar
+        elif ergodic == "weighted":
+            z2use = self.zbarWeighted
+        else:
+            z2use = self.z
+
             
         if descale:
             if self.normalize:
                 if self.linOpUsedWithLoss:
                     print("Warning: Cannot descale because of the presence of a linear operator")
                     print("composed with the data. Just returning the unnormalized solution vector")
-                    out = self.z 
+                    out = z2use
                 else:
-                    out = self.z[1:]/self.scaling[1:]
-                    out = concatenate((array(self.z[0]),out))
+                    out = z2use[1:]/self.scaling[1:]
+                    out = concatenate((array(z2use[0]),out))
             else:
-                out  = self.z 
+                out  = z2use
         else:
-            out  = self.z 
+            out  = z2use
             
         if (self.intercept==False):
             out = out[1:]
@@ -741,7 +778,8 @@ class ProjSplitFit(object):
 
         self.nDataBlocks = numBlocks
         
-        blocksPerIteration = ui.checkUserInput(blocksPerIteration,int,'int','blocksPerIteration',default=1,low=1,lowAllowed=True)
+        blocksPerIteration = ui.checkUserInput(blocksPerIteration,int,'int','blocksPerIteration',default=1,low=1,
+                                               lowAllowed=True)
 
         try:            
             if blocksPerIteration >= self.nDataBlocks:
@@ -770,7 +808,8 @@ class ProjSplitFit(object):
         verbose = ui.checkUserBool(verbose,"verbose")                
             
         if maxIterations != None:            
-            maxIterations = ui.checkUserInput(maxIterations,int,'int','maxIterations',default=1000,low=1,lowAllowed=True)
+            maxIterations = ui.checkUserInput(maxIterations,int,'int','maxIterations',
+                                              default=1000,low=1,lowAllowed=True)
              
         if maxIterations is None:
             maxIterations = float('Inf')
@@ -786,6 +825,7 @@ class ProjSplitFit(object):
         dualErrs = []
         phis = []
         self.runCalled = True
+        sumTau = 0.0
 
         ################################
         # BEGIN MAIN ALGORITHM LOOP
@@ -803,11 +843,18 @@ class ProjSplitFit(object):
                 print("primal and dual tolerance reached, finishing run")
                 break
 
-            phi = self.__projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
+            phi,tau = self.__projectToHyperplane() # update (z,w1...wn) from (x1..xn,y1..yn,z,w1..wn)
 
             if phi == "converged":
                 print("Gradient of the hyperplane is 0, converged, finishing run")
                 break
+
+            self.zbar = (self.k/(self.k+1.0))*self.zbar + (1.0/(self.k+1))*self.z
+
+            if tau > 0:
+                self.zbarWeighted = (sumTau/(sumTau+tau))*self.zbarWeighted + (tau/(sumTau+tau))*self.z
+                sumTau += tau
+
             t1 = time()
 
             if keepHistory and (self.k % historyFreq == 0):
@@ -872,6 +919,8 @@ class ProjSplitFit(object):
 
     def __initializeVariables(self):
         self.z = zeros(self.nPrimalVars+1)
+        self.zbar = zeros(self.nPrimalVars+1)
+        self.zbarWeighted = zeros(self.nPrimalVars+1)
         self.Hz = zeros(self.nDataBlockVars)
         self.xdata = zeros((self.nDataBlocks,self.nDataBlockVars))
         self.ydata = zeros((self.nDataBlocks,self.nDataBlockVars))
@@ -1072,8 +1121,11 @@ class ProjSplitFit(object):
             pi += norm(self.ureg[i],2)**2
 
         # compute phi
+        tau = 0.0
+
         if pi > 0:
             phi = self.__getPhi(v)
+
 
             if phi > 0:
                 # compute tau
@@ -1089,7 +1141,7 @@ class ProjSplitFit(object):
         else:
             phi = "converged"
 
-        return phi
+        return phi,tau
 
 
 
