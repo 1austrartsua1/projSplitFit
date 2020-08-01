@@ -99,7 +99,8 @@ features. A common tactic to improve performance is to scale the features so
 that they have commensurate size. This is controlled by setting the
 ``normalize`` argument of ``addData`` to ``True`` (which is the default). If this
 is done, then the observations matrix :math:`A` is copied and the columns of
-the copy are normalized to have unit :math:`\ell_2` norm.
+the copy are normalized to have :math:`\ell_2` norm equal to :math:`\sqrt{n}` where
+:math:`n` is the number of rows of :math:`A`.
 
 
 Adding a Regularizer
@@ -406,7 +407,7 @@ handles the composition internally and does not explicitly compute the matrix
 product. This option is controlled via the ``linearOp`` argument to
 ``addData``.
 
-Taking this option, and electing not to normalized the input data, one may set
+Taking this option, and electing not to normalize the input data, one may set
 up the loss term as follows::
 
   import projSplitFit as ps
@@ -436,7 +437,7 @@ i.e.
       \right]
       \quad
       \text{and}
-      \quad 
+      \quad
   G^\top = \left[
     \begin{array}{cccc}
     1 &   & & \\

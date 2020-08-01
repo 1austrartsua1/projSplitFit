@@ -159,7 +159,7 @@ class ProjSplitFit(object):
             Default is True.
 
         normalize : :obj:`bool`,optional
-            whether to normalize columns of the data matrix to have unit norm.
+            whether to normalize columns of the data matrix to have square norm equal to num rows.
             If True, data matrix will be copied. Default is True.
 
         linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or 2D :obj:`numpy.ndarray` or 2D :obj:`scipy.sparse.spmatrix`, optional
