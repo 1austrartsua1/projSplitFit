@@ -11,7 +11,7 @@ from numpy import concatenate
 from numpy import array
 from numpy.random import choice
 from numpy import ndarray
-from numpy import sqrt 
+from numpy import sqrt
 
 from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse import issparse
@@ -87,7 +87,7 @@ class ProjSplitFit(object):
         self.setDualScaling(dualScaling)
 
         self.allRegularizers = []
-        self.numRegs = 0        
+        self.numRegs = 0
         self.dataAdded = False
         self.runCalled = False
 
@@ -131,23 +131,23 @@ class ProjSplitFit(object):
         .. math::
 
             \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
-              \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) 
+              \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
                 + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
         Parameters
         ----------
         observations : 2d :obj:`numpy.ndarray` or :obj:`scipy.sparse.spmatrix`
-            A 2D numpy array or scipy sparse matrix. Each row of the observations 
+            A 2D numpy array or scipy sparse matrix. Each row of the observations
             matrix being :math:`a_i` above.
-            All :obj:`scipy.sparse.spmatrix` subclasses are supported. The matrix 
-            will be converted to :obj:`scipy.sparse.csr_matrix` format as this is 
-            most convenient for row slicing and arithmetic operations. 
+            All :obj:`scipy.sparse.spmatrix` subclasses are supported. The matrix
+            will be converted to :obj:`scipy.sparse.csr_matrix` format as this is
+            most convenient for row slicing and arithmetic operations.
 
         responses : 1d ndarray or :obj:`list` or numpy array
             each element equal to :math:`y_i` above
 
         loss : :obj:`float` or :obj:`string` or :obj:`losses.LossPlugIn`
-            May be a :obj:`float` greater than 1, the :obj:`string` 'logistic', 
+            May be a :obj:`float` greater than 1, the :obj:`string` 'logistic',
             or an object of class :obj:`losses.LossPlugIn`
 
         process : :obj:`lossProcessors.LossProcessor`, optional
@@ -163,18 +163,18 @@ class ProjSplitFit(object):
             If True, data matrix will be copied. Default is True.
 
         linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or 2D :obj:`numpy.ndarray` or 2D :obj:`scipy.sparse.spmatrix`, optional
-            adds matrix H in Eq. (1). Defaults to the identity. May be a scipy 
+            adds matrix H in Eq. (1). Defaults to the identity. May be a scipy
             linear operator, a 2D ndarray, or a scipy sparse matrix. If it is a
             sparse matrix, it will be converted to :obj:`scipy.sparse.csr_matrix` format
-            as this is most convenient for arithmetic operations. 
-            
+            as this is most convenient for arithmetic operations.
+
         embed : :obj:`regularizers.Regularizer`,optional
             embeds the regularizer ``embed``, meaning that the proximal operator
-            is evaluated in-line with the loss processing update. Only available for 
-            the following forward-type loss processors: ``Forward1Fixed``, 
-            ``Forward1Backtrack``, ``Forward2Fixed``, ``Forward2Backtrack``. If 
-            embed is used with any other loss processor, then a warning is 
-            printed and the regularizer is added as a normal regularizer 
+            is evaluated in-line with the loss processing update. Only available for
+            the following forward-type loss processors: ``Forward1Fixed``,
+            ``Forward1Backtrack``, ``Forward2Fixed``, ``Forward2Backtrack``. If
+            embed is used with any other loss processor, then a warning is
+            printed and the regularizer is added as a normal regularizer
 
         '''
 
@@ -187,7 +187,7 @@ class ProjSplitFit(object):
 
         if issparse(observations):
             #sparse matrix format
-            observations = csr_matrix(observations) 
+            observations = csr_matrix(observations)
             self.sparseObservationMtx = True
         elif isinstance(observations,ndarray) == False:
             raise Exception("Observations must be either a numpy ndarray or a scipy.sparse matrix")
@@ -269,21 +269,21 @@ class ProjSplitFit(object):
                     raise Exception("Col number mismatch in linear operator")
 
         if embed is None:
-            self.embeddedRegInUse = False 
+            self.embeddedRegInUse = False
         else:
             if isinstance(embed,Regularizer) == False:
                 raise Exception("embed must be an object of class Regularizer")
-            
+
             if(self.process.embedOK == False):
                 print("WARNING: addData was called with a regularizer embedded.")
                 print("But embedding is not possible with this process object.")
                 print("Moving embedded regularizer to be an ordinary regularizer.")
-                self.embeddedRegInUse = False 
+                self.embeddedRegInUse = False
                 self.addRegularizer(embed)
-            else:                
+            else:
                 self.embedded = embed
                 self.embeddedRegInUse = True
-                
+
 
 
         if normalize:
@@ -293,7 +293,7 @@ class ProjSplitFit(object):
                 self.A = npcopy(observations)
                 self.scaling = norm(self.A,axis=0)
                 self.scaling += 1.0*(self.scaling < 1e-10)
-                self.A = sqrt(self.nrowsOfA)*self.A/self.scaling                
+                self.A = sqrt(self.nrowsOfA)*self.A/self.scaling
             else:
                 self.A = csr_matrix(observations,copy=True)
                 self.scaling = sparse_norm(self.A,axis=0)
@@ -307,7 +307,7 @@ class ProjSplitFit(object):
             self.normalize = False
 
         self.loss = Loss(loss)
-        
+
         if (intercept not in [False,True]):
             print("Warning: intercept should be a bool")
             print("Setting to False, no intercept")
@@ -377,7 +377,7 @@ class ProjSplitFit(object):
 
         .. math::
 
-            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n 
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n
             \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
         This method adds each :math:`h_j`, :math:`\nu_j`, and :math:`G_j` above
@@ -386,12 +386,12 @@ class ProjSplitFit(object):
         ----------
             regObj : :obj:`regularizers.Regularizer`
                 object of class :obj:`regularizers.Regularizer`
-                
+
             linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or 2D :obj:`numpy.ndarray` or 2D :obj:`scipy.sparse.spmatrix`, optional
-                adds matrix :math:`G_j` in above. May be a scipy 
+                adds matrix :math:`G_j` in above. May be a scipy
                 linear operator, a 2D ndarray, or a scipy sparse matrix. If it is a
                 sparse matrix, it will be converted to :obj:`scipy.sparse.csr_matrix` format
-                as this is most convenient for arithmetic operations.            
+                as this is most convenient for arithmetic operations.
 
         '''
         if isinstance(regObj,Regularizer) == False:
@@ -428,17 +428,16 @@ class ProjSplitFit(object):
 
         Parameters
         -----------
+        ergodic : :obj:`bool` or :obj:`string`, optional
+           Whether to compute objective at the primal iterate :math:`z^k`, or one of its two averaged
+           versions. If False, use the primal iterate. If "simple", evaluate at
+           :math:`\frac{1}{k}\sum_k z^k`, if "weighted", evaluate at
 
-           ergodic : :obj:`bool` or :obj:`string`, optional
-             Whether to compute objective at the primal iterate z^k, or one of its two averaged
-             versions. If False, use the primal iterate. If "simple", evaluate at 
-             :math:`\frac{1}{k}\sum_k z^k`, if "weighted", evaluate at
-             
-             .. math::
-               \sum_{t=1}^k \frac{\tau_t z^k}{\sum_{t=1}^k\tau_t} 
-        
-             where :math:`\tau_t` are the stepsizes used in the hyperplane projections. 
-                
+           .. math::
+              \frac{\sum_{t=1}^k\tau_t z^t}{\sum_{t=1}^k\tau_t}
+
+           where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
+
         Returns
         ---------
         currentLoss : :obj:`float`
@@ -455,7 +454,7 @@ class ProjSplitFit(object):
             z2use = self.z
 
         currentLoss,Hz = self.__getLoss(z2use)
-        
+
 
         for reg in self.allRegularizers:
             Hiz = reg.linearOp.matvec(z2use[1:])
@@ -475,69 +474,69 @@ class ProjSplitFit(object):
 
         return currentLoss
 
-    
+
     def getScaling(self):
         r'''
         Returns the scaling vector. For the :math:`n\times d'` data matrix
-        :math:`A`, the scaling vector is :math:`d'\times 1` vector containing the 
-        scaling factors used for each feature. This scaling vector can be used with 
-        new test data to normalize the features. 
+        :math:`A`, the scaling vector is :math:`d'\times 1` vector containing the
+        scaling factors used for each feature. This scaling vector can be used with
+        new test data to normalize the features.
         If the ``normalize`` argument to ``addData`` was set to False,
         then an exception will be raised.
-        
-        If no data have been added yet, raises an exception. 
-        
-        Returns         
+
+        If no data have been added yet, raises an exception.
+
+        Returns
         --------
           scaling : 1D NumPy array
-            scaling vector or None if ``normalize`` set to False in 
+            scaling vector or None if ``normalize`` set to False in
         '''
         if self.dataAdded==False:
             raise Exception("No data added yet so cannot return scale vector")
-        
+
         if self.normalize == False:
             raise Exception("No normalization applied so cannot return a scale vector")
-        
-        return self.scaling 
-        
+
+        return self.scaling
+
 
     def getSolution(self,descale=False,ergodic=False):
         r'''
         Returns the current primal solution :math:`z^k`.
-        
+
         If the ``intercept`` argument was True in ``addData``, the intercept coefficient is the
         first entry of :math:`z^k`.
-        
+
         If the ``run`` method has not been called yet, raises an exception.
 
         Parameters
         ----------
-        
+
             descale : :obj:`bool`,optional
-                    Defaults to False. 
+                    Defaults to False.
                     If the ``normalize`` argument to ``addData`` was set to True
                     and the ``descale`` argument here is True, the normalization
-                    that was applied to the columns of the data matrix is applied 
-                    to the entries of :math:`z^k`, meaning that the user may 
+                    that was applied to the columns of the data matrix is applied
+                    to the entries of :math:`z^k`, meaning that the user may
                     use the original unnormalized data matrix with this new feature,
                     and also may use it on new data. However, if a linear operator
                     was added with ``addData`` via argument ``linOp``, then a warning
                     message will be printed and the solution vector will not be descaled.
 
             ergodic : :obj:`bool` or :obj:`string`, optional
-             Whether to return the primal iterate z^k, or one of its two averaged
+             Whether to return the primal iterate :math:`z^k`, or one of its two averaged
              versions. If False, use the primal iterate. If "simple", return
              :math:`\frac{1}{k}\sum_k z^k`, if "weighted", return
 
              .. math::
-               \sum_{t=1}^k \frac{\tau_t z^k}{\sum_{t=1}^k\tau_t}
+                \frac{\sum_{t=1}^k \tau_t z^t}{\sum_{t=1}^k\tau_t}
 
              where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
-            
+
         Returns
         -------
             z : 1D numpy array
-                :math:`z^k` 
+                :math:`z^k`
 
         '''
 
@@ -551,7 +550,7 @@ class ProjSplitFit(object):
         else:
             z2use = self.z
 
-            
+
         if descale:
             if self.normalize:
                 if self.linOpUsedWithLoss:
@@ -565,13 +564,13 @@ class ProjSplitFit(object):
                 out  = z2use
         else:
             out  = z2use
-            
+
         if (self.intercept==False):
             out = out[1:]
-            
-        
+
+
         return out
-        
+
 
 
     def getPrimalViolation(self):
@@ -580,14 +579,14 @@ class ProjSplitFit(object):
 
         After at least one call to the method ``run``, returns a :obj:`float`
         equal to the primal violation.
-        
-        The primal violation is 
-        
+
+        The primal violation is
+
         .. math::
             \max_i \|G_i z^k - x_i^k\|_2
-        
+
         where, with some abuse of notation, :math:`G_i` is the linear operator
-        associated with the ith block. 
+        associated with the ith block.
 
         If ``run`` has not been called yet, raises an exception.
 
@@ -607,12 +606,12 @@ class ProjSplitFit(object):
 
         After at least one call to the method run(), returns a float
         equal to the dual violation.
-        
+
         The dual violation is
-        
+
         .. math::
             \max_i \|y_i^k - w_i^k\|_2
-        
+
         If run has not been called yet, raises an exception.
 
         Returns
@@ -637,7 +636,7 @@ class ProjSplitFit(object):
         corresponding to an iteration for which the history statistics were
         recorded. The total number of columns is num iterations divided by the
         ``historyFreq`` parameter, which can be set as an argument to ``run`` and defaults to 10.
-        In each row of this array, the rows have the following interpretation:        
+        In each row of this array, the rows have the following interpretation:
 
         0. Objective value
         1. Cumulative run time
@@ -666,7 +665,7 @@ class ProjSplitFit(object):
 
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False,
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1,
-            resetIterate=False,verbose=False):
+            resetIterate=False,verbose=False,ergodic=None):
         r'''
         Run projective splitting.
 
@@ -709,22 +708,22 @@ class ProjSplitFit(object):
 
             nBlocks : :obj:`int`,optional
                 Number of blocks in the projective splitting decomposition
-                of the loss. Defaults to 1. Blocks are contiguous indices and the 
-                number of indices in each block varies by at-most one. 
-                
+                of the loss. Defaults to 1. Blocks are contiguous indices and the
+                number of indices in each block varies by at-most one.
+
                 For example if number of observations is 100 and nblocks is set to 10
-                then the blocks would be 
-                
-                    [ 
+                then the blocks would be
+
+                    [
                     [0,1,...,9],
                     [10,11,...,19],
                     ...
                     [90,91,...,99]
                     ]
-                
-                If the number of observations was 105 and nblocks is set to 10, then 
+
+                If the number of observations was 105 and nblocks is set to 10, then
                 the blocks would be 5 blocks of 11 and 5 blocks of 10, i.e.
-                
+
                     [
                     [0,1,...,10],
                     [11,12,..22],
@@ -734,13 +733,13 @@ class ProjSplitFit(object):
                     ...
                     [95,96,...,104]
                     ]
-                
+
                 This uses the formula
-                
+
                 .. math::
                     n = \lceil n/n_b \rceil n\%n_b
                          + \lfloor n/n_b \rfloor(n_b - n\%n_b).
-                
+
             blockActivation : :obj:`string`,optional
                 Strategy for selecting blocks of the loss to process at each iteration.
                 Defaults to "greedy". Other valid choices are "random" and "cyclic".
@@ -750,12 +749,22 @@ class ProjSplitFit(object):
 
             resetIterate : :obj:`bool`,optional
                 If True, the current values of all variables (if ``run`` has been called before)
-                in projective splitting (eg: :math:`z^k, w_i^k` etc) are erased and initialized to 0. 
+                in projective splitting (eg: :math:`z^k, w_i^k` etc) are erased and initialized to 0.
                 Defaults to False.
 
             verbose : :obj:`bool`,optional
                 If True, will printing iteration counts every ``historyFreq`` iterations
                 . Defaults to False.
+
+            ergodic : :obj:`bool` or :obj:`string`, optional
+               If keepHistory=True, whether to compute objective at the primal iterate :math:`z^k`,
+               or one of its two averaged versions. If False, use the primal iterate.
+               If "simple", evaluate at :math:`\frac{1}{k}\sum_k z^k`, if "weighted", evaluate at
+
+               .. math::
+                  \frac{\sum_{t=1}^k\tau_t z^t}{\sum_{t=1}^k\tau_t}
+
+               where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
 
         '''
 
@@ -777,11 +786,11 @@ class ProjSplitFit(object):
                 self.internalResetIterate = True
 
         self.nDataBlocks = numBlocks
-        
+
         blocksPerIteration = ui.checkUserInput(blocksPerIteration,int,'int','blocksPerIteration',default=1,low=1,
                                                lowAllowed=True)
 
-        try:            
+        try:
             if blocksPerIteration >= self.nDataBlocks:
                 blocksPerIteration = self.nDataBlocks
         except:
@@ -790,30 +799,30 @@ class ProjSplitFit(object):
             blocksPerIteration =1
 
         self.partition = ut.createApartition(self.nrowsOfA,self.nDataBlocks,self.sparseObservationMtx)
-        
+
         self.__createListOfSparseMatrices()
 
         self.__setUpRegularizers()
 
         self.nDataBlockVars = self.ncolsOfA + 1 # extra 1 for the intercept term
-        
-        
+
+
         resetIterate = ui.checkUserBool(resetIterate,"resetIterate")
-                    
+
         if resetIterate or self.internalResetIterate:
             self.internalResetIterate = False
             self.__initializeVariables()
-            
+
         keepHistory = ui.checkUserBool(keepHistory,"keepHistory")
-        verbose = ui.checkUserBool(verbose,"verbose")                
-            
-        if maxIterations != None:            
+        verbose = ui.checkUserBool(verbose,"verbose")
+
+        if maxIterations != None:
             maxIterations = ui.checkUserInput(maxIterations,int,'int','maxIterations',
                                               default=1000,low=1,lowAllowed=True)
-             
+
         if maxIterations is None:
             maxIterations = float('Inf')
-            
+
         historyFreq = ui.checkUserInput(historyFreq,int,'int','historyFreq',default=10,low=1,lowAllowed=True)
         primalTol = ui.checkUserInput(primalTol,float,'float','primalTol',default=1e-6,low=0.0,lowAllowed=True)
         dualTol = ui.checkUserInput(dualTol,float,'float','dualTol',default=1e-6,low=0.0,lowAllowed=True)
@@ -830,9 +839,9 @@ class ProjSplitFit(object):
         ################################
         # BEGIN MAIN ALGORITHM LOOP
         ################################
-                        
-        while(self.k < maxIterations):            
-                                    
+
+        while(self.k < maxIterations):
+
             if verbose and (self.k%historyFreq == 0):
                 print('iteration = {}'.format(self.k))
             t0 = time()
@@ -858,7 +867,7 @@ class ProjSplitFit(object):
             t1 = time()
 
             if keepHistory and (self.k % historyFreq == 0):
-                objective.append(self.getObjective())
+                objective.append(self.getObjective(ergodic=ergodic))
                 times.append(times[-1]+t1-t0)
                 primalErrs.append(self.primalErr)
                 dualErrs.append(self.dualErr)
@@ -887,21 +896,21 @@ class ProjSplitFit(object):
 
 
     def __createListOfSparseMatrices(self):
-        # for sparse matrices, it is much more efficient (faster) to preslice the 
-        # matrices and store a list of pre-sliced matrices. 
+        # for sparse matrices, it is much more efficient (faster) to preslice the
+        # matrices and store a list of pre-sliced matrices.
         # To make this backwards compatible, we need to replace partition with just range(nBlocks)
-        # so that calls like thisSlice = partition[block] just return the block. 
+        # so that calls like thisSlice = partition[block] just return the block.
         if self.sparseObservationMtx:
-            self.Afull = self.A 
-            self.yresponseFull = self.yresponse 
+            self.Afull = self.A
+            self.yresponseFull = self.yresponse
             self.A = []
             self.yresponse = []
             for part in self.partition:
                 self.A.append(self.Afull[part])
                 self.yresponse.append(self.yresponseFull[part])
             self.partition = range(len(self.partition))
-    
-    
+
+
     @staticmethod
     def __addLinear(regObj,linearOp=None):
         if linearOp is None:
@@ -1165,10 +1174,10 @@ class ProjSplitFit(object):
         return phi
 
     def __getLoss(self,z):
-        Hz = self.dataLinOp.matvec(z)        
+        Hz = self.dataLinOp.matvec(z)
         if self.sparseObservationMtx:
-            AHz = self.Afull.dot(Hz)            
-            
+            AHz = self.Afull.dot(Hz)
+
             getVal = self.loss.value(AHz,self.yresponseFull)
         else:
             AHz = self.A.dot(Hz)
