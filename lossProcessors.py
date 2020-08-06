@@ -39,9 +39,8 @@ class LossProcessor(object):
         
         yhat = psObj.A[thisSlice].dot(point)                
         gradL = psObj.loss.derivative(yhat,psObj.yresponse[thisSlice])        
-        grad = (1.0/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(gradL)        
+        grad = (1.0/psObj.nrowsOfA)*psObj.A[thisSlice].T.dot(gradL)  
 
-        
         return grad  
       
     def getStep(self):

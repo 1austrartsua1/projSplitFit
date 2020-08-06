@@ -302,7 +302,7 @@ class ProjSplitFit(object):
                 self.A = self.A.multiply(sqrt(self.nrowsOfA)*self.scaling)
                 self.A = csr_matrix(self.A)
         else:
-            print("Not normalizing columns of A")
+            #print("Not normalizing columns of A")
             self.A = observations
             self.normalize = False
 
@@ -456,6 +456,7 @@ class ProjSplitFit(object):
         currentLoss,Hz = self.__getLoss(z2use)
 
 
+
         for reg in self.allRegularizers:
             Hiz = reg.linearOp.matvec(z2use[1:])
             getVal = reg.evaluate(Hiz)
@@ -568,8 +569,8 @@ class ProjSplitFit(object):
         if (self.intercept==False):
             out = out[1:]
 
-
         return out
+
 
 
 
@@ -835,6 +836,7 @@ class ProjSplitFit(object):
         phis = []
         self.runCalled = True
         sumTau = 0.0
+        interTime = 0.0
 
         ################################
         # BEGIN MAIN ALGORITHM LOOP
@@ -865,10 +867,12 @@ class ProjSplitFit(object):
                 sumTau += tau
 
             t1 = time()
+            interTime += t1-t0
 
             if keepHistory and (self.k % historyFreq == 0):
                 objective.append(self.getObjective(ergodic=ergodic))
-                times.append(times[-1]+t1-t0)
+                times.append(times[-1]+interTime)
+                interTime = 0.0 
                 primalErrs.append(self.primalErr)
                 dualErrs.append(self.dualErr)
                 phis.append(phi)
