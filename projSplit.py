@@ -1042,7 +1042,11 @@ class ProjSplitFit(object):
                 i += 1
 
             if allRegsHaveLinOps:
-                self.addRegularizer(Regularizer(lambda x,scale: x, lambda x: 0))
+                if len(self.allRegularizers)>0:
+                    step = self.allRegularizers[0].getStepsize()
+                else:
+                    step = 1.0
+                self.addRegularizer(Regularizer(lambda x,scale: x, lambda x: 0,step=step))
 
             self.numPSblocks = self.nDataBlocks + self.numRegs
 
