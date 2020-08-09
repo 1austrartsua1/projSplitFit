@@ -767,6 +767,11 @@ class ProjSplitFit(object):
 
                where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
 
+            equalizeStepsizes : :obj:`bool`, optional
+                If set to True, for backtracking loss processors (``Forward2Backtrack`` and ``Forward1Backtrack``)
+                set the stepsizes for all regularizers equal to the average of all stepsizes
+                returned by backtracking for each loss slice. Defaults to False.
+
         '''
 
         if self.dataAdded == False:
