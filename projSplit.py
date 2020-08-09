@@ -666,7 +666,7 @@ class ProjSplitFit(object):
 
     def run(self,primalTol = 1e-6, dualTol=1e-6,maxIterations=None,keepHistory = False,
             historyFreq = 10, nblocks = 1, blockActivation="greedy", blocksPerIteration=1,
-            resetIterate=False,verbose=False,ergodic=None):
+            resetIterate=False,verbose=False,ergodic=None,equalizeStepsizes=False):
         r'''
         Run projective splitting.
 
@@ -754,7 +754,7 @@ class ProjSplitFit(object):
                 Defaults to False.
 
             verbose : :obj:`bool`,optional
-                If True, will printing iteration counts every ``historyFreq`` iterations
+                If True, will printing iteration counts every 100 iterations
                 . Defaults to False.
 
             ergodic : :obj:`bool` or :obj:`string`, optional
@@ -844,10 +844,11 @@ class ProjSplitFit(object):
 
         while(self.k < maxIterations):
 
-            if verbose and (self.k%historyFreq == 0):
+            if verbose and (self.k%100 == 0):
                 print('iteration = {}'.format(self.k))
             t0 = time()
             self.__updateLossBlocks(blockActivation,blocksPerIteration)
+            self.__equalizeStepsizes(equalizeStepsizes)
             self.__updateRegularizerBlocks()
 
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
@@ -872,7 +873,7 @@ class ProjSplitFit(object):
             if keepHistory and (self.k % historyFreq == 0):
                 objective.append(self.getObjective(ergodic=ergodic))
                 times.append(times[-1]+interTime)
-                interTime = 0.0 
+                interTime = 0.0
                 primalErrs.append(self.primalErr)
                 dualErrs.append(self.dualErr)
                 phis.append(phi)
@@ -897,6 +898,17 @@ class ProjSplitFit(object):
             # we modified the embedded scaling to deal with multiple num blocks
             # now set it back to the previous value
             self.embedded.setScaling(self.embeddedScaling)
+
+
+    def __equalizeStepsizes(self,equalizeStepsizes):
+        if equalizeStepsizes:
+            steps = getattr(self.process,"steps",None)
+            if steps is not None :
+                averageStep = sum(steps)/len(steps)
+                # set all regularizers new stepsize equal to averageStep, except
+                # the embedded regularizer (if any).
+                for reg in self.allRegularizers:
+                    reg.setStep(averageStep)
 
 
     def __createListOfSparseMatrices(self):
