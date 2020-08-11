@@ -28,15 +28,14 @@ class Regularizer(object):
       The regularizer class is used to define each :math:`\nu_j h_j(G_j z)`` term,
       with the exception of the optional linear operator :math:`G_j`, which is supplied
       when calling ``addRegularizer`` to introduce the regularizer to the formulation.
-      The function :math:`h_j` is defined through a function evaluating its 
-      proximal operator; if you wish to compute objective function values, you must
-      also supply a function to compute its value.  
-      
-      You may use standard built-in regularizers, or create objects of this class to 
-      define new regularizers.  When defining your own regularizers, you must provide a 
-      function implementing the regularizer's proximal operator ("prox").       
+            
+      You may use standard built-in regularizers, or create objects of this
+      class to define new regularizers.  When defining your own regularizers,
+      you must provide a function implementing the regularizer's proximal
+      operator ("prox").   If you wish to compute objective values, you must
+      also supply a function to compute the regularizer value.
     '''
-    
+
     def __init__(self,prox,value=None,scaling=1.0,step=1.0):
         r''' It is only necessary to define *value* if you wish to compute
             objective function values, either by calling ``getObjective`` or
@@ -122,7 +121,7 @@ class Regularizer(object):
 
     def getScaling(self):
         r'''
-        Get the scaling :math:``\nu_j`` being used for this regularizer.
+        Get the scaling :math:`\nu_j` being used for this regularizer.
 
         Returns
         -------
@@ -134,7 +133,7 @@ class Regularizer(object):
 
     def getStep(self):
         r'''
-        get the stepsize :math:``\eta`` being used in the proximal steps for 
+        get the stepsize :math:`\eta` being used in the proximal steps for 
         this regularizer.
 
         Returns
@@ -196,29 +195,27 @@ def L1(scaling=1.0,step=1.0):
     out = Regularizer(L1prox,L1val,scaling,step)
     return out
 
+
 def L2sq(scaling=1.0,step=1.0):
-    r'''
-    Create the L2 squared regularizer. The output is an object of class ``regularizers.Regularizer``
-    which may be input to ``ProjSplitFit.addRegularizer``.
+    r''' 
+    Create an L2 squared regularizer. The output is an object of class
+    ``regularizers.Regularizer`` which may be passed to
+    ``ProjSplitFit.addRegularizer``.
 
-    Scaling is the coefficient :math:`\nu` that will
-    be applied to the function in the objective. That is, it will appear as
+    *scaling* is the coefficient :math:`\nu_j` that will be applied to the
+    regularizer in the objective. That is, ithe regularizer will appear as
+    :math:`(\nu_j/2)\|\,\cdot\,\|_2^2`.  Note the factor of 0.5.
 
-    .. math::
-      \frac{\nu}{2}\|z\|_2^2.
-
-    Note the factor of 0.5.
-
-    step is the stepsize that projective splitting will use for the proximal steps
-    w.r.t. this regularizer.
+    *step* is the stepsize that projective splitting will use for the proximal steps
+    performed on this regularizer.
 
     Parameters
     -----------
 
     Scaling : :obj:`float`,optional
-        Defaults to 1.0
+        Defaults to 1.0.  Must be positive and finite.
     Stepsize : :obj:`float`,optional
-        Defaluts to 1.0
+        Defaluts to 1.0.  Must be positive and finite.
 
     Returns
     --------
@@ -235,28 +232,26 @@ def L2sq(scaling=1.0,step=1.0):
 
 def L2(scaling=1.0,step=1.0):
     r'''
-    Create the L2 norm regularizer. Not to be confused with the L2sq regularizer,
-    which is this function *squared*.
+    Create an L2-norm regularizer. Not to be confused with the ``L2sq`` regularizer,
+    which is the same function squared and divided by 2.
 
-    The output is an object of class ``regularizers.Regularizer``
-    which may be input to ``ProjSplitFit.addRegularizer``.
+    The output is an object of class ``regularizers.Regularizer``,
+    which may be passed to ``ProjSplitFit.addRegularizer``.
 
-    Scaling is the coefficient :math:`\nu` that will
-    be applied to the function in the objective. That is, it will appear as
+    *scaling* is the coefficient :math:`\nu_j` that will
+    be applied to the function in the objective. That is, the regularizer
+    will appear as :math:`\nu_j\|\,\cdot\,\|_2`.
 
-    .. math::
-      \nu\|z\|_2
-
-    step is the stepsize that projective splitting will use for the proximal steps
-    w.r.t. this regularizer.
+    *step* is the stepsize :math:`\eta` that projective splitting will use in
+    proximal steps with respect to this regularizer.
 
     Parameters
     -----------
 
     Scaling : :obj:`float`,optional
-        Defaults to 1.0
+        Defaults to 1.0.  Must be positive and finite.
     Stepsize : :obj:`float`,optional
-        Defaluts to 1.0
+        Defaluts to 1.0.  Must be positive and finite.
 
     Returns
     --------
