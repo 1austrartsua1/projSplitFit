@@ -67,63 +67,46 @@ def LR_derivative(yhat,y):
 
 class LossPlugIn(object):
     r'''
-    Objects of this class may be used as the input ``loss`` to the
-    ``ProjSplitFit.addData`` method to define custom losses.
+    Objects of this class may be used as supplied as the ``loss`` argument
+    of the ``ProjSplitFit.addData`` method, to define customized loss functions.
+    That argument also accepts ``float`` or ``int`` values :math:`p > 1`, which 
+    are interpreted as specifying the :math:`\ell_p^p` loss, or the string
+    "logistic" to specify the logistic loss function.  
 
-    The user may set the argument ``loss`` to ``ProjSplitFit.addData`` to an
-    integer :math:`p > 1` to use the :math:`\ell_p^p` loss, or they may set it to
-    "logistic" to use the logistic loss.
-
-    However, if the user would like to define their own loss, then they must
-    write a function for computing the derivative of the loss and pass it into
-    the constructor to get an object of this class. This can then be used as
-    the input ``loss`` to ``ProjSplitFit.addData``.
-
+    Other choices require creating a ``LossPlugIn`` object.  This in turn 
+    requires supplying a function to compute the derivative of the loss function.
+    If you plan to compute objective function values, you must also supply a 
+    function to compute the loss function value.
     '''
+
     def __init__(self,derivative,value=None):
         r'''
-        Only implement value if you wish to compute objective function values
-        of the outputs of ``ProjSplitFit`` to monitor progress. It is not necessary for the operation
-        of ``ProjSplitFit``. However, if the value function is
-        set to None, but then the ``ProjSplitFit.getObjective`` method is called,
-        then it will raise an Exception. Similarly if ``ProjSplitFit.run`` is called
-        with the ``keepHistory`` argument set to True.
+        You need only supply a *value* function if you wish to compute
+        objective function values (either with ``ProjSplitFit.getObjective``
+        or by enabling history collection in ``ProjSplitFit.run``). 
 
         Parameters
         ----------
-        derivative : function
-            Function of two 1D NumPy arrays of the same length.
-            Must output an array of the same length
-            as the two inputs which is the derivative wrt the first argument of
-            the loss evaluated at each pair of elements in the input arrays.
-            That is, for inputs::
-
-                [x_1,x_2,...,x_n], [y_1,y_2,...,y_n]
-
-            output::
-
-                [z_1,z_2,...,z_n]
-
-            where
-
-            ..  math::
-
-                z_i = \frac{\partial}{\partial x}\ell(x_i,r_i)
-
-            and the partial derivative is w.r.t. the first argument to :math:`\ell`.
+        derivative : function 
+            Function of two 1D ``numpy`` arrays of the same length, the first
+            containing predicted values and the second containing actual
+            response values.  Must output an array of the same length as the
+            two inputs, whose elements consists of partical derivatives with
+            respect to the predicted values. Specifically, supposing that the
+            two input arrays are :math:`q = [q_0 \; q_1 \;
+            \cdots q_k]` and :math:`q = [r_0 \; r_1 \; \cdots r_k]`, the
+            returned array should be contain elements of the form
+            :math:`\frac{\partial}{\partial q_i}\ell(q_i,r_i)` for each
+            input index :math:`i`.
 
         value : function,optional
-            Must handle two float inputs and output a float. Defaults to None, not supported.
-            Outputs
-
-            .. math::
-
-                \ell(x,y)
-
-            for inputs x and y.
-
-
+            Must accept two ``float`` arguments and return a single ``float``. 
+            If supplied the arguments :math:`q_i` (for the prediction) and :math:`r_i`
+            (for the response), the function should return :math:`\ell(q_i,r_i)`.
+            Defaults to ``None``.  If the default is used, however, attempting to
+            compute the objective value will raise an exception.
         '''
+
         try:
             test = ones(100)
             if value is not None:
