@@ -465,6 +465,7 @@ regularizer as follows::
 
   from scipy.sparse.linalg import LinearOperator
   import numpy as np
+  import regularizers
 
   def applyG(x):
     return x[:-1]
@@ -481,13 +482,12 @@ The second regularizer is more straightforward and may be dealt with via the
 built-in ``L1`` function and composing with the linear operator :math:`H`
 as follows::
 
-  from regularizers import L1
-  regObj2 = L1(scaling=lam*(1-mu))
+  regObj2 = regularizers.L1(scaling=lam*(1-mu))
   projSplit.addRegularizer(regObj2,linearOp=H)
 
 Finally we are ready to run the method with::
 
-  projSplit.run()
+  projSplit.run(maxIterations=1000)
 
 One can obtain the final objective value and solution via::
 
