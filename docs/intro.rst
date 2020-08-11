@@ -14,7 +14,7 @@ The implementation is based on ``numpy``.
 The basic optimization problem that this code solves is the following:
 
 .. math::
-   \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}} \left\{ \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r} \nu_j h_j(G_j z) \right\}
+   \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}} \left\{ \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,r_i) + \sum_{j=1}^{n_r} \nu_j h_j(G_j z) \right\}
    :label: masterProb
 
 where
@@ -22,7 +22,7 @@ where
 * :math:`z_0\in\mathbb{R}` is the intercept variable (which may be optionally fixed to zero)
 * :math:`z\in\mathbb{R}^d` is the regression parameter vector
 * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
-* :math:`y_i` for :math:`i=1,\ldots,n` are the responses (or labels)
+* :math:`r_i` for :math:`i=1,\ldots,n` are the responses (or labels)
 * :math:`H\in\mathbb{R}^{d' \times d}` is a matrix (typically the identity)
 * :math:`a_i\in\mathbb{R}^{d'}` are the observations, forming the rows of the :math:`n\times d'` observation/data matrix :math:`A`
 * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
@@ -32,7 +32,7 @@ where
 The first summation in this formulation is the *loss*, measuring how well the
 predictions :math:`z_0 + a_i^\top H z` obtained from the dataset using the
 regression parameters :math:`(z_0,z)` match the observed responses
-:math:`y_i`.  ``ProjSplitFit`` supports the following choices for the loss :math:`\ell`:
+:math:`r_i`.  ``ProjSplitFit`` supports the following choices for the loss :math:`\ell`:
 
 * :math:`\ell_p^p`, that is, :math:`\ell(a,b)=\frac{1}{p}|a-b|^p` for any :math:`p > 1`
 * logistic, that is, :math:`\ell(a,b)=\log(1+\exp(-ab))`

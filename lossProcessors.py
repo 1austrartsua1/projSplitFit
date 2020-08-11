@@ -91,7 +91,7 @@ class Forward2Fixed(LossProcessor):
     where the stepsize :math:`\rho` is fixed and
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
     See https://arxiv.org/abs/1803.07043.
 
@@ -134,7 +134,7 @@ class Forward2Backtrack(LossProcessor):
     where the stepsize :math:`\rho_i` is discovered by backtracking linesearch at each iteration and
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
     See https://arxiv.org/abs/1803.07043.
 
@@ -257,7 +257,7 @@ class  Forward1Fixed(LossProcessor):
     where the stepsize :math:`\rho` is constant and
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j).
 
     See https://arxiv.org/abs/1902.09025.
 
@@ -318,7 +318,7 @@ class Forward1Backtrack(LossProcessor):
     at each iteration and
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
     See https://arxiv.org/abs/1902.09025.
 
@@ -456,7 +456,7 @@ class BackwardExact(LossProcessor):
     where
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j)
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
     and the proximal operator is computed exactly by solving the appropriate linear equation.
     Only available when the loss is the :math:`\ell_2^2` loss.
@@ -569,7 +569,7 @@ class BackwardCG(LossProcessor):
     where
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j).
 
     The proximal operator is only computed approximately via a conjugate gradient method.
     This only works for the :math:`\ell_2^2` loss, in which case computing the prox
@@ -690,7 +690,7 @@ class BackwardLBFGS(LossProcessor):
     where
 
     .. math::
-        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,y_j).
+        f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j).
 
     The proximal operator is computed approximately via the L-BFGS solver until the
     relative error criteria of https://arxiv.org/abs/1803.07043 are met, or a max

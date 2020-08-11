@@ -14,7 +14,7 @@ The most important file here is the [user guide](user_guide.pdf). Your first ste
 
 Here are the key modules related to the package
 
-* [projSplit.py](projSplit.py), the main module including the key class *ProjSplitFit*
+* [projSplitFit.py](projSplitFit.py), the main module including the key class *ProjSplitFit*
 * [losses.py](losses.py) classes for defining the loss
 * [lossProcessors.py](lossProcessors.py) classes for instructing *ProjSplitFit* how to process the loss
 * [regularizers.py](regularizers.py) classes for adding regularizers to the model.

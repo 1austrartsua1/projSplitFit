@@ -423,8 +423,8 @@ Note that, by default, the intercept term :math:`v_0` is
 incorporated into the loss.
 
 We now consider the two regularization terms.  In the first regularization term, the
-notation :math:`v_{-r}`, as introduced in 
-:cite:`YB18`, specifies that the regularizer applies to all but the last coefficient in 
+notation :math:`v_{-r}`, as introduced in
+:cite:`YB18`, specifies that the regularizer applies to all but the last coefficient in
 :math:`v`, which corresponds to the root node of the adjective tree
 described by the matrix :math:`H`. A simple way to encode this
 regularization term is to treat it as the :math:`\ell_1` norm composed
@@ -457,7 +457,7 @@ Writing :math:`G` as a matrix, we have
       &   &        & 1 \\
     0 & 0 &\hdots & 0
     \end{array}
-           \right]. 
+           \right].
 
 We may create such a linear operator using the
 ``scipy.sparse.linalg.LinearOperator`` class and incorporate it into the
@@ -579,7 +579,7 @@ iteration. The first is ``nblocks``. This controls how many blocks projective
 splitting breaks the loss into for processing. Recall the loss is
 
 .. math::
-  \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
+  \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,r_i)
 
 An important property of projective splitting is *block iterativeness*:  the method does not
 need to process every observation at each iteration. Instead, it may break the
