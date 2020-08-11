@@ -4,17 +4,17 @@ Created on Mon May 11 15:11:50 2020
 
 @author: pjohn
 """
-getNewOptVals = False  
+getNewOptVals = False
 
 import sys
 sys.path.append('../')
-import projSplit as ps 
-from regularizers import L1  
+import projSplitFit as ps 
+from regularizers import L1
 import lossProcessors as lp
 
 import numpy as np
 import pickle
-import pytest 
+import pytest
 from matplotlib import pyplot as plt
 
 if getNewOptVals:
@@ -43,23 +43,23 @@ for processor in processors:
             toDo.append((processor,norm,inter,testNumber))
             testNumber += 1
 
-@pytest.mark.parametrize("processor,nrm,inter,testNumber",toDo) 
+@pytest.mark.parametrize("processor,nrm,inter,testNumber",toDo)
 def test_L1LR(processor,nrm,inter,testNumber):
 
     m = 40
     d = 10
-    if getNewOptVals and (testNumber == 0):            
+    if getNewOptVals and (testNumber == 0):
         A,y = getLRdata(m,d)
         cache['A']=A
         cache['y']=y
     else:
         A = cache['A']
         y = cache['y']
-        
-    
+
+
     projSplit = ps.ProjSplitFit()
-    
-    
+
+
     gamma = 1e0
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,'logistic',processor,normalize=nrm,intercept=inter)
@@ -69,53 +69,36 @@ def test_L1LR(processor,nrm,inter,testNumber):
     projSplit.addRegularizer(regObj)
     projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1)
     ps_val = projSplit.getObjective()
-    
+
     if getNewOptVals:
         opt = cache.get((nrm,inter,'opt'))
-        if opt is None:        
+        if opt is None:
             if nrm:
-                Anorm = A  
+                Anorm = A
                 n = A.shape[0]
                 scaling = np.linalg.norm(Anorm,axis=0)
                 scaling += 1.0*(scaling < 1e-10)
                 A = np.sqrt(n)*Anorm/scaling
-                
+
             if inter:
                  AwithIntercept = np.zeros((m,d+1))
                  AwithIntercept[:,0] = np.ones(m)
                  AwithIntercept[:,1:(d+1)] = A
-                 A = AwithIntercept 
-                 
-                 
+                 A = AwithIntercept
+
+
             opt, _ = runCVX_LR(A,y,lam,inter)
             cache[(nrm,inter,'opt')]=opt
     else:
         opt = cache[(nrm,inter,'opt')]
-    
+
     print('cvx opt val = {}'.format(opt))
     print('ps opt val = {}'.format(ps_val))
     assert abs(ps_val-opt)<1e-2
-    
-  
-    
+
+
+
 def test_writeCache2Disk():
     if getNewOptVals:
         with open('results/cache_L1LR','wb') as file:
             pickle.dump(cache,file)
-    
-    
-    
-    
-    
-    
-    
-
-
-
-    
-    
-    
-    
-    
-    
-

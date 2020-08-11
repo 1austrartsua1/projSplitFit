@@ -213,7 +213,7 @@ operations may be accomplished as follows:
 
 ::
 
-  from regularizer import Regularizer
+  from regularizers import Regularizer
   def prox_g(z,sigma):
     return (z>=0)*z
   def value_g(x):
@@ -475,7 +475,7 @@ regularizer as follows::
   (_,nv) = H.shape
   shape = (nv-1,nv)
   G = LinearOperator(shape,matvec=applyG,rmatvec=applyGtranspose)
-  psObj.addRegularizer(regularizers.L1(scaling=mu*lam),linearOp=G)
+  projSplit.addRegularizer(regularizers.L1(scaling=mu*lam),linearOp=G)
 
 The second regularizer is more straightforward and may be dealt with via the
 built-in ``L1`` function and composing with the linear operator :math:`H`

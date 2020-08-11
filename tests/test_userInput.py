@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('../')
-import projSplit as ps
+import projSplitFit as ps
 import lossProcessors as lp
 import pytest
 
@@ -118,6 +118,3 @@ def test_incorrect(Processor,args,testAttribute,expected):
     processObj = Processor(*args)
     attribute = getattr(processObj,testAttribute)
     assert attribute == expected
-
-
-
