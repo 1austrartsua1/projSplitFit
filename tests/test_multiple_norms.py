@@ -7,7 +7,7 @@ getNewOptVals = False
 
 import sys
 sys.path.append('../')
-import projSplit as ps
+import projSplitFit as ps
 from regularizers import L1
 import lossProcessors as lp
 

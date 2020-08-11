@@ -6,12 +6,12 @@ Created on Wed Apr 29 16:16:24 2020
 getNewOptVals = False
 import sys
 sys.path.append('../')
-import projSplit as ps 
+import projSplitFit as ps 
 import lossProcessors as lp
 
 import numpy as np
 import pickle
-import pytest 
+import pytest
 from matplotlib import pyplot as plt
 
 
@@ -23,17 +23,17 @@ if getNewOptVals:
 else:
     with open('results/cache_lslr','rb') as file:
         cache = pickle.load(file)
-        
-    
 
 
 
 
-    
-    
+
+
+
+
 @pytest.mark.parametrize("gf",[(1.0),(1.1),(1.2),(1.5)])
 def test_f1backtrack(gf):
-    
+
     projSplit = ps.ProjSplitFit()
     m = 10
     d = 20
@@ -45,41 +45,41 @@ def test_f1backtrack(gf):
     else:
         A=cache['Af1bt']
         y=cache['yf1bt']
-        
-        
+
+
     processor = lp.Forward1Backtrack(growFactor=gf,growFreq=10)
-    
+
     projSplit.setDualScaling(1e-1)
     projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
-    
+
     vec = projSplit.getScaling()
     assert len(vec) == d
-    
-    
+
+
     projSplit.run(maxIterations = None,keepHistory = True,
                   primalTol=1e-3,dualTol=1e-3,nblocks=5)
     ps_val = projSplit.getObjective()
-    
+
     if getNewOptVals and (gf==1.0):
         AwithIntercept = np.zeros((m,d+1))
         AwithIntercept[:,0] = np.ones(m)
         AwithIntercept[:,1:(d+1)] = A
         result = np.linalg.lstsq(AwithIntercept,y,rcond=None)
-        xhat = result[0]  
+        xhat = result[0]
         LSval = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
         cache['optf1bt']=LSval
     else:
         LSval=cache['optf1bt']
-        
-        
-        
-    
+
+
+
+
     assert ps_val - LSval < 1e-2
-    
+
 
 @pytest.mark.parametrize("gf",[(1.0),(1.1),(1.2),(1.5)])
 def test_f2backtrack(gf):
-    
+
     projSplit = ps.ProjSplitFit()
     m = 10
     d = 20
@@ -91,29 +91,29 @@ def test_f2backtrack(gf):
     else:
         A=cache['Af2bt']
         y=cache['yf2bt']
-    
+
     processor = lp.Forward2Backtrack(growFactor=gf,growFreq=10)
-    
+
     projSplit.setDualScaling(1e-1)
     projSplit.addData(A,y,2,processor,intercept=True,normalize=True)
     projSplit.run(maxIterations = None,keepHistory = True,
                   primalTol=1e-3,dualTol=1e-3,nblocks=5)
     ps_val = projSplit.getObjective()
-    
-    
+
+
     if getNewOptVals and (gf==1.0):
         AwithIntercept = np.zeros((m,d+1))
         AwithIntercept[:,0] = np.ones(m)
         AwithIntercept[:,1:(d+1)] = A
         result = np.linalg.lstsq(AwithIntercept,y,rcond=None)
-        xhat = result[0]  
+        xhat = result[0]
         LSval = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
         cache['optf2bt']=LSval
     else:
         LSval=cache['optf2bt']
-    
+
     assert ps_val - LSval < 1e-2
-    
+
 
 stepsize = 1e-1
 f2fixed = lp.Forward2Fixed(stepsize)
@@ -131,8 +131,8 @@ for i in [False,True]:
         for blk in range(1,5):
             for process in [backLBFGS,f2fixed,f2backtrack,f2affine,f1fixed,f1bt,back_exact,backCG]:
                 ToDo.append((process,i,j,blk,firsttest))
-                firsttest=False 
-        
+                firsttest=False
+
 @pytest.mark.parametrize("processor,inter,norm,nblk,firsttest",ToDo)
 def test_ls_PrimDual(processor,inter,norm,nblk,firsttest):
     processor.setStep(1e-1)
@@ -147,15 +147,15 @@ def test_ls_PrimDual(processor,inter,norm,nblk,firsttest):
     else:
         A=cache['AprimDual']
         y=cache['yprimDual']
-        
+
     projSplit.setDualScaling(1e-1)
     projSplit.addData(A,y,2,processor,intercept=inter,normalize=norm)
     projSplit.run(maxIterations = None,keepHistory = True,
                   primalTol=1e-3,dualTol=1e-3,nblocks=nblk,historyFreq=1)
-    
+
     print("Primal violation = {}".format(projSplit.getPrimalViolation()))
-    print("Dual violation = {}".format(projSplit.getDualViolation()))    
-    
+    print("Dual violation = {}".format(projSplit.getDualViolation()))
+
     assert projSplit.getPrimalViolation()<1e-3
     assert projSplit.getDualViolation()<1e-3
 
@@ -185,8 +185,8 @@ def test_cyclic(processor,firsttest):
     else:
         A=cache['Acyclic']
         y=cache['ycyclic']
-        
-    
+
+
     if getNewOptVals and firsttest:
         result = np.linalg.lstsq(A,y,rcond=None)
         xhat = result[0]
@@ -194,33 +194,33 @@ def test_cyclic(processor,firsttest):
         cache['optCyclic']=LSval
     else:
         LSval=cache['optCyclic']
-        
-        
+
+
     gamma = 1e-1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
 
     #projSplit.addRegularizer(regObj)
-    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,blockActivation="cyclic")     
+    projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,blockActivation="cyclic")
     #fps = projSplit.getHistory()[0]
     #plt.plot(fps)
     #plt.show()
-    
+
     ps_opt = projSplit.getObjective()
     print("PS opt = {}".format(ps_opt))
     print("LS opt = {}".format(LSval))
     assert abs(ps_opt - LSval)<1e-2
-    
-    
-    
-    for blks in range(2,7):   
+
+
+
+    for blks in range(2,7):
         projSplit.run(maxIterations=2000,keepHistory = True, nblocks = 5,
                   blockActivation="cyclic",resetIterate=True, blocksPerIteration=blks)
 
         ps_opt = projSplit.getObjective()
         assert abs(ps_opt - LSval)<1e-2
-    
-    
+
+
 
 
 f2fixed = lp.Forward2Fixed()
@@ -239,7 +239,7 @@ for inter in [False,True]:
         for process in processors:
             toDo.append((process,norm,inter,firsttest))
             firsttest = False
-            
+
 
 print(toDo)
 
@@ -259,17 +259,17 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
     else:
         A=cache['AlsintNorm']
         y=cache['ylsintNorm']
-        
+
     gamma = 1e-2
     projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)    
+    projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)
     projSplit.run(maxIterations = 5000,keepHistory = True,nblocks = 10,primalTol=0.0,
                   dualTol=0.0)
     ps_sol = projSplit.getSolution()
     ps_sol_simp = projSplit.getSolution(ergodic="simple")
     ps_sol_weight = projSplit.getSolution(ergodic="weighted")
-    
-    
+
+
     if getNewOptVals:
         LSval = cache.get((inter,norm,'lsIntNormOpt'))
         if LSval is None:
@@ -278,30 +278,30 @@ def test_ls_Int_Norm(processor,norm,inter,firsttest):
                 AwithIntercept[:,0] = np.ones(m)
                 AwithIntercept[:,1:(d+1)] = A
                 result = np.linalg.lstsq(AwithIntercept,y,rcond=None)
-                xhat = result[0]  
+                xhat = result[0]
             else:
                 result = np.linalg.lstsq(A,y,rcond=None)
                 xhat = result[0]
-            
+
             if norm == False:
                 assert(np.linalg.norm(xhat-ps_sol)<1e-2)
                 assert (np.linalg.norm(xhat - ps_sol_simp) < 1e-2)
                 assert (np.linalg.norm(xhat - ps_sol_weight) < 1e-2)
-            
+
             if inter:
                 LSval = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
             else:
                 LSval = 0.5*np.linalg.norm(A.dot(xhat)-y,2)**2/m
             cache[(inter,norm,'lsIntNormOpt')]=LSval
-            
+
     else:
         LSval = cache.get((inter,norm,'lsIntNormOpt'))
-    
+
     psSolVal = projSplit.getObjective()
-            
+
     assert(abs(psSolVal - LSval) < 1e-2)
-    
-    
+
+
 
 f2fixed = lp.Forward2Fixed()
 f2bt = lp.Forward2Backtrack()
@@ -311,7 +311,7 @@ f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
 backCG = lp.BackwardCG()
 backLBFGS = lp.BackwardLBFGS()
-@pytest.mark.parametrize("processor",[(backLBFGS),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)]) 
+@pytest.mark.parametrize("processor",[(backLBFGS),(f2fixed),(f2bt),(f2affine),(f1fixed),(f1bt),(back_exact),(backCG)])
 def test_ls_blocks(processor):
     processor.setStep(5e-1)
     projSplit = ps.ProjSplitFit()
@@ -328,17 +328,17 @@ def test_ls_blocks(processor):
     else:
         A = cache.get('AlsBlocks')
         y = cache.get('ylsBlocks')
-        
-        
-            
+
+
+
     gamma = 1e-1
     projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,2,processor,normalize=False)    
+    projSplit.addData(A,y,2,processor,normalize=False)
     projSplit.run(maxIterations = 1500,keepHistory = True,nblocks = 10,primalTol=1e-3,dualTol=1e-3)
     assert projSplit.getObjective() >= 0, "objective is not >= 0"
     sol = projSplit.getSolution()
     assert sol.shape == (d+1,)
-    
+
     if getNewOptVals:
         LSresid = cache.get('optlsblocks')
         if LSresid is None:
@@ -346,15 +346,15 @@ def test_ls_blocks(processor):
             AwithIntercept[:,0] = np.ones(m)
             AwithIntercept[:,1:(d+1)] = A
             result = np.linalg.lstsq(AwithIntercept,y,rcond=None)
-            xhat = result[0]    
-            
+            xhat = result[0]
+
             LSresid = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
             cache['optlsblocks']=LSresid
     else:
         LSresid = cache.get('optlsblocks')
-            
-    
-    PSresid = projSplit.getObjective()    
+
+
+    PSresid = projSplit.getObjective()
     assert abs(LSresid - PSresid) <1e-2
 
     PSresidErg = projSplit.getObjective(ergodic = "simple")
@@ -363,13 +363,13 @@ def test_ls_blocks(processor):
     PsresidErgWeight = projSplit.getObjective(ergodic = "weighted")
     assert abs(LSresid - PsresidErgWeight) < 1e-2
 
-    
-    
+
+
     projSplit.run(maxIterations = 1000,keepHistory = True,resetIterate=True,blockActivation="random",nblocks = 10)
     PSrandom = projSplit.getObjective()
     assert abs(PSresid - PSrandom)<1e-2
-    
-    projSplit.run(maxIterations = 1000,keepHistory = True,resetIterate=True,blockActivation="cyclic",nblocks = 10)    
+
+    projSplit.run(maxIterations = 1000,keepHistory = True,resetIterate=True,blockActivation="cyclic",nblocks = 10)
     PScyclic = projSplit.getObjective()
     assert abs(PSresid  - PScyclic)<1e-2
 
@@ -386,8 +386,8 @@ for norm in [False,True]:
     for inter in [False,True]:
         for process in processors:
             toDo.append((process,norm,inter))
-            
-@pytest.mark.parametrize("processor,norm,inter",toDo) 
+
+@pytest.mark.parametrize("processor,norm,inter",toDo)
 def test_lr(processor,norm,inter):
     processor.setStep(1e0)
     projSplit = ps.ProjSplitFit()
@@ -404,14 +404,14 @@ def test_lr(processor,norm,inter):
     else:
         A = cache.get('Alr')
         y = cache.get('ylr')
-        
+
     lam = 0.0
     gamma = 1e-4
     projSplit.setDualScaling(gamma)
-    projSplit.addData(A,y,'logistic',processor,normalize=norm,intercept=inter)    
-    projSplit.run(maxIterations = 3000,keepHistory = True,nblocks = 10)    
+    projSplit.addData(A,y,'logistic',processor,normalize=norm,intercept=inter)
+    projSplit.run(maxIterations = 3000,keepHistory = True,nblocks = 10)
     ps_opt_val = projSplit.getObjective()
-    
+
     if getNewOptVals:
         opt = cache.get((inter,'optlr'))
         if opt is None:
@@ -419,27 +419,27 @@ def test_lr(processor,norm,inter):
                  AwithIntercept = np.zeros((m,d+1))
                  AwithIntercept[:,0] = np.ones(m)
                  AwithIntercept[:,1:(d+1)] = A
-                 A = AwithIntercept 
-            
-                
+                 A = AwithIntercept
+
+
             opt, _ = runCVX_LR(A,y,lam,intercept=inter)
             cache[(inter,'optlr')]=opt
     else:
         opt = cache.get((inter,'optlr'))
-        
-            
+
+
     print("ps opt is {}".format(ps_opt_val))
     print("cvx opt is {}".format(opt))
-        
+
     assert abs(opt - ps_opt_val)<1e-2
-    
+
 
 f2bt = lp.Forward2Backtrack()
 f2fixed = lp.Forward2Fixed(1e-1)
 f1fixed = lp.Forward1Fixed()
 f1bt = lp.Forward1Backtrack()
 back_exact = lp.BackwardExact()
-@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed),(f1bt),(back_exact)]) 
+@pytest.mark.parametrize("processor",[(f2fixed),(f2bt),(f1fixed),(f1bt),(back_exact)])
 def test_blockIs1bug(processor):
     m = 40
     d = 10
@@ -447,25 +447,25 @@ def test_blockIs1bug(processor):
         A = cache.get('AblockBug')
         y = cache.get('yblockBug')
         if A is None:
-            
-            A,y = getLSdata(m,d)    
+
+            A,y = getLSdata(m,d)
             cache['AblockBug']=A
             cache['yblockBug']=y
     else:
         A = cache.get('AblockBug')
         y = cache.get('yblockBug')
-        
+
     projSplit = ps.ProjSplitFit()
-    
+
     gamma = 1e1
     projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=False,intercept=False)
-    
-    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,blockActivation="random")     
-    
+
+    projSplit.run(maxIterations=1000,keepHistory = True, nblocks = 1,blockActivation="random")
+
     ps_opt = projSplit.getObjective()
     print('ps func opt = {}'.format(ps_opt))
-    
+
     if getNewOptVals:
         LSval = cache.get('optBug')
         if LSval is None:
@@ -475,8 +475,8 @@ def test_blockIs1bug(processor):
             cache['optBug']=LSval
     else:
         LSval = cache.get('optBug')
-            
-            
+
+
     print('LSval = {}'.format(LSval))
     assert abs(LSval - ps_opt)<1e-2
 
@@ -491,8 +491,8 @@ for nblk in [1,2,10]:
         for norm in [False,True]:
             for processor in [back_exact,backCG,backLBFGS]:
                 ToDo.append((nblk,inter,norm,processor))
-                
-@pytest.mark.parametrize("nblk,inter,norm,processor",ToDo) 
+
+@pytest.mark.parametrize("nblk,inter,norm,processor",ToDo)
 def test_backward(nblk,inter,norm,processor):
     m = 80
     d = 20
@@ -500,30 +500,30 @@ def test_backward(nblk,inter,norm,processor):
         A = cache.get('Aback')
         y = cache.get('yback')
         if A is None:
-            
-            A,y = getLSdata(m,d)    
+
+            A,y = getLSdata(m,d)
             cache['Aback']=A
             cache['yback']=y
     else:
         A = cache.get('Aback')
         y = cache.get('yback')
-        
-    projSplit = ps.ProjSplitFit()        
+
+    projSplit = ps.ProjSplitFit()
     gamma = 1e-3
     #if nblk==10:
     #    gamma = 1e3
-    projSplit.setDualScaling(gamma)    
+    projSplit.setDualScaling(gamma)
     projSplit.addData(A,y,2,processor,normalize=norm,intercept=inter)
-    
+
     projSplit.run(maxIterations=5000,keepHistory = True, nblocks = nblk,blockActivation="random",
                   primalTol = 1e-7,dualTol = 1e-7)
-    
+
     #psvals = projSplit.getHistory()[0]
     #plt.plot(psvals)
     #plt.show()
     ps_opt = projSplit.getObjective()
     print('ps func opt = {}'.format(ps_opt))
-    
+
     if getNewOptVals:
         LSval = cache.get((inter,'optback'))
         if LSval is None:
@@ -532,7 +532,7 @@ def test_backward(nblk,inter,norm,processor):
                 AwithIntercept[:,0] = np.ones(m)
                 AwithIntercept[:,1:(d+1)] = A
                 result = np.linalg.lstsq(AwithIntercept,y,rcond=None)
-                xhat = result[0]  
+                xhat = result[0]
                 LSval = 0.5*np.linalg.norm(AwithIntercept.dot(xhat)-y,2)**2/m
             else:
                 result = np.linalg.lstsq(A,y,rcond=None)
@@ -541,9 +541,9 @@ def test_backward(nblk,inter,norm,processor):
             cache[(inter,'optback')]=LSval
     else:
         LSval = cache.get((inter,'optback'))
-                        
+
     print('LSval = {}'.format(LSval))
-    
+
     assert ps_opt - LSval <1e-2
 
 
@@ -551,12 +551,3 @@ def test_writeCache2Disk():
     if getNewOptVals:
         with open('results/cache_lslr','wb') as file:
             pickle.dump(cache,file)
-            
-
-
-    
-    
-    
-    
-
-    

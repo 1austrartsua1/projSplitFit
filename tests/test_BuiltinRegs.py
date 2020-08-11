@@ -1,29 +1,29 @@
 
-getNewOptVals = False      
+getNewOptVals = False
 
 
 import sys
 sys.path.append('../')
-import projSplit as ps 
+import projSplitFit as ps 
 from regularizers import L2
 from regularizers import L2sq
-import numpy as np 
-import pickle 
-import pytest 
+import numpy as np
+import pickle
+import pytest
 
 m = 10
 d = 50
 
-if getNewOptVals:        
+if getNewOptVals:
     import cvxpy as cvx
     cache = {}
     xcvx = cvx.Variable(d)
     fL2sq = 5.5*0.5*cvx.norm(xcvx,2)**2
     fL2 = 3.7*cvx.norm(xcvx,2)
-else:    
+else:
     xcvx = None
     fL2sq = None
-    fL2 = None 
+    fL2 = None
     with open('results/cache_BuiltInRegs','rb') as file:
         cache = pickle.load(file)
 
@@ -37,7 +37,7 @@ L2reg = L2(scaling = 3.7)
 @pytest.mark.parametrize("builtInReg,cvxf,testNum",[(L2sqReg,fL2sq,0),(L2reg,fL2,1)])
 def test_a_reg(builtInReg,cvxf,testNum):
     projSplit = ps.ProjSplitFit()
-        
+
     if getNewOptVals:
         A = cache.get('Areg')
         y = cache.get('yreg')
@@ -49,41 +49,31 @@ def test_a_reg(builtInReg,cvxf,testNum):
     else:
         A = cache['Areg']
         y = cache['yreg']
-        
+
     projSplit.addData(A,y,intercept=False,normalize=False,loss=2)
     projSplit.addRegularizer(builtInReg)
     projSplit.run(nblocks=5)
     psval = projSplit.getObjective()
-    
+
     if getNewOptVals:
         opt = cache.get(('optreg',testNum))
-        if opt is None:        
-            cvxf += (1/(2*m))*cvx.sum_squares(A@xcvx - y) 
+        if opt is None:
+            cvxf += (1/(2*m))*cvx.sum_squares(A@xcvx - y)
             prob = cvx.Problem(cvx.Minimize(cvxf))
             prob.solve(verbose=False)
             opt = prob.value
             cache[('optreg',testNum)]=opt
     else:
         opt=cache[('optreg',testNum)]
-        
+
     print(f"psval = {psval}")
     print(f"CVX opt = {opt}")
-    
-    assert psval - opt <1e-5
-    
 
-    
+    assert psval - opt <1e-5
+
+
+
 def test_writeResult():
     if getNewOptVals:
         with open('results/cache_BuiltInRegs','wb') as file:
             pickle.dump(cache,file)
-    
-    
-    
-    
-        
-    
-
-    
-        
-    

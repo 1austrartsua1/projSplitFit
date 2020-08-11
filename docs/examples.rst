@@ -213,7 +213,7 @@ operations may be accomplished as follows:
 
 ::
 
-  from regularizer import Regularizer
+  from regularizers import Regularizer
   def prox_g(z,sigma):
     return (z>=0)*z
   def value_g(x):
@@ -423,8 +423,8 @@ Note that, by default, the intercept term :math:`v_0` is
 incorporated into the loss.
 
 We now consider the two regularization terms.  In the first regularization term, the
-notation :math:`v_{-r}`, as introduced in 
-:cite:`YB18`, specifies that the regularizer applies to all but the last coefficient in 
+notation :math:`v_{-r}`, as introduced in
+:cite:`YB18`, specifies that the regularizer applies to all but the last coefficient in
 :math:`v`, which corresponds to the root node of the adjective tree
 described by the matrix :math:`H`. A simple way to encode this
 regularization term is to treat it as the :math:`\ell_1` norm composed
@@ -457,7 +457,7 @@ Writing :math:`G` as a matrix, we have
       &   &        & 1 \\
     0 & 0 &\hdots & 0
     \end{array}
-           \right]. 
+           \right].
 
 We may create such a linear operator using the
 ``scipy.sparse.linalg.LinearOperator`` class and incorporate it into the
@@ -465,6 +465,7 @@ regularizer as follows::
 
   from scipy.sparse.linalg import LinearOperator
   import numpy as np
+  import regularizers
 
   def applyG(x):
     return x[:-1]
@@ -475,19 +476,18 @@ regularizer as follows::
   (_,nv) = H.shape
   shape = (nv-1,nv)
   G = LinearOperator(shape,matvec=applyG,rmatvec=applyGtranspose)
-  psObj.addRegularizer(regularizers.L1(scaling=mu*lam),linearOp=G)
+  projSplit.addRegularizer(regularizers.L1(scaling=mu*lam),linearOp=G)
 
 The second regularizer is more straightforward and may be dealt with via the
 built-in ``L1`` function and composing with the linear operator :math:`H`
 as follows::
 
-  from regularizers import L1
-  regObj2 = L1(scaling=lam*(1-mu))
+  regObj2 = regularizers.L1(scaling=lam*(1-mu))
   projSplit.addRegularizer(regObj2,linearOp=H)
 
 Finally we are ready to run the method with::
 
-  projSplit.run()
+  projSplit.run(maxIterations=1000)
 
 One can obtain the final objective value and solution via::
 
@@ -579,7 +579,7 @@ iteration. The first is ``nblocks``. This controls how many blocks projective
 splitting breaks the loss into for processing. Recall the loss is
 
 .. math::
-  \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
+  \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,r_i)
 
 An important property of projective splitting is *block iterativeness*:  the method does not
 need to process every observation at each iteration. Instead, it may break the

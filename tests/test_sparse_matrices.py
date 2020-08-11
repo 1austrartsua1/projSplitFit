@@ -1,9 +1,9 @@
-getNewOptVals = False 
+getNewOptVals = False
 
 import sys
 sys.path.append('../')
 
-import projSplit as ps
+import projSplitFit as ps
 import regularizers
 
 import pytest
@@ -31,9 +31,9 @@ for mat in sparse_types:
 
 @pytest.mark.parametrize("sparse_type,INT,Norm,reg",ToDo)
 def test_ls_with_lin_op(sparse_type,INT,Norm,reg):
-    
+
     gamma = 1e0
-    
+
     psObj = ps.ProjSplitFit(gamma)
     m = 25
     d = 15
@@ -165,16 +165,3 @@ def test_writeResult():
     if getNewOptVals:
         with open('results/cache_sparse','wb') as file:
             pickle.dump(cache,file)
-
-
-
-
-
-
-
-
-
-
-
-
-

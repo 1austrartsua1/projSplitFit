@@ -22,7 +22,7 @@ class Regularizer(object):
       .. math::
 
         \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
-               \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
+               \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,r_i)
                   + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
       The regularizer class is used to define each :math:`\nu_j h_j(G_j z)`` term,
@@ -36,6 +36,7 @@ class Regularizer(object):
       define new regularizers.  When defining your own regularizers, you must provide a 
       function implementing the regularizer's proximal operator ("prox").       
     '''
+    
     def __init__(self,prox,value=None,scaling=1.0,step=1.0):
         r''' It is only necessary to define *value* if you wish to compute
             objective function values, either by calling ``getObjective`` or
@@ -207,7 +208,7 @@ def L2sq(scaling=1.0,step=1.0):
       \frac{\nu}{2}\|z\|_2^2.
 
     Note the factor of 0.5.
-    
+
     step is the stepsize that projective splitting will use for the proximal steps
     w.r.t. this regularizer.
 

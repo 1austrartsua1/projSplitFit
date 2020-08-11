@@ -7,7 +7,7 @@ Detailed Documentation
 ProjSplitFit Class
 ===================
 
-.. autoclass:: projSplit.ProjSplitFit
+.. autoclass:: projSplitFit.ProjSplitFit
    :members:
 
    .. automethod:: __init__
@@ -42,7 +42,7 @@ Loss Processors
 =================
 
 These classes instruct projective splitting how to process the blocks of variables
-associated with the loss, and are added in the ``projSplitFit.addData`` method
+associated with the loss, and are added in the ``ProjSplitFit.addData`` method
 as the ``process`` input.
 
 If you leave the ``process`` argument to ``ProjSplitFit.addData`` unused, then ``ProjSplitFit`` will use the

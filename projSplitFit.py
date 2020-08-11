@@ -38,13 +38,13 @@ class ProjSplitFit(object):
     Please refer to
 
     * :cite:`for1`, arxiv.org/abs/1803.07043 (algorithm definition page 9)
-    * :cite:`coco`, arxiv.org/abs/1902.09025 (algorithm definiteion pages 10-11)
+    * :cite:`coco`, arxiv.org/abs/1902.09025 (algorithm definition pages 10-11)
 
     To create an object, call::
 
         psobj = ProjSplitFit(dualScaling)
 
-    ``dualScaling`` (which defaults to 1.0) is :math:`\gamma` in the algorithm 
+    ``dualScaling`` (which defaults to 1.0) is :math:`\gamma` in the algorithm
     definitions from the above papers.
 
     The general optimization objective this can solve is
@@ -52,7 +52,7 @@ class ProjSplitFit(object):
     .. math::
 
       \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
-                \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,y_i)
+                \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,r_i)
                    + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
 
@@ -61,7 +61,7 @@ class ProjSplitFit(object):
     * :math:`z_0\in\mathbb{R}` is the intercept variable
     * :math:`z\in\mathbb{R}^d` is the parameter vector
     * :math:`\ell:\mathbb{R}\times\mathbb{R}\to\mathbb{R}_+` is the loss
-    * :math:`y_i` for :math:`i=1,\ldots,n` are the responses (or labels)
+    * :math:`r_i` for :math:`i=1,\ldots,n` are the responses (or labels)
     * :math:`H\in\mathbb{R}^{d' \times d}` is a matrix (typically the identity)
     * :math:`a_i\in\mathbb{R}^{d'}` are the observations, forming the rows of the :math:`n\times d'` observation/data matrix :math:`A`
     * :math:`h_j` for :math:`j=1,\ldots,n_r` are convex functions which are *regularizers*, typically nonsmooth
@@ -133,7 +133,7 @@ class ProjSplitFit(object):
         .. math::
 
             \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
-              \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,y_i)
+              \frac{1}{n}\sum_{i=1}^n \ell (z_0 + a_i^\top H z,r_i)
                 + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
         Parameters
@@ -148,7 +148,7 @@ class ProjSplitFit(object):
 
         responses : 1d :obj:`numpy.ndarray` or :obj:`list`
             the elements within this object comprise the response values
-            :math:`y_i` above.  The number of elements should equal the number
+            :math:`r_i` above.  The number of elements should equal the number
             of rows in ``observations``.
 
         loss : :obj:`float` or :obj:`string` or :obj:`losses.LossPlugIn`
@@ -173,7 +173,7 @@ class ProjSplitFit(object):
             Introduces the matrix :math:`H` in the above problem
             formulation. Defaults to the identity. If this argument is a
             sparse matrix, it will be converted to
-            :obj:`scipy.sparse.csr_matrix` format, as this format is 
+            :obj:`scipy.sparse.csr_matrix` format, as this format is
             the most convenient for the arithmetic operations required in
             the solution algorithm.
 
@@ -387,7 +387,7 @@ class ProjSplitFit(object):
         .. math::
 
             \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}\frac{1}{n}\sum_{i=1}^n
-            \ell (z_0 + a_i^\top H z,y_i) + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
+            \ell (z_0 + a_i^\top H z,r_i) + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
 
         This method adds each :math:`h_j`, :math:`\nu_j`, and :math:`G_j` above
 
@@ -398,7 +398,7 @@ class ProjSplitFit(object):
 
             linearOp : :obj:`scipy.sparse.linalg.LinearOperator` or 2D :obj:`numpy.ndarray` or 2D :obj:`scipy.sparse.spmatrix`, optional
                 Introduces the matrix :math:`G_j` above, which otherwise defaults to
-                an identity matrix.  If a sparse matrix is supplied, it is 
+                an identity matrix.  If a sparse matrix is supplied, it is
                 internally converted to the :obj:`scipy.sparse.csr_matrix` format.
 
         '''
@@ -429,7 +429,7 @@ class ProjSplitFit(object):
 
     def getObjective(self,ergodic=False):
         r'''
-        Returns the current objective value evaluated at the current primal iterate 
+        Returns the current objective value evaluated at the current primal iterate
         :math:`z^k`.  If the method has not been run yet, raises an exception.
 
         If a loss or regularizer was added without defining its value method,
@@ -437,16 +437,16 @@ class ProjSplitFit(object):
 
         Parameters
         -----------
-        ergodic : :obj:`bool` or :obj:`string`, optional Whether to compute
-           objective at the primal iterate :math:`z^k`, or one of its two
-           averaged versions. If ``False`` (the default), uses the primal
-           iterate. If "simple", evaluate at
+        ergodic : :obj:`bool` or :obj:`string`, optional
+           Whether to compute objective at the primal iterate :math:`z^k`,
+           or one of its two averaged versions. If ``False`` (the default),
+           uses the primal iterate. If "simple", evaluate at
            :math:`\frac{1}{k}\sum_{t=1}^k z^t`; if "weighted", evaluate at
 
            .. math::
               \frac{\sum_{t=1}^k\tau_t z^t}{\sum_{t=1}^k\tau_t}
 
-           where the :math:`\tau_t` are the stepsizes used in the hyperplane 
+           where the :math:`\tau_t` are the stepsizes used in the hyperplane
            projections.
 
         Returns
@@ -492,21 +492,22 @@ class ProjSplitFit(object):
         Returns the scaling vector. For the :math:`n\times d'` data matrix
         :math:`A`, the scaling vector is :math:`d'\times 1` vector containing
         the scaling factors used to normalize new test data. If the
-         ``normalize`` argument to ``addData`` was ``False``, then an
-        calling this method raises an exception.
+        ``normalize`` argument to ``addData`` was ``False``, then
+        the method simply returns a vector of ones.
 
         If no data have been added yet, raises an exception.
 
         Returns
         --------
           scaling : 1D NumPy array
-            scaling vector 
+            scaling vector
         '''
         if self.dataAdded==False:
             raise Exception("No data added yet so cannot return scale vector")
 
         if self.normalize == False:
-            raise Exception("No normalization applied so cannot return a scale vector")
+            return ones(self.ncolsOfA)
+
 
         return self.scaling
 
@@ -515,7 +516,7 @@ class ProjSplitFit(object):
         r'''
         Returns the current primal solution :math:`z^k`.
 
-        If the ``intercept`` argument was True in ``addData``, the intercept coefficient 
+        If the ``intercept`` argument was True in ``addData``, the intercept coefficient
         is returned as the first entry of :math:`z^k`.
 
         If the ``run`` method has not been called yet, raises an exception.
@@ -534,15 +535,16 @@ class ProjSplitFit(object):
                     ``linOp``, then a warning message will be printed and the
                     solution vector will not be descaled.
 
-            ergodic : :obj:`bool` or :obj:`string`, optional Whether to return
-             the primal iterate :math:`z^k`, or one of its two averaged
-             versions. If ``False``, return the primal iterate. If "simple",
-             return :math:`\frac{1}{k}\sum_{t=1}^k z^k`; if "weighted", return
+            ergodic : :obj:`bool` or :obj:`string`,optional
+                    Whether to return
+                    the primal iterate :math:`z^k`, or one of its two averaged
+                    versions. If ``False``, return the primal iterate. If "simple",
+                    return :math:`\frac{1}{k}\sum_{t=1}^k z^k`; if "weighted", return
 
-             .. math::
-                \frac{\sum_{t=1}^k \tau_t z^t}{\sum_{t=1}^k\tau_t}
+                    .. math::
+                      \frac{\sum_{t=1}^k \tau_t z^t}{\sum_{t=1}^k\tau_t}
 
-             where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
+                    where :math:`\tau_t` are the stepsizes used in the hyperplane projections.
 
         Returns
         -------
@@ -592,14 +594,22 @@ class ProjSplitFit(object):
         After at least one call to the method ``run``, this method returns a
         :obj:`float` equal to the primal violation.
 
-        The primal violation is
+        Recall the objective
 
         .. math::
-            \max_i \|G_i z^k - x_i^k\|_2
 
-        where, :math:`G_i`, with some abuse of notation, is the linear
-        operator associated with the
-        :math:`i^{\text{th}}` block (equivalent to the identity if not supplied).
+          \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
+                    \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,r_i)
+                       + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
+
+        In the notation of :cite:`for1`, the primal violation is
+
+        .. math::
+            \max\{\max_{i=1,..,n_b} \|H z^k - x_i^k\|_2 , \max_{j=1,..,n_r}\|G_jz^k - x_{j+n_b}^k\|_2\}
+
+        where, :math:`n_b` is the number of blocks in the loss (controlled by ``nblocks``
+        argument to ``run``).
+
 
         If ``run`` has not been called yet, raises an exception.
 
@@ -614,17 +624,27 @@ class ProjSplitFit(object):
             return self.primalErr
 
     def getDualViolation(self):
-        '''
+        r'''
         Returns the current dual violation.  A solution is exactly optimal
         if both its primal and dual violation are zero.
 
         After at least one call to the method run(), returns a float
         equal to the dual violation.
 
+        Recall the objective
+
+        .. math::
+            \min_{z\in\mathbb{R}^d,z_0\in \mathbb{R}}
+                    \frac{1}{n}\sum_{i=1}^n\ell (z_0 + a_i^\top H z,r_i)
+                       + \sum_{j=1}^{n_r}\nu_j h_j(G_j z)
+
         In the notation of :cite:`for1`, dual violation is
 
         .. math::
-            \max_i \|y_i^k - w_i^k\|_2
+            \max\{ \max_{i=1,..,n_b} \|y_i^k - w_i^k\|_2 , \max_{j=1,..,n_r} \|y_{j+n_b}-w_j^k\|_2\}
+
+        where, :math:`n_b` is the number of blocks in the loss (controlled by ``nblocks``
+        argument to ``run``).
 
         If run has not been called yet, raises an exception.
 
@@ -644,7 +664,7 @@ class ProjSplitFit(object):
         Returns array of history data from most recent invocation of ``run`` for which
         the ``keepHistory`` was set to ``True``.
 
-        After at least one call to run with keepHistory set to ``True``, the function 
+        After at least one call to run with keepHistory set to ``True``, the function
         call::
 
             historyArray = psfObj.getHistory()
@@ -692,29 +712,31 @@ class ProjSplitFit(object):
         ----------
             primalTol : :obj:`float`,optional
                 Continue running algorithm if primal error is greater than ``primalTol``.
-                The primal error is
+                In the notation of :cite:`for1`, the primal violation is
 
                 .. math::
-                    \max_i \|G_i z^k - x_i^k\|_2
+                    \max\{\max_{i=1,..,n_b} \|H z^k - x_i^k\|_2 , \max_{j=1,..,n_r}\|G_{j}z^k - x_{j+n_b}^k\|_2\}
 
-                where, with some abuse of notation, :math:`G_i` is the linear
-                operator associated with the :math:`i^{\text{th}}` block. 
+                where, :math:`n_b` is the number of blocks in the loss (controlled by ``nblocks``
+                argument to ``run``) and :math:`n_r` is the number of regularizers.
                 To terminate the method, both primal error and dual error
                 must be smaller than their respective tolerances, or the
-                number of must iterations exceeds ``maxIteration``. Default 1e-6.
+                number of iterations must exceed ``maxIteration``. Default 1e-6.
 
             dualTol : :obj:`float`,optional
                 Continue running algorithm if dual error is greater than dualTol.
                 The dual error is
 
                 .. math::
-                    \max_i \|y_i^k - w_i^k\|_2
+                    \max\{ \max_{i=1,..,n_b} \|y_i^k - w_i^k\|_2 , \max_{j=1,..,n_r} \|y_{j+n_b}-w_j^k\|_2\}
 
-                 To terminate the method, both primal error and dual error
+                where, :math:`n_b` is the number of blocks in the loss (controlled by ``nblocks``
+                argument to ``run``) and :math:`n_r` is the number of regularizers.
+                To terminate the method, both primal error and dual error
                 must be smaller than their respective tolerances, or the
-                number of must iterations exceeds ``maxIteration``. Default 1e-6.
+                number of iterations must exceed ``maxIteration``. Default 1e-6.
 
-            maxIterations : :obj:`int`,optional 
+            maxIterations : :obj:`int`,optional
                 Terminate algorithm as soon as it has run for
                 more than ``maxIterations`` iterations. Default is ``None``,
                 which means not to terminate until the ``primalTol`` and ``dualTol``
@@ -739,12 +761,12 @@ class ProjSplitFit(object):
                 :math:`n` is the number of observations.
 
                 In conjunction with the greedy activation method (see below), choosing
-                ``nBlocks`` larger than 1 has shown to greatly improve algorithm
+                ``nBlocks`` larger than 1 has been shown to greatly improve algorithm
                 performance for some problem classes.
-                
-                Suppose ``nBlocks`` is set to :math:`b` and the number of 
+
+                Suppose ``nBlocks`` is set to :math:`b` and the number of
                 observations is :math:`n`.  Then the first :math:`n\!\! \mod b`
-                blocks have :math:`\lceil n/b \rceil` observations and 
+                blocks have :math:`\lceil n/b \rceil` observations and
                 the remainder have :math:`\lfloor n/b \rfloor` observations.
                 If :math:`b` divides :math:`n`, this means that all blocks
                 have :math:`n/b` observations.
@@ -778,22 +800,23 @@ class ProjSplitFit(object):
                 If there is only one block, all these choices are equivalent.
 
             blocksPerIteration : :obj:`int`,optional
-                Number of blocks to update in each iteration. Defaults to 1.  Must 
+                Number of blocks to update in each iteration. Defaults to 1.  Must
                 be a positive integer in the range 1 to ``nBlocks``.
 
-            resetIterate : :obj:`bool`,optional If ``True``, the current
+            resetIterate : :obj:`bool`,optional
+                If ``True``, the current
                 values of all working variables (if ``run`` has been called before) in
-                the projective splitting algorithm (eg: :math:`z^k, w_i^k` etc) are 
-                overwritten with zero vectors before starting the run. Defaults 
+                the projective splitting algorithm (eg: :math:`z^k, w_i^k` etc) are
+                overwritten with zero vectors before starting the run. Defaults
                 to ``False``, meaning that the algorithm starts from its previous state.
 
             verbose : :obj:`bool`,optional
-                If ``True``, will printing iteration counts every 100 iterations. 
+                If ``True``, will print iteration counts every 100 iterations.
                 Defaults to ``False``.
 
             ergodic : :obj:`bool` or :obj:`string`, optional
 
-               If keepHistory=True, whether to compute the objective at the primal
+               If ``keepHistory=True``, whether to compute the objective at the primal
                iterate :math:`z^k`, or one of its two averaged versions. If
                ``False``, use the primal iterate. If "simple", evaluate at
                :math:`\frac{1}{k}\sum_{t=1}^k z^t`; if "weighted", evaluate at
