@@ -71,10 +71,14 @@ method. It must be selected carefully. There are two ways to set
 
   projSplit = ps.ProjSplitFit(dualScaling=gamma)
 
-(the default value is 1).  It may also be modified later through the
+The default value is 1.  The parameter may also be modified later through the
 ``setDualScaling`` method::
 
   projSplit.setDualScaling(gamma)
+
+Tuning this parameter is currently of paramount importance in the practical
+performance of the algorithm.  In future, we hope to provide automated tools
+for tuning :math:`\gamma`.
 
 
 Including an Intercept Variable
@@ -379,53 +383,60 @@ To use this loss, you would proceed as follows::
 Complete Example: Rare Feature Selection
 ==========================================
 
-Let's look at a complete example from page 34 of our paper :cite:`coco`, which originated from :cite:`YB18`.
-The problem of interest is
+We now consider a complete example, taken from page 34 of our paper
+:cite:`coco`.  This problem originated with :cite:`YB18` and takes the form
+(substituting :math:`v` for :math:`\gamma` as the decision variables)
 
 .. math::
-  \min_{\substack{\boldsymbol{\gamma_0}\in \mathbb{R} \\ \boldsymbol{\gamma}\in \mathbb{R}^{|\mathcal{T}|}}}
+  \min_{\substack{v_0\in \mathbb{R} \\ v\in \mathbb{R}^{d}}}
   \left\{
-  \frac{1}{2n}\|\boldsymbol{\gamma_0} e + X H\boldsymbol{\gamma} - y\|_2^2
+  \frac{1}{2n}\|v_0 e + X Hv - y\|_2^2
   +
   \lambda
   \big(
-  \mu\|\boldsymbol{\gamma_{-r}}\|_1
+  \mu\|v_{-r}\|_1
   +
-  (1-\mu)\|H\boldsymbol{\gamma}\|_1
+  (1-\mu)\|Hv\|_1
   \big)
   \right\}
 
-The loss function here is the :math:`\ell_2^2`, but with the regression
+The loss function here is :math:`\ell_2^2`, but with the regression
 coefficients composed with a linear operator :math:`H`. There are two ways to
-deal with such situations. If the size and density of the matrices is not of
-great concern concern, one may pre-compute a new matrix through ``Xnew =
-X*H``, and use ``Xnew`` as the observation matrix passed to ``projSplitFit``.
-If forming :math:`XH` directly in this manner is prohibitive or causes an unacceptable increase in the
-number of nonzero entries, the linear
-operator can be instead composed with the loss, meaning that ``projSplitFit``
-handles the composition internally and does not explicitly compute the matrix
-product. This option is controlled via the ``linearOp`` argument to
-``addData``.
+deal with such situations:  first, if the size and density of the matrices is
+not of great concern concern, one may pre-compute a new matrix through ``Xnew
+= X*H``, and use ``Xnew`` as the observation matrix passed to
+``projSplitFit``.  Second, if forming :math:`XH` directly in this manner is
+somehow prohibitive or causes an unacceptable increase in the number of
+nonzero matrix elements, the linear operator can be instead composed with the
+loss, meaning that ``projSplitFit`` handles the composition internally and
+does not explicitly compute the matrix product. This option is controlled via
+the ``linearOp`` argument to ``addData``.
 
-Taking this option, and electing not to normalize the input data, one may set
+Taking the second approach and electing not to normalize the input data, one may set
 up the loss term as follows::
 
   import projSplitFit as ps
   projSplit = ps.ProjSplitFit()
   projSplit.addData(X,y,loss=2,linearOp=H,normalize=False)
 
-Note that, by default, the intercept term :math:`\boldsymbol{\gamma}_0` is incorporated into the loss.
+Note that, by default, the intercept term :math:`v_0` is
+incorporated into the loss.
 
-The first regularizer does not apply to the root node variable of :math:`\boldsymbol{\gamma}`,
-which is stored as the last entry of the vector.
-A simple way to encode this is to treat it as the :math:`\ell_1` norm composed
-with a linear operator which simply drops the last entry. That is,
-:math:`\|G \boldsymbol{\gamma}\|_1` where
+We now consider the two regularization terms.  In the first regularization term, the
+notation :math:`v_{-r}`, as introduced in 
+:cite:`YB18`, specifies that the regularizer applies to all but the last coefficient in 
+:math:`v`, which corresponds to the root node of the adjective tree
+described by the matrix :math:`H`. A simple way to encode this
+regularization term is to treat it as the :math:`\ell_1` norm composed
+with a linear operator which simply drops the last entry of a vector. That
+is, we write the regularizer as :math:`\|G v\|_1`, where
 
 .. math::
-  G\boldsymbol{\gamma} = [\boldsymbol{\gamma}_1 \quad \boldsymbol{\gamma}_2 \quad \ldots\quad \boldsymbol{\gamma}_{|\mathcal{T}|-1}]
+  G : [v_1 \;\; v_2 \;\; \cdots \;\; v_{d-1} \;\; v_d]
+      \mapsto
+      [v_1 \;\; v_2 \;\; \cdots \;\; v_{d-1}].
 
-i.e.
+Writing :math:`G` as a matrix, we have
 
 .. math::
   G = \left[\begin{array}{ccccc}
@@ -436,7 +447,7 @@ i.e.
       \end{array}
       \right]
       \quad
-      \text{and}
+      \text{and therefore}
       \quad
   G^\top = \left[
     \begin{array}{cccc}
@@ -446,12 +457,11 @@ i.e.
       &   &        & 1 \\
     0 & 0 &\hdots & 0
     \end{array}
-           \right].
+           \right]. 
 
-
-
-This can be included in the model with the ``scipy.sparse.linalg.LinearOperator`` class
-as follows::
+We may create such a linear operator using the
+``scipy.sparse.linalg.LinearOperator`` class and incorporate it into the
+regularizer as follows::
 
   from scipy.sparse.linalg import LinearOperator
   import numpy as np
@@ -460,12 +470,12 @@ as follows::
     return x[:-1]
 
   def applyGtranspose(v):
-    return np.concatenate((v,np.array([0])))
+    return np.append(v,0.0)
 
-  (_,ngamma) = H.shape
-  shape = (ngamma-1,ngamma)
-  G = LinearOperator(shape,matvec=applyG,rmatvec = applyGtranspose)
-  psObj.addRegularizer(regularizers.L1(scaling = mu*lam),linearOp=G)
+  (_,nv) = H.shape
+  shape = (nv-1,nv)
+  G = LinearOperator(shape,matvec=applyG,rmatvec=applyGtranspose)
+  psObj.addRegularizer(regularizers.L1(scaling=mu*lam),linearOp=G)
 
 The second regularizer is more straightforward and may be dealt with via the
 built-in ``L1`` function and composing with the linear operator :math:`H`
@@ -475,14 +485,14 @@ as follows::
   regObj2 = L1(scaling=lam*(1-mu))
   projSplit.addRegularizer(regObj2,linearOp=H)
 
-Finally we are ready to run the method via::
+Finally we are ready to run the method with::
 
   projSplit.run()
 
 One can obtain the final objective value and solution via::
 
   optimalVal = projSplit.getObjective()
-  gammastar = projSplit.getSolution()
+  vstar = projSplit.getSolution()
 
 
 Loss Processor Objects
