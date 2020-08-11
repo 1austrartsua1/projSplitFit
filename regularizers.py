@@ -39,8 +39,7 @@ class Regularizer(object):
     def __init__(self,prox,value=None,scaling=1.0,step=1.0):
         r''' It is only necessary to define *value* if you wish to compute
             objective function values, either by calling ``getObjective`` or
-            by using the ``keepHistory`` option of the ``run`` method of
-            ``projSplitFit``. 
+            by using the ``keepHistory`` option of the ``ProjSplitFit.run`` method. 
 
             parameters
             ----------
@@ -68,7 +67,7 @@ class Regularizer(object):
                 projective splitting with this regularizer. Must be positive
                 and defaults to 1.0.  Will be overridden on an
                 interation-by-iteration basis if the ``equalizeStepsizes``
-                option is enabled in the ``run`` method of ``projSplitFit``.
+                option is enabled in the ``run`` method of ``ProjSplitFit``.
         '''
         try:
             test = ones(100)
@@ -170,7 +169,7 @@ def L1(scaling=1.0,step=1.0):
 
     *step* is the stepsize :math:`\eta` that projective splitting will use
     for proximal steps using this regularizer, unless overridden by the
-    ``equalizeStepsizes`` option of the ``run`` method of ``projSplitFit``.
+    ``equalizeStepsizes`` option of the ``run`` method of ``ProjSplitFit``.
 
     Parameters
     -----------
