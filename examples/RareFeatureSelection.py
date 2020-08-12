@@ -35,6 +35,11 @@ projSplit.addRegularizer(regularizers.L1(scaling = mu*lam),linearOp=G)
 regObj2 = regularizers.L1(scaling=lam*(1-mu))
 projSplit.addRegularizer(regObj2,linearOp=H)
 
+### In some cases there is a random block selection even though we use greedy
+### Fix the random number seed so results are reproducible
+np.random.seed(1)
+
 print("Running 1000 iterations of projective splitting...")
+print("This problem is very difficult.  Increase maxIterations to solve problem")
 projSplit.run(nblocks=10,maxIterations=1000,verbose=True,blockActivation='greedy')
 print(f"Objective value = {projSplit.getObjective()}")
