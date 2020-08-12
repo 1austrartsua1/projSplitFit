@@ -161,11 +161,11 @@ class ProjSplitFit(object):
             An object of a class derived from :obj:`lossProcessors.LossProcessor`.
             Default is :obj:`Forward2Backtrack()`
 
-        intercept : :obj:`bool`,optional
+        intercept : :obj:`bool`, optional
             whether to include an intercept/constant term in the linear model.
             The default value is ``True``.
 
-        normalize : :obj:`bool`,optional
+        normalize : :obj:`bool`, optional
             whether to normalize columns of the data matrix to have square norm equal to num rows.
             If True, data matrix will be copied. Default is True.
 
@@ -177,7 +177,7 @@ class ProjSplitFit(object):
             the most convenient for the arithmetic operations required in
             the solution algorithm.
 
-        embed : :obj:`regularizers.Regularizer`,optional
+        embed : :obj:`regularizers.Regularizer`, optional
             Embeds a regularizer into the loss, meaning that the proximal operator
             is evaluated in-line with the loss processing update. Only available for
             the following forward-type loss processors: ``Forward1Fixed``,
@@ -524,7 +524,7 @@ class ProjSplitFit(object):
         Parameters
         ----------
 
-            descale : :obj:`bool`,optional
+            descale : :obj:`bool`, optional
                     Defaults to False.
                     If the ``normalize`` argument to ``addData`` was set to
                     True and ``descale`` is True, the normalization that was
@@ -535,7 +535,7 @@ class ProjSplitFit(object):
                     ``linOp``, then a warning message will be printed and the
                     solution vector will not be descaled.
 
-            ergodic : :obj:`bool` or :obj:`string`,optional
+            ergodic : :obj:`bool` or :obj:`string`, optional
                     Whether to return
                     the primal iterate :math:`z^k`, or one of its two averaged
                     versions. If ``False``, return the primal iterate. If "simple",
@@ -710,7 +710,7 @@ class ProjSplitFit(object):
 
         Parameters
         ----------
-            primalTol : :obj:`float`,optional
+            primalTol : :obj:`float`, optional
                 Continue running algorithm if primal error is greater than ``primalTol``.
                 In the notation of :cite:`for1`, the primal violation is
 
@@ -723,7 +723,7 @@ class ProjSplitFit(object):
                 must be smaller than their respective tolerances, or the
                 number of iterations must exceed ``maxIteration``. Default 1e-6.
 
-            dualTol : :obj:`float`,optional
+            dualTol : :obj:`float`, optional
                 Continue running algorithm if dual error is greater than dualTol.
                 The dual error is
 
@@ -736,23 +736,23 @@ class ProjSplitFit(object):
                 must be smaller than their respective tolerances, or the
                 number of iterations must exceed ``maxIteration``. Default 1e-6.
 
-            maxIterations : :obj:`int`,optional
+            maxIterations : :obj:`int`, optional
                 Terminate algorithm as soon as it has run for
                 more than ``maxIterations`` iterations. Default is ``None``,
                 which means not to terminate until the ``primalTol`` and ``dualTol``
                 conditions are reached.
 
-            keepHistory : :obj:`bool`,optional
+            keepHistory : :obj:`bool`, optional
                 If ``True``, record the algorithm history (see the ``getHistory``
                 method). Default is ``False``. Note that to keep history requires
                 computing the objective value, which may be slow for large
                 problems.
 
-            historyFreq : :obj:`int`,optional
+            historyFreq : :obj:`int`, optional
                 If ``keepHistory`` is ``True``, history information is recorded
                 every ``historyFreq`` iterations.  Defaults to 10.
 
-            nblocks : :obj:`int`,optional
+            nblocks : :obj:`int`, optional
                 Number of blocks in the projective splitting decomposition
                 of the loss. Defaults to 1. Blocks are contiguous indices and the
                 number of indices in each block varies by at most one.
@@ -794,23 +794,23 @@ class ProjSplitFit(object):
                     [95,96,...,104]
                     ]
 
-            blockActivation : :obj:`string`,optional
+            blockActivation : :obj:`string`, optional
                 Strategy for selecting blocks of the loss to process at each iteration.
                 Defaults to "greedy". Other valid choices are "random" and "cyclic".
                 If there is only one block, all these choices are equivalent.
 
-            blocksPerIteration : :obj:`int`,optional
+            blocksPerIteration : :obj:`int`, optional
                 Number of blocks to update in each iteration. Defaults to 1.  Must
                 be a positive integer in the range 1 to ``nblocks``.
 
-            resetIterate : :obj:`bool`,optional
+            resetIterate : :obj:`bool`, optional
                 If ``True``, the current
                 values of all working variables (if ``run`` has been called before) in
                 the projective splitting algorithm (eg: :math:`z^k, w_i^k` etc) are
                 overwritten with zero vectors before starting the run. Defaults
                 to ``False``, meaning that the algorithm starts from its previous state.
 
-            verbose : :obj:`bool`,optional
+            verbose : :obj:`bool`, optional
                 If ``True``, will print iteration counts every 100 iterations.
                 Defaults to ``False``.
 
@@ -1070,7 +1070,7 @@ class ProjSplitFit(object):
             # with a "pass-through" prox
             self.embedded = Regularizer(lambda x,scale:x,lambda x:0)
         else:
-            if self.embedded.getStepsize() != self.process.getStep():
+            if self.embedded.getStep() != self.process.getStep():
                 print("WARNING: embedded regularizer must use the same stepsize as the Loss update process")
                 print("Setting the embedded regularizer stepsize to be the process stepsize")
                 self.embedded.setStep(self.process.getStep())

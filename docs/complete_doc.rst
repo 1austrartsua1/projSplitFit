@@ -53,7 +53,7 @@ splitting algorithm, it is provided with the vector :math:`Hz^k` derived from
 the current primal solution estimate :math:`z^k` (which just equals
 :math:`z^k` if :math:`H` was not specified) and the dual solution estimate
 :math:`w_i^k`.  It returns two vectors :math:`x_i^k` and :math:`y_i^k`, which
-have should have the same dimension as :math:`w_i^k`.  These returned vectors
+should have the same dimension as :math:`w_i^k`.  These returned vectors
 must have specific properties in order to guarantee convergence of the
 algorithm; all the provided loss processor have these properties, with one
 caveat mentioned below.

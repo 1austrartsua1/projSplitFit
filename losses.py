@@ -67,15 +67,15 @@ def LR_derivative(yhat,y):
 
 class LossPlugIn(object):
     r'''
-    Objects of this class may be used as supplied as the ``loss`` argument
+    Objects of this class may be used as the ``loss`` argument
     of the ``ProjSplitFit.addData`` method, to define customized loss functions.
-    That argument also accepts ``float`` or ``int`` values :math:`p > 1`, which 
+    That argument also accepts ``float`` or ``int`` values :math:`p > 1`, which
     are interpreted as specifying the :math:`\ell_p^p` loss, or the string
-    "logistic" to specify the logistic loss function.  
+    "logistic" to specify the logistic loss function.
 
-    Other choices require creating a ``LossPlugIn`` object.  This in turn 
+    Other choices require creating a ``LossPlugIn`` object.  This in turn
     requires supplying a function to compute the derivative of the loss function.
-    If you plan to compute objective function values, you must also supply a 
+    If you plan to compute objective function values, you must also supply a
     function to compute the loss function value.
     '''
 
@@ -83,15 +83,15 @@ class LossPlugIn(object):
         r'''
         You need only supply a *value* function if you wish to compute
         objective function values (either with ``ProjSplitFit.getObjective``
-        or by enabling history collection in ``ProjSplitFit.run``). 
+        or by enabling history collection in ``ProjSplitFit.run``).
 
         Parameters
         ----------
-        derivative : function 
+        derivative : :obj:`function`
             Function of two 1D ``numpy`` arrays of the same length, the first
             containing predicted values and the second containing actual
             response values.  Must output an array of the same length as the
-            two inputs, whose elements consists of partical derivatives with
+            two inputs, whose elements consists of partial derivatives with
             respect to the predicted values. Specifically, supposing that the
             two input arrays are :math:`q = [q_0 \; q_1 \;
             \cdots q_k]` and :math:`q = [r_0 \; r_1 \; \cdots r_k]`, the
@@ -99,8 +99,8 @@ class LossPlugIn(object):
             :math:`\frac{\partial}{\partial q_i}\ell(q_i,r_i)` for each
             input index :math:`i`.
 
-        value : function,optional
-            Must accept two ``float`` arguments and return a single ``float``. 
+        value : :obj:`function`, optional
+            Must accept two ``float`` arguments and return a single ``float``.
             If supplied the arguments :math:`q_i` (for the prediction) and :math:`r_i`
             (for the response), the function should return :math:`\ell(q_i,r_i)`.
             Defaults to ``None``.  If the default is used, however, attempting to
