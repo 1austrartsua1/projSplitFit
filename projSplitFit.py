@@ -752,19 +752,19 @@ class ProjSplitFit(object):
                 If ``keepHistory`` is ``True``, history information is recorded
                 every ``historyFreq`` iterations.  Defaults to 10.
 
-            nBlocks : :obj:`int`,optional
+            nblocks : :obj:`int`,optional
                 Number of blocks in the projective splitting decomposition
                 of the loss. Defaults to 1. Blocks are contiguous indices and the
                 number of indices in each block varies by at most one.
 
-                ``nBlocks`` must be an integer in the range 1 to :math:`n`, where
+                ``nblocks`` must be an integer in the range 1 to :math:`n`, where
                 :math:`n` is the number of observations.
 
                 In conjunction with the greedy activation method (see below), choosing
-                ``nBlocks`` larger than 1 has been shown to greatly improve algorithm
+                ``nblocks`` larger than 1 has been shown to greatly improve algorithm
                 performance for some problem classes.
 
-                Suppose ``nBlocks`` is set to :math:`b` and the number of
+                Suppose ``nblocks`` is set to :math:`b` and the number of
                 observations is :math:`n`.  Then the first :math:`n\!\! \mod b`
                 blocks have :math:`\lceil n/b \rceil` observations and
                 the remainder have :math:`\lfloor n/b \rfloor` observations.
@@ -801,7 +801,7 @@ class ProjSplitFit(object):
 
             blocksPerIteration : :obj:`int`,optional
                 Number of blocks to update in each iteration. Defaults to 1.  Must
-                be a positive integer in the range 1 to ``nBlocks``.
+                be a positive integer in the range 1 to ``nblocks``.
 
             resetIterate : :obj:`bool`,optional
                 If ``True``, the current
@@ -979,7 +979,7 @@ class ProjSplitFit(object):
     def __createListOfSparseMatrices(self):
         # for sparse matrices, it is much more efficient (faster) to preslice the
         # matrices and store a list of pre-sliced matrices.
-        # To make this backwards compatible, we need to replace partition with just range(nBlocks)
+        # To make this backwards compatible, we need to replace partition with just range(nblocks)
         # so that calls like thisSlice = partition[block] just return the block.
         if self.sparseObservationMtx:
             self.Afull = self.A

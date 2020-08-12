@@ -613,12 +613,12 @@ For example, to use 10 blocks and evaluate one block
 per iteration using a greedy selection scheme, one would run the optimization
 by (assuming that ``projSplit`` is a ``projSplitFit`` object) ::
 
-   projSplit.run(nBlocks=10, blockActivation='greedy', blocksPerIteration=1)
+   projSplit.run(nblocks=10, blockActivation='greedy', blocksPerIteration=1)
 
 However, greedy activation and one block per iteration being the defaults,
 the above could be shortened to ::
 
-   projSplit.run(nBlocks=10)
+   projSplit.run(nblocks=10)
 
 For some problem classes, it has been empirically been observed that
 processing one or two blocks per iteration, selected in this greedy manner,
