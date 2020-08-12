@@ -17,8 +17,5 @@ A = np.random.normal(0,1,[m,d])
 r = np.random.normal(0,1,m)
 loss = ls.LossPlugIn(derivative=deriv, value=val)
 projSplit.addData(A,r,loss=loss)
-projSplit.setDualScaling(10.0)
 projSplit.run(verbose=True)
 print(f"Objective value = {projSplit.getObjective()}")
-
-
