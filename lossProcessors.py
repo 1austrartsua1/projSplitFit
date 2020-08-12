@@ -104,7 +104,12 @@ class Forward2Fixed(LossProcessor):
         Parameters
         ----------
         step : :obj:`float`, optional
-            stepsize :math:`\rho`, defaulting to 1.0
+            the stepsize :math:`\rho`, defaulting to 1.0.  Should be positive. For
+            convergence to be guaranteed, the stepsize should be less than
+            :math:`1/L_i`, where :math:`L_i` is the Lipschitz continuity
+            modulus of the gradient of the function :math:`f_i` defined above.
+            If this value is unknown or is infinite, use the
+            ``Forward2Backtrack`` loss processor instead.
 
         '''
 
@@ -154,8 +159,11 @@ class Forward2Backtrack(LossProcessor):
                 Initial trial choice of the stepsize :math:`\rho_{ik}`, defaulting to 1.0
 
             Delta : :obj:`float`, optional
-                parameter in backtracking line search check condition.
-                Defaults to 1.0
+                the parameter :math:`\Delta` in backtracking linesearch
+                termination condition of :cite:`for1.` Larger values make the
+                condition more difficult to satisfy and result in more
+                backtracking iterations and smaller accepted stepsizes.
+                Defaults to 1.0.
 
             backtrackFactor : :obj:`float`, optional
                 How much to shrink the stepsize by at each iteration of backtracking.
@@ -229,7 +237,8 @@ class Forward2Affine(LossProcessor):
         Parameters
         ----------
             Delta : :obj:`float`, optional
-                parameter in backtracking line search check condition.
+                parameter in stepsize calculation condition of :cite:`for1`.
+                Larger values result in smaller stepsizes.
                 Defaults to 1.0
 
         '''
@@ -282,7 +291,14 @@ class  Forward1Fixed(LossProcessor):
         Parameters
         ----------
             stepsize : :obj:`float`, optional
-                stepsize :math:`\rho`, defaulting to 1.0
+                stepsize :math:`\rho`, defaulting to 1.0.  Must be positive.
+                To guarantee convergence, should be less than
+                :math:`2(1-\alpha)/L_i`, where :math:`\alpha` is the
+                ``blendFactor`` constant below and
+                :math:`L_i` is the modulus of Lipschitz continuity of the
+                function :math:`f_i` as defined above.  If :math:`L_i` is
+                unknown or infinite, use the ``Forward2backtrack`` loss
+                processor instead.
 
             blendFactor : :obj:`float`, optional
                 The averaging parameter :math:`\alpha` in one-forward-step
@@ -483,7 +499,7 @@ class BackwardExact(LossProcessor):
 
     If the involved matrices are wide (having a number of rows less than half
     the number of columns), the matrix inversion lemma is used to reduce the
-    size of the inverted matrix, see Sec. 4.2.4 of
+    size of the inverted matrix, see Section 4.2.4 of
     https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
 
     Objects of this class may be used as the ``process`` argument to
