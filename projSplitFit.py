@@ -296,7 +296,7 @@ class ProjSplitFit(object):
 
 
         if normalize:
-            print("Normalizing columns of A to have square norm equal to num rows")
+            print("Normalizing columns of observation matrix to have square norm equal to num rows")
             self.normalize = True
             if self.sparseObservationMtx == False:
                 self.A = npcopy(observations)
@@ -311,7 +311,7 @@ class ProjSplitFit(object):
                 self.A = self.A.multiply(sqrt(self.nrowsOfA)*self.scaling)
                 self.A = csr_matrix(self.A)
         else:
-            #print("Not normalizing columns of A")
+            #print("Not normalizing columns of observation matrix")
             self.A = observations
             self.normalize = False
 
@@ -848,7 +848,7 @@ class ProjSplitFit(object):
 
         if self.runCalled:
             if(self.nDataBlocks != numBlocks):
-                print("change of the number of blocks, resetting iterates automatically")
+                print("Changed of the number of blocks, resetting iterates automatically")
                 self.internalResetIterate = True
 
         self.nDataBlocks = numBlocks
@@ -909,12 +909,13 @@ class ProjSplitFit(object):
 
         while(self.k < maxIterations):
 
-            if verbose and (self.k%100 == 0):
-                print('iteration = {}'.format(self.k))
             t0 = time()
             self.__updateLossBlocks(blockActivation,blocksPerIteration)
             self.__equalizeStepsizes(equalizeStepsizes)
             self.__updateRegularizerBlocks()
+
+            if verbose and (self.k%100 == 0):
+                print('iteration = {:<5d}  primalViol = {:<11.6g}  dualViol = {:<11.6g}'.format(self.k,self.primalErr,self.dualErr))
 
             if (self.primalErr < primalTol) & (self.dualErr < dualTol):
                 print("primal and dual tolerance reached, finishing run")
@@ -1108,7 +1109,7 @@ class ProjSplitFit(object):
 
             if allRegsHaveLinOps:
                 if len(self.allRegularizers)>0:
-                    step = self.allRegularizers[0].getStepsize()
+                    step = self.allRegularizers[0].getStep()
                 else:
                     step = 1.0
                 self.addRegularizer(Regularizer(lambda x,scale: x, lambda x: 0,step=step))
