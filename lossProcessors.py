@@ -335,6 +335,10 @@ class Forward1Backtrack(LossProcessor):
 
     See :cite:`coco`, https://arxiv.org/abs/1902.09025.
 
+    Note that convergence has not been proven for this this loss processor in
+    the case that ``blocksPerIteration`` is smaller than ``nBlocks``, although
+    it is suspected that it does indeed converge in this case.
+
     Objects of this class may be used as the ``process`` argument to
     ``ProjSplitFit.addData``.
 
