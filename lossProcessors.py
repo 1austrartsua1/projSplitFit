@@ -150,22 +150,22 @@ class Forward2Backtrack(LossProcessor):
         r'''
         Parameters
         ----------
-            initialStep : :obj:`float`,optional
+            initialStep : :obj:`float`, optional
                 Initial trial choice of the stepsize :math:`\rho_{ik}`, defaulting to 1.0
 
-            Delta : :obj:`float`,optional
+            Delta : :obj:`float`, optional
                 parameter in backtracking line search check condition.
                 Defaults to 1.0
 
-            backtrackFactor : :obj:`float`,optional
+            backtrackFactor : :obj:`float`, optional
                 How much to shrink the stepsize by at each iteration of backtracking.
                 Must be strictly between 0 and 1. Defaults to 0.7
 
-            growFactor : :obj:`float`,optional
+            growFactor : :obj:`float`, optional
                 How much to grow the stepsize by before backtracking. Must
                 be at least 1.0. Defaults to 1.0
 
-            growFreq : :obj:`int`,optional
+            growFreq : :obj:`int`, optional
                 How often, in terms of iterations, to grow the stepsize,
                 defaults to ``None``, which means to never grow the stepsize. Must be
                 at least 1.
@@ -213,7 +213,7 @@ class Forward2Backtrack(LossProcessor):
 
 class Forward2Affine(LossProcessor):
     r'''
-    Two forward steps with stepsize automatically tuned for the 
+    Two forward steps with stepsize automatically tuned for the
     :math:`\ell_2^2` loss.  This loss process is only applicable
     when the loss function has an affine gradient map, which
     occurs only in the :math:`\ell_2^2` case.  See :cite:`for1`,
@@ -228,7 +228,7 @@ class Forward2Affine(LossProcessor):
 
         Parameters
         ----------
-            Delta : :obj:`float`,optional
+            Delta : :obj:`float`, optional
                 parameter in backtracking line search check condition.
                 Defaults to 1.0
 
@@ -252,7 +252,7 @@ class Forward2Affine(LossProcessor):
 
 
 class  Forward1Fixed(LossProcessor):
-    r''' 
+    r'''
     One forward step with a fixed stepsize. See :cite:`coco`,
     https://arxiv.org/abs/1902.09025.
 
@@ -281,10 +281,10 @@ class  Forward1Fixed(LossProcessor):
         r'''
         Parameters
         ----------
-            stepsize : :obj:`float`,optional
+            stepsize : :obj:`float`, optional
                 stepsize :math:`\rho`, defaulting to 1.0
 
-            blendFactor : :obj:`float`,optional 
+            blendFactor : :obj:`float`, optional
                 The averaging parameter :math:`\alpha` in one-forward-step
                 calculations above. Defaults to 0.1. Must be strictly between
                 0 and 1.
@@ -349,22 +349,22 @@ class Forward1Backtrack(LossProcessor):
 
         Parameters
         ----------
-            initialStep : :obj:`float`,optional
+            initialStep : :obj:`float`, optional
                 Initial trial stepsize in first iteration, defaults to 1.0
 
-            blendFactor : :obj:`float`,optional
-                The averaging parameter :math:`\alpha` in calculation above. 
+            blendFactor : :obj:`float`, optional
+                The averaging parameter :math:`\alpha` in calculation above.
                 Defaults to 0.1.  Must be strictly between 0 and 1.
 
-            backtrackFactor : :obj:`float`,optional
+            backtrackFactor : :obj:`float`, optional
                 How much to shrink the stepsize by at each iteration of backtracking.
                 Must be strictly between 0 and 1. Defaults to 0.7
 
-            growFactor : :obj:`float`,optional
+            growFactor : :obj:`float`, optional
                 How much to grow the stepsize before backtracking. Must
                 be at least 1.0. Defaults to 1.0
 
-            growFreq : :obj:`int`,optional
+            growFreq : :obj:`int`, optional
                 How often, in terms of iterations, to grow the stepsize,
                 defaults to ``None``, which means to never grow the stepsize.
                 Must be at least 1.
@@ -461,7 +461,7 @@ class Forward1Backtrack(LossProcessor):
 
 
 class BackwardExact(LossProcessor):
-    r''' 
+    r'''
     Exact backward step for quadratic loss functions, calculated via
     matrix inversion. Only applicable to the :math:`\ell_2^2` loss function.
     Appropriate matrix inverses are cached before the first iteration.
@@ -482,7 +482,7 @@ class BackwardExact(LossProcessor):
     :math:`\ell_2^2` loss.
 
     If the involved matrices are wide (having a number of rows less than half
-    the number of columnss), the matrix inversion lemma is used to reduce the
+    the number of columns), the matrix inversion lemma is used to reduce the
     size of the inverted matrix, see Sec. 4.2.4 of
     https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
 
@@ -494,7 +494,7 @@ class BackwardExact(LossProcessor):
         r'''
         Parameters
         ----------
-            stepsize : :obj:`float`,optional
+            stepsize : :obj:`float`, optional
                 Stepsize :math:`\rho`, defaults to 1.0
         '''
 
@@ -580,7 +580,7 @@ class BackwardCG(LossProcessor):
     r'''
     Approximate backward step for the :math:`\ell_2^2` loss, computed by the
     conjugate gradient method for linear equations. Only applicable to the
-    :math:`\ell_2^2`.  
+    :math:`\ell_2^2`.
 
     Updates are of the form
 
@@ -613,13 +613,13 @@ class BackwardCG(LossProcessor):
         r'''
         Parameters
         ----------
-            relativeErrorFactor : :obj:`float`,optional
+            relativeErrorFactor : :obj:`float`, optional
                 :math:`\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
 
-            stepsize : :obj:`float`,optional
+            stepsize : :obj:`float`, optional
                 stepsize :math:`\rho`, defaultings to 1.0
 
-            maxIter : :obj:`int`,optional
+            maxIter : :obj:`int`, optional
                 Maximum number of iterations of conjugate gradient. Defaults to 100.
                 Must be at least 1.
         '''
@@ -723,7 +723,7 @@ class BackwardLBFGS(LossProcessor):
     iterated until the relative error criteria specified in
     :cite:`Eck17,CE18,for1`, are met, or the maximum number of iterations is
     reached.  Convergence is not guaranteed when the maximum number L-BFGS of
-    iterations is reached in more than a finite number of projective 
+    iterations is reached in more than a finite number of projective
     splitting iterations.
 
     Objects of this class may be used as the ``process`` argument to
@@ -736,39 +736,39 @@ class BackwardLBFGS(LossProcessor):
         r'''
         Parameters
         ----------
-            step : :obj:`float`,optional
-                Stepsize :math:`rho`, defaulting to 1.0
+            step : :obj:`float`, optional
+                Stepsize :math:`\rho`, defaulting to 1.0
 
-            relativeErrorFactor : :obj:`float`,optional
+            relativeErrorFactor : :obj:`float`, optional
                 :math:`\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
 
-            memory : :obj:`int`,optional
-                how many iterations of memory are held by L-BFGS. Defaults to 10. 
+            memory : :obj:`int`, optional
+                how many iterations of memory are held by L-BFGS. Defaults to 10.
                 Must be at least 1.
 
-            c1 : :obj:`float`,optional
-                the :math:`c_1` parameter in the Wolfe linesearch used by L-BFGS. 
+            c1 : :obj:`float`, optional
+                the :math:`c_1` parameter in the Wolfe linesearch used by L-BFGS.
                 Defaults to 1e-4. Must be strictly between 0 and 1, with :math:`c_1<c_2`.
 
-            c2 : :obj:`float`,optional
-                the :math:`c_2` parameter in the Wolfe linesearch used by L-BFGS. 
+            c2 : :obj:`float`, optional
+                the :math:`c_2` parameter in the Wolfe linesearch used by L-BFGS.
                 Defaults to 0.9. Must be strictly between 0 and 1, with :math:`c_1<c_2`.
 
-            shrinkFactor : :obj:`float`,optional
+            shrinkFactor : :obj:`float`, optional
                 How much to shrink stepsize during the Wolfe linesearch. Must be
                 strictly between 0 and 1 and defaults to 0.7
 
-            growFactor : :obj:`float`,optional
+            growFactor : :obj:`float`, optional
                 How much to grow stepsize at the outset of the Wolfe line-search. Must be
                 greater than 1, and defaults to 1.1
 
-            maxiter : :obj:`int`,optional
+            maxiter : :obj:`int`, optional
                 maximum number of iterations of L-BFGS. Defaults to 100.
                 Must be at least 1.
 
-            lineSearchIter : :obj:`int`,optional
+            lineSearchIter : :obj:`int`, optional
                 maximum number of iterations of Wolfe linesearch. Defaults to 20.
-                Must be at least 1.  
+                Must be at least 1.
 
         '''
         self.embedOK = False
@@ -866,41 +866,4 @@ class BackwardLBFGS(LossProcessor):
     def wolfeLineSearch(self,psObj,x,p,grad,f,t,thisSlice):
 
         direcDeriv = grad.T.dot(p)
-        step = 1.0
-        stepNotFound = True
-        niter = 0
-        gradNotComputed = True
-        while stepNotFound:
-            xTrial = x + step*p
-            fTrial = self.Fprox(psObj,xTrial,thisSlice,t)
-
-            cond1 = fTrial - f - self.c1*step*direcDeriv
-            if cond1 <= 0:
-                gradNotComputed = False
-                gradTrial = self.gradprox(psObj,xTrial,thisSlice,t)
-                cond2 = gradTrial.T.dot(p) - self.c2*direcDeriv
-                if cond2 >= 0:
-                    stepNotFound = False
-                else:
-                    step = self.growFactor*step
-
-            else:
-                step = self.shrinkFactor*step
-
-            niter += 1
-            if (niter >= self.lineSearchIter):
-                stepNotFound = False
-
-        if gradNotComputed:
-            gradTrial = self.gradprox(psObj,xTrial,thisSlice,t)
-        return xTrial,gradTrial,fTrial
-
-    def passesErrCheck(self,psObj,x,t,block,gradfx):
-        w = psObj.wdata[block]
-        e = x+self.step*gradfx - t
-        err1 = e.T.dot(psObj.Hz - x) + self.sigma*norm(psObj.Hz - x)**2
-        if err1 >= 0:
-            err2 = e.T.dot(gradfx - w) \
-                   - self.step*norm(gradfx - w)
-            if err2<=0:
-                return True
+        step = 1

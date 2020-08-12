@@ -28,7 +28,7 @@ class Regularizer(object):
       The regularizer class is used to define each :math:`\nu_j h_j(G_j z)`` term,
       with the exception of the optional linear operator :math:`G_j`, which is supplied
       when calling ``addRegularizer`` to introduce the regularizer to the formulation.
-            
+
       You may use standard built-in regularizers, or create objects of this
       class to define new regularizers.  When defining your own regularizers,
       you must provide a function implementing the regularizer's proximal
@@ -39,11 +39,11 @@ class Regularizer(object):
     def __init__(self,prox,value=None,scaling=1.0,step=1.0):
         r''' It is only necessary to define *value* if you wish to compute
             objective function values, either by calling ``getObjective`` or
-            by using the ``keepHistory`` option of the ``ProjSplitFit.run`` method. 
+            by using the ``keepHistory`` option of the ``ProjSplitFit.run`` method.
 
             parameters
             ----------
-            prox : function 
+            prox : :obj:`function`
                 must be a function of two parameters: a
                 ``numpy``-style array :math:`s` and a positive ``float``
                 :math:`\eta`.  This function must return the vector
@@ -51,23 +51,24 @@ class Regularizer(object):
                 (1/2)\| x - s \|^2\right\}`` for arbitrary inputs
                 :math:`s` and :math:`0<\eta<\infty`.
 
-            value : function,optional
+            value : :obj:`function`, optional
                 must be a function of one parameter:  a numpy-style
                 array. Must returns a float which is the value of :math:`h(x)``.
                 The default is ``None``, meaning undefined. The returned value
                 should not include the scaling factor :math:`\nu_j`.
 
-            scaling : :obj:`float`,optional
+            scaling : :obj:`float`, optional
                 the objective scaling factor :math:`\nu_j` to use with this regularizer.
                 The function will appear in the objective as :math:`\nu_j h_j(G_j z)`.
                 Must be positive and defaults to 1.0.
 
-            step : :obj:`float`,optional 
+            step : :obj:`float`, optional
                 the stepsize :math:`\eta` to use in the proximal steps of
                 projective splitting with this regularizer. Must be positive
                 and defaults to 1.0.  Will be overridden on an
-                interation-by-iteration basis if the ``equalizeStepsizes``
+                iteration-by-iteration basis if the ``equalizeStepsizes``
                 option is enabled in the ``run`` method of ``ProjSplitFit``.
+
         '''
         try:
             test = ones(100)
@@ -101,7 +102,7 @@ class Regularizer(object):
         Parameters
         ----------
         scaling : :obj:`float`
-            scaling factor; must be a positive and finite
+            scaling factor; must be positive and finite
         '''
         self.nu = ui.checkUserInput(scaling,float,'float','scaling',default=1.0,low=0.0,lowAllowed=True)
 
@@ -113,7 +114,7 @@ class Regularizer(object):
         Parameters
         ------------
         step : :obj:`float`
-            stepsize; must be finite and positive
+            stepsize; must be positive and finite
         '''
         self.step = ui.checkUserInput(step,float,'float','step',default=1.0,low=0.0)
 
@@ -132,7 +133,7 @@ class Regularizer(object):
 
     def getStep(self):
         r'''
-        get the stepsize :math:`\eta` being used in the proximal steps for 
+        get the stepsize :math:`\eta` being used in the proximal steps for
         this regularizer.
 
         Returns
@@ -157,7 +158,7 @@ class Regularizer(object):
 
 def L1(scaling=1.0,step=1.0):
     r'''
-    Returns an L1 regularizer. The output is an object of class 
+    Returns an L1 regularizer. The output is an object of class
     ``regularizers.Regularizer`` suitable as input to ``ProjSplitFit.addRegularizer``.
 
     *scaling* is the coefficient :math:`\nu_j` that will
@@ -174,9 +175,9 @@ def L1(scaling=1.0,step=1.0):
     Parameters
     -----------
 
-    Scaling : :obj:`float`,optional
+    Scaling : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite
-    Stepsize : :obj:`float`,optional
+    Stepsize : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite
 
     Returns
@@ -196,13 +197,13 @@ def L1(scaling=1.0,step=1.0):
 
 
 def L2sq(scaling=1.0,step=1.0):
-    r''' 
+    r'''
     Create an L2 squared regularizer. The output is an object of class
     ``regularizers.Regularizer`` which may be passed to
     ``ProjSplitFit.addRegularizer``.
 
     *scaling* is the coefficient :math:`\nu_j` that will be applied to the
-    regularizer in the objective. That is, ithe regularizer will appear as
+    regularizer in the objective. That is, the regularizer will appear as
     :math:`(\nu_j/2)\|\,\cdot\,\|_2^2`.  Note the factor of 0.5.
 
     *step* is the stepsize that projective splitting will use for the proximal steps
@@ -211,9 +212,9 @@ def L2sq(scaling=1.0,step=1.0):
     Parameters
     -----------
 
-    Scaling : :obj:`float`,optional
+    Scaling : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite.
-    Stepsize : :obj:`float`,optional
+    Stepsize : :obj:`float`, optional
         Defaluts to 1.0.  Must be positive and finite.
 
     Returns
@@ -247,9 +248,9 @@ def L2(scaling=1.0,step=1.0):
     Parameters
     -----------
 
-    Scaling : :obj:`float`,optional
+    Scaling : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite.
-    Stepsize : :obj:`float`,optional
+    Stepsize : :obj:`float`, optional
         Defaluts to 1.0.  Must be positive and finite.
 
     Returns
