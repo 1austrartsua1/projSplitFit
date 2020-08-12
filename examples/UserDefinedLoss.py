@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 sys.path.append('../')
-import projSplit as ps
+import projSplitFit as ps
 
 import losses as ls
 def deriv(x,y):
@@ -12,10 +12,13 @@ def val(x,y):
 projSplit = ps.ProjSplitFit()
 m = 500
 d = 200
+np.random.seed(1)
 A = np.random.normal(0,1,[m,d])
-y = np.random.normal(0,1,m)
+r = np.random.normal(0,1,m)
 loss = ls.LossPlugIn(derivative=deriv, value=val)
-projSplit.addData(A,y,loss=loss)
-projSplit.run()
-print(f"optimal val = {projSplit.getObjective()}")
+projSplit.addData(A,r,loss=loss)
+projSplit.setDualScaling(10.0)
+projSplit.run(verbose=True)
+print(f"Objective value = {projSplit.getObjective()}")
+
 

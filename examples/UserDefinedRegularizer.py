@@ -1,13 +1,14 @@
 import sys
 sys.path.append('../')
 import numpy as np
-import projSplit as ps
+import projSplitFit as ps
 from regularizers import L1
 ### Basic Setup with a Quadratic Loss
 m = 500
 d = 1000
+np.random.seed(1)
 A = np.random.normal(0,1,[m,d])
-y = np.random.normal(0,1,m)
+r = np.random.normal(0,1,m)
 
 ### User-defined and Multiple regularizers
 from regularizers import Regularizer
@@ -19,19 +20,17 @@ def value_g(x):
     return 0.0
 
 regObjNonneg = Regularizer(prox=prox_g, value=value_g)
-gamma = 1e1
+gamma = 1.0
 projSplit = ps.ProjSplitFit(gamma)
 projSplit.addRegularizer(regObjNonneg)
 lam1 = 0.1
 projSplit = ps.ProjSplitFit()
-projSplit.addData(A,y,loss=2,intercept=False,normalize=False)
+projSplit.addData(A,r,loss=2,intercept=False,normalize=False)
 regObj = L1(scaling=lam1)
 projSplit.addRegularizer(regObj)
 regObjNonneg = Regularizer(prox=prox_g, value=value_g)
 projSplit.addRegularizer(regObjNonneg)
-projSplit.run()
+projSplit.run(verbose=True)
 optimalVal = projSplit.getObjective()
 z = projSplit.getSolution()
-print(f"optimal value = {optimalVal}")
-
-
+print(f"Objective value = {optimalVal}")
