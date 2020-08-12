@@ -50,10 +50,10 @@ def test_L1():
     assert regObj.getScaling()==scale
     scale = -1.0
     regObj = L1(scale)
-    assert (regObj.getScaling(),regObj.getStepsize())==(1.0,1.0)
+    assert (regObj.getScaling(),regObj.getStep())==(1.0,1.0)
 
     regObj = L1(scale)
-    assert (regObj.getScaling(),regObj.getStepsize())==(1.0,1.0)
+    assert (regObj.getScaling(),regObj.getStep())==(1.0,1.0)
 
     scale = 11.5
     rho = 3.0

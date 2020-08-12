@@ -395,7 +395,7 @@ class Forward1Backtrack(LossProcessor):
             thisSlice = psObj.partition[block]
             self.thetahat[block][1:] = psObj.embedded.getProx(self.thetahat[block][1:])
             self.thetahat[block][0] = 0.0
-            self.what[block] = -psObj.embedded.getStepsize()**(-1)*self.thetahat[block]
+            self.what[block] = -psObj.embedded.getStep()**(-1)*self.thetahat[block]
             self.gradxdata[block] = self._getAGrad(psObj,self.thetahat[block],thisSlice)
             self.what[block] += self.gradxdata[block]
 

@@ -1069,7 +1069,7 @@ class ProjSplitFit(object):
             # with a "pass-through" prox
             self.embedded = Regularizer(lambda x,scale:x,lambda x:0)
         else:
-            if self.embedded.getStepsize() != self.process.getStep():
+            if self.embedded.getStep() != self.process.getStep():
                 print("WARNING: embedded regularizer must use the same stepsize as the Loss update process")
                 print("Setting the embedded regularizer stepsize to be the process stepsize")
                 self.embedded.setStep(self.process.getStep())
@@ -1108,7 +1108,7 @@ class ProjSplitFit(object):
 
             if allRegsHaveLinOps:
                 if len(self.allRegularizers)>0:
-                    step = self.allRegularizers[0].getStepsize()
+                    step = self.allRegularizers[0].getStep()
                 else:
                     step = 1.0
                 self.addRegularizer(Regularizer(lambda x,scale: x, lambda x: 0,step=step))
