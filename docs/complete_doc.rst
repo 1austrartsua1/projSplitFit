@@ -41,14 +41,24 @@ User-Defined Losses (LossPlugIn Class)
 Loss Processors
 =================
 
-These classes instruct projective splitting how to process the blocks of variables
-associated with the loss, and are added in the ``ProjSplitFit.addData`` method
-as the ``process`` input.
+The loss processor classes instruct projective splitting how to process the
+loss function.   The loss processor is specified by the ``process`` argument
+of the ``ProjSplitFit.addData``.
 
-If you leave the ``process`` argument to ``ProjSplitFit.addData`` unused, then ``ProjSplitFit`` will use the
-default loss processor, ``Forward2Backtrack``.
+If you omit the ``process`` argument to ``ProjSplitFit.addData``, then
+``ProjSplitFit`` will use the default loss processor, ``Forward2Backtrack``.
 
-Forward-step (Gradient) Based Loss Processors
+When a loss processor for block :math:`i` is invoked within the projective
+splitting algorithm, it is provided with the vector :math:`Hz^k` derived from
+the current primal solution estimate :math:`z^k` (which just equals
+:math:`z^k` if :math:`H` was not specified) and the dual solution estimate
+:math:`w_i^k`.  It returns two vectors :math:`x_i^k` and :math:`y_i^k`, which
+have should have the same dimension as :math:`w_i^k`.  These returned vectors
+must have specific properties in order to guarantee convergence of the
+algorithm; all the provided loss processor have these properties, with one
+caveat mentioned below.
+
+Forward-step (Gradient) Loss Processors
 --------------------------------------------------
 
 Forward2Fixed

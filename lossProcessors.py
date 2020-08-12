@@ -43,7 +43,7 @@ class LossProcessor(object):
 
     def getStep(self):
         '''
-        Get the stepsize in use with this loss processor.
+        Return the stepsize in use with this loss processor.
 
         Returns
         -------
@@ -54,12 +54,12 @@ class LossProcessor(object):
 
     def setStep(self,step):
         '''
-        Set the stepsize in use with this loss processor.
+        Set the stepsize for this loss processor.
 
         Parameters
         -------
         step : :obj:`float`
-          stepsize
+          stepsize.  Must be positive and finite
         '''
 
         self.step = step
@@ -82,7 +82,7 @@ class LossProcessor(object):
 #############
 class Forward2Fixed(LossProcessor):
     r'''
-    Two forward steps with a fixed stepsize. Updates of the form
+    Two forward steps with a fixed stepsize. The returned vectors take the form
 
     .. math::
         x_i^k &= H z^k - \rho (\nabla f_i(H z^k) - w_i^k) \\
@@ -93,17 +93,18 @@ class Forward2Fixed(LossProcessor):
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
-    See https://arxiv.org/abs/1803.07043.
+    See :cite:`for1`, https://arxiv.org/abs/1803.07043.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
 
     '''
     def __init__(self,step=1.0):
-        '''
+        r'''
         Parameters
         ----------
         step : :obj:`float`, optional
-            stepsize, defaults to 1.0
+            stepsize :math:`\rho`, defaulting to 1.0
 
         '''
 
@@ -120,50 +121,54 @@ class Forward2Fixed(LossProcessor):
         gradx = self._getAGrad(psObj,psObj.xdata[block],thisSlice)
         psObj.ydata[block] = a + gradx
 
+
 class Forward2Backtrack(LossProcessor):
     r'''
-    Two forward steps with backtracking linesearch stepsize.
+    Two forward steps with a backtracking linesearch stepsize.
 
-    Updates of the form
+    The returned pair of vectors takes the form
 
     .. math::
-        x_i^k &= H z^k - \rho_i (\nabla f_i(H z^k) - w_i^k) \\
+        x_i^k &= H z^k - \rho_{ik} (\nabla f_i(H z^k) - w_i^k) \\
         y_i^k &= \nabla f_i(x_i^k)
 
 
-    where the stepsize :math:`\rho_i` is discovered by backtracking linesearch at each iteration and
+    where the stepsize :math:`\rho_{ik}` is discovered by a backtracking
+    linesearch at each iteration and
 
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
-    See https://arxiv.org/abs/1803.07043.
+    See :cite:`for1`, https://arxiv.org/abs/1803.07043.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
-
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
     '''
+
     def __init__(self,initialStep=1.0,Delta=1.0,backtrackFactor=0.7,
                  growFactor=1.0,growFreq=None):
-        '''
+        r'''
         Parameters
         ----------
             initialStep : :obj:`float`,optional
-                stepsize, defaults to 1.0
+                Initial trial choice of the stepsize :math:`\rho_{ik}`, defaulting to 1.0
 
             Delta : :obj:`float`,optional
                 parameter in backtracking line search check condition.
                 Defaults to 1.0
 
             backtrackFactor : :obj:`float`,optional
-                How much to decrement the stepsize by at each iteration of backtracking.
-                Must be between 0 and 1. Defaults to 0.7
+                How much to shrink the stepsize by at each iteration of backtracking.
+                Must be strictly between 0 and 1. Defaults to 0.7
 
             growFactor : :obj:`float`,optional
                 How much to grow the stepsize by before backtracking. Must
                 be at least 1.0. Defaults to 1.0
 
             growFreq : :obj:`int`,optional
-                How often, in terms of iterations, to grow the stepsize, defaults to None, which means
-                never grow the stepsize. Must be at least one.
+                How often, in terms of iterations, to grow the stepsize,
+                defaults to ``None``, which means to never grow the stepsize. Must be
+                at least 1.
         '''
 
         self.embedOK = True
@@ -207,14 +212,17 @@ class Forward2Backtrack(LossProcessor):
 
 
 class Forward2Affine(LossProcessor):
-    '''
-    Two forward steps with stepsize automatically tuned. Only works for affine
-    gradients, i.e. when the loss is the squared loss, i.e. p = 2.
-    See https://arxiv.org/abs/1803.07043.
+    r'''
+    Two forward steps with stepsize automatically tuned for the 
+    :math:`\ell_2^2` loss.  This loss process is only applicable
+    when the loss function has an affine gradient map, which
+    occurs only in the :math:`\ell_2^2` case.  See :cite:`for1`,
+    https://arxiv.org/abs/1803.07043.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
-
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
     '''
+
     def __init__(self,Delta=1.0):
         '''
 
@@ -244,10 +252,11 @@ class Forward2Affine(LossProcessor):
 
 
 class  Forward1Fixed(LossProcessor):
-    r'''
-    One forward step with a fixed stepsize. See https://arxiv.org/abs/1902.09025.
+    r''' 
+    One forward step with a fixed stepsize. See :cite:`coco`,
+    https://arxiv.org/abs/1902.09025.
 
-    Updates of the form
+    The returned vectors are calculated by
 
     .. math::
         x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho (y_i^{k-1} - w_i^k) \\
@@ -259,22 +268,26 @@ class  Forward1Fixed(LossProcessor):
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j).
 
-    See https://arxiv.org/abs/1902.09025.
+    See :cite:`coco`, https://arxiv.org/abs/1902.09025.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
 
+    Note that convergence has not been proven for this this loss processor in
+    the case that ``blocksPerIteration`` is smaller than ``nBlocks``, although
+    it is suspected that it does indeed converge in this case.
     '''
     def __init__(self,stepsize=1.0, blendFactor=0.1):
         r'''
         Parameters
         ----------
             stepsize : :obj:`float`,optional
-                stepsize, defaults to 1.0
+                stepsize :math:`\rho`, defaulting to 1.0
 
-            blendFactor : :obj:`float`,optional
-                Averaging parameter :math:`\alpha` in one forward step update. Defaults to 0.1.
-                Must be between 0 and 1.
-
+            blendFactor : :obj:`float`,optional 
+                The averaging parameter :math:`\alpha` in one-forward-step
+                calculations above. Defaults to 0.1. Must be strictly between
+                0 and 1.
         '''
         self.step = ui.checkUserInput(stepsize,float,'float','stepsize',default=1.0,low=0.0)
         self.alpha = ui.checkUserInput(blendFactor,float,'float','blendFactor',default=0.1,low=0.0,high=1.0)
@@ -304,25 +317,26 @@ class  Forward1Fixed(LossProcessor):
 
 class Forward1Backtrack(LossProcessor):
     r'''
-    One forward step with a backtracking line-search stepsize.
-    See https://arxiv.org/abs/1902.09025.
+    One forward step with stepsize determined by a backtracking line search.
+    See :cite:`coco`, https://arxiv.org/abs/1902.09025.
 
-    Updates of the form
+    The returned vectors are of the form
 
     .. math::
-        x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho_i (y_i^{k-1} - w_i^k) \\
+        x_i^k &= (1-\alpha)x_i^{k-1} + \alpha H z^k - \rho_{ik} (y_i^{k-1} - w_i^k) \\
         y_i^k &= \nabla f_i(x_i^k)
 
 
-    where the stepsize :math:`\rho_i` is discovered by a backtracking linesearch
+    where the stepsize :math:`\rho_{ik}` is discovered by a backtracking linesearch
     at each iteration and
 
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
-    See https://arxiv.org/abs/1902.09025.
+    See :cite:`coco`, https://arxiv.org/abs/1902.09025.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
 
     '''
     def __init__(self,initialStep=1.0, blendFactor=0.1,backTrackFactor = 0.7,
@@ -332,23 +346,24 @@ class Forward1Backtrack(LossProcessor):
         Parameters
         ----------
             initialStep : :obj:`float`,optional
-                Stepsize in first iteration, defaults to 1.0
+                Initial trial stepsize in first iteration, defaults to 1.0
 
             blendFactor : :obj:`float`,optional
-                Averaging parameter :math:`\alpha` in one forward step update. Defaults to 0.1.
-                Must be between 0 and 1.
+                The averaging parameter :math:`\alpha` in calculation above. 
+                Defaults to 0.1.  Must be strictly between 0 and 1.
 
             backtrackFactor : :obj:`float`,optional
-                How much to decrement the stepsize by at each iteration of backtracking.
-                Must be between 0 and 1. Defaults to 0.7
+                How much to shrink the stepsize by at each iteration of backtracking.
+                Must be strictly between 0 and 1. Defaults to 0.7
 
             growFactor : :obj:`float`,optional
-                How much to grow the stepsize by before backtracking. Must
+                How much to grow the stepsize before backtracking. Must
                 be at least 1.0. Defaults to 1.0
 
             growFreq : :obj:`int`,optional
-                How often, in terms of iterations, to grow the stepsize, defaults to None, which means
-                never grow the stepsize. Must be at least one.
+                How often, in terms of iterations, to grow the stepsize,
+                defaults to ``None``, which means to never grow the stepsize.
+                Must be at least 1.
 
         '''
         self.embedOK = True
@@ -442,39 +457,41 @@ class Forward1Backtrack(LossProcessor):
 
 
 class BackwardExact(LossProcessor):
-    r'''
-    Exact backward step for quadratics via matrix inversion. Only works with the squared loss, i.e. p=2.
+    r''' 
+    Exact backward step for quadratic loss functions, calculated via
+    matrix inversion. Only applicable to the :math:`\ell_2^2` loss function.
     Appropriate matrix inverses are cached before the first iteration.
 
-    Updates are of the form
+    The returned vectors are of the form
 
     .. math::
         x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
         y_i^k &= \rho^{-1}(H z^k + \rho w_i^k - x_i^k)
-
 
     where
 
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j)
 
-    and the proximal operator is computed exactly by solving the appropriate linear equation.
-    Only available when the loss is the :math:`\ell_2^2` loss.
+    and the proximal operator is computed exactly by solving the appropriate
+    system of linear equations. Only applicable when using the
+    :math:`\ell_2^2` loss.
 
-    If the involed matrices are wide (number of rows less than half number of cols),
-    the matrix inversion lemma is used,
-    see Sec. 4.2.4 of https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
+    If the involved matrices are wide (having a number of rows less than half
+    the number of columnss), the matrix inversion lemma is used to reduce the
+    size of the inverted matrix, see Sec. 4.2.4 of
+    https://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
-
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
     '''
+
     def __init__(self,stepsize=1.0):
-        '''
+        r'''
         Parameters
         ----------
             stepsize : :obj:`float`,optional
-                Stepsize, defaults to 1.0
-
+                Stepsize :math:`\rho`, defaults to 1.0
         '''
 
         self.embedOK = False
@@ -557,8 +574,9 @@ class BackwardExact(LossProcessor):
 
 class BackwardCG(LossProcessor):
     r'''
-    Backward step via conjugate gradient for quadratics. Only works for the squared
-    loss, i.e. p=2. See https://arxiv.org/abs/1803.07043.
+    Approximate backward step for the :math:`\ell_2^2` loss, computed by the
+    conjugate gradient method for linear equations. Only applicable to the
+    :math:`\ell_2^2`.  
 
     Updates are of the form
 
@@ -571,17 +589,22 @@ class BackwardCG(LossProcessor):
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j).
 
-    The proximal operator is only computed approximately via a conjugate gradient method.
-    This only works for the :math:`\ell_2^2` loss, in which case computing the prox
-    is equivalent to solving a linear system of equations.
+    The proximal operator is only computed approximately via a conjugate
+    gradient method. This method is only applicable the :math:`\ell_2^2` loss,
+    in which case computing the prox is equivalent to solving a linear system
+    of equations.
 
-    The conjugate gradient method is iterated until the relative error critera of
-    https://arxiv.org/abs/1803.07043 are met, or the max number of iterations is
-    run.
+    The conjugate gradient method is iterated until the relative error
+    criteria specified in :cite:`Eck17,CE18,for1`, are met, or the maximum number
+    of iterations is reached.  Convergence is not guaranteed when the maximum
+    number of conjugate gradient iterations is reached in more than a finite number of
+    projective splitting iterations.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
 
     '''
+
     def __init__(self,relativeErrorFactor=0.9,stepsize=1.0,maxIter=100):
         r'''
         Parameters
@@ -590,11 +613,11 @@ class BackwardCG(LossProcessor):
                 :math:`\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
 
             stepsize : :obj:`float`,optional
-                stepsize, defaults to 1.0
+                stepsize :math:`\rho`, defaultings to 1.0
 
             maxIter : :obj:`int`,optional
-                max number of iterations of conjugate gradient. Defaults to 100.
-                Must be at least one.
+                Maximum number of iterations of conjugate gradient. Defaults to 100.
+                Must be at least 1.
         '''
         self.embedOK = False
         self.pMustBe2 = True
@@ -679,9 +702,9 @@ class BackwardCG(LossProcessor):
 
 class BackwardLBFGS(LossProcessor):
     r'''
-    Backward step via the L-BFGS solver.
+    Approximate backward step computed by the limited-memory BFGS (L-BFGS) method.
 
-    Updates are of the form
+    The returned vectors are of the form
 
     .. math::
         x_i^k &= \text{prox}_{\rho f_i}( H z^k +\rho w_i^k) \\
@@ -692,11 +715,15 @@ class BackwardLBFGS(LossProcessor):
     .. math::
         f_i(t) = \frac{1}{n}\sum_{j\in\text{block }i}\ell (t_0 + a_j^T t,r_j).
 
-    The proximal operator is computed approximately via the L-BFGS solver until the
-    relative error criteria of https://arxiv.org/abs/1803.07043 are met, or a max
-    number of iterations is run.
+    The proximal operator is computed approximately by the L-BFGS method,
+    iterated until the relative error criteria specified in
+    :cite:`Eck17,CE18,for1`, are met, or the maximum number of iterations is
+    reached.  Convergence is not guaranteed when the maximum number L-BFGS of
+    iterations is reached in more than a finite number of projective 
+    splitting iterations.
 
-    Objects of this class may be used as the ``process`` argument to ``ProjSplitFit.addData``.
+    Objects of this class may be used as the ``process`` argument to
+    ``ProjSplitFit.addData``.
 
     '''
     def __init__(self,step=1.0,relativeErrorFactor = 0.9,memory = 10,c1 = 1e-4,
@@ -706,37 +733,38 @@ class BackwardLBFGS(LossProcessor):
         Parameters
         ----------
             step : :obj:`float`,optional
-                Stepsize, defaults to 1.0
+                Stepsize :math:`rho`, defaulting to 1.0
 
             relativeErrorFactor : :obj:`float`,optional
                 :math:`\sigma`, relative error factor. Must be in [0,1). Defaults to 0.9
 
             memory : :obj:`int`,optional
-                how many iterations of memory in L-BFGS. Defaults to 10. Must be at least one.
+                how many iterations of memory are held by L-BFGS. Defaults to 10. 
+                Must be at least 1.
 
             c1 : :obj:`float`,optional
-                :math:`c_1` parameter in the Wolfe linesearch. Defaults to 1e-4. Must
-                be between 0 and 1 and :math:`c_1<c_2`.
+                the :math:`c_1` parameter in the Wolfe linesearch used by L-BFGS. 
+                Defaults to 1e-4. Must be strictly between 0 and 1, with :math:`c_1<c_2`.
 
             c2 : :obj:`float`,optional
-                :math:`c_2` parameter in the Wolfe linesearch. Defaults to 0.9. Must
-                be between 0 and 1 and :math:`c_1<c_2`.
+                the :math:`c_2` parameter in the Wolfe linesearch used by L-BFGS. 
+                Defaults to 0.9. Must be strictly between 0 and 1, with :math:`c_1<c_2`.
 
             shrinkFactor : :obj:`float`,optional
-                How much to shrink stepsize during Wolfe line-search. Must be
-                between 0 and 1 and defaults to 0.7
+                How much to shrink stepsize during the Wolfe linesearch. Must be
+                strictly between 0 and 1 and defaults to 0.7
 
             growFactor : :obj:`float`,optional
-                How much to grow stepsize during Wolfe line-search. Must be
-                > 1 and defaults to 1.1
+                How much to grow stepsize at the outset of the Wolfe line-search. Must be
+                greater than 1, and defaults to 1.1
 
             maxiter : :obj:`int`,optional
-                max number of iterations of L-BFGS. Defaults to 100.
-                Must be at least one.
+                maximum number of iterations of L-BFGS. Defaults to 100.
+                Must be at least 1.
 
             lineSearchIter : :obj:`int`,optional
-                max number of iterations of Wolfe linesearch. Defaults to 20.
-                Must be at least one.
+                maximum number of iterations of Wolfe linesearch. Defaults to 20.
+                Must be at least 1.  
 
         '''
         self.embedOK = False
