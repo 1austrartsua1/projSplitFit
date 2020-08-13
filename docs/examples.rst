@@ -128,9 +128,9 @@ where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, we call the
 The built-in method ``L1`` returns an object derived from the class
 ``regularizers.Regularizer`` The ``regularizers.Regularizer`` class may be
 used to describe any convex function to be used as a regularizer. Other
-built-in regularizers include ``regularizers.L2sq`` which creates the
-regularizer :math:`0.5\|x\|_2^2` and ``regularizers.L2``, which creates the
-regularizer :math:`\|x\|_2`.
+built-in regularizers include ``regularizers.L2sq``, which creates the
+regularizer :math:`0.5\|x\|_2^2`, and ``regularizers.L2``, which creates the
+regularizer :math:`\|x\|_2`.  A group L2 regularizer is also available.
 
 To recap, the entire code to solve :eq:`lasso` with
 :math:`\lambda_1=0.1` and the default dual scaling of :math:`\gamma=1` is ::
