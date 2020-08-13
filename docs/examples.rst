@@ -497,23 +497,34 @@ as follows::
   regObj2 = regularizers.L1(scaling=lam*(1-mu))
   projSplit.addRegularizer(regObj2,linearOp=H)
 
+We set the dual scaling factor :math:`\gamma` to 0.01::
+
+  projSplit.setDualScaling(1e-2)
+
 Finally we are ready to run the method with::
 
-  projSplit.run(maxIterations=1000)
+  projSplit.run(nblocks=10,maxIterations=None,verbose=True,
+                primalTol=1e-2,dualTol=1e-2)
+
+The problem instance provided in the ``examples/data`` directory, taken
+directly from :cite:`YB18`, is quite difficult and ill-conditioned, so we only
+solve it to an accuracy of approximately 0.01, similarly to the experiments in
+:cite:`for1`, in which roughly the same algorithm had the best observed
+performance among six possible first-order methods.
 
 One can obtain the final objective value and solution via::
 
-  optimalVal = projSplit.getObjective()
-  vstar = projSplit.getSolution()
+  objVal = projSplit.getObjective()
+  solVector = projSplit.getSolution()
 
-A complete program solving an instance of the rare feature selection problem
-may be found in ``examples/RareFeatureSelection.py``. Unlike the other
-examples in the ``examples`` subdirectory, which generate moderate-sized
-synthetic datasets, this example reads its data from files containing the
-actual (very large) dataset used in :cite:`YB18`. Consequently, very long run
-times may be anticipated.  These runtimes could improved by using parallel
-computation to a greater extent than it is automatically present in ``numpy``,
-but such capabilities are not included in this release of ``projSplitFit``.
+A complete program incorporating the above code elements, as well as reading
+in the dataset of :cite:`YB18` from the files in ``examples/data``, may be
+found in ``examples/RareFeatureSelection.py``.
+
+The ``projSplitFit`` package currently only uses parallelism to the degree that
+``numpy`` uses parallelism on your computer configuration.  Other applications
+of parallelism hold the potential to improve performance, but are not
+addressed in this software at present.
 
 
 Loss Processor Objects
