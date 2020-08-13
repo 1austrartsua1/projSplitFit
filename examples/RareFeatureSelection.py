@@ -14,14 +14,14 @@ H = sp.load_npz('data/S_A.npz')     # this matrix also in scipy.sparse format
 r = np.load('data/y_train.npy')     # training labels
 
 ### create projective splitting object
-projSplit = ps.ProjSplitFit(dualScaling=0.01)
+projSplit = ps.ProjSplitFit()
 
 ### add data composed with linear operator
 projSplit.addData(X,r,loss=2,linearOp=H,normalize=False)
 
 ### first regularizer
 mu=0.5
-lam=1e-4
+lam=1e-5
 def applyG(x):
     return x[:-1]
 def applyGtranspose(v):
@@ -36,10 +36,19 @@ regObj2 = regularizers.L1(scaling=lam*(1-mu))
 projSplit.addRegularizer(regObj2,linearOp=H)
 
 ### In some cases there is a random block selection even though we use greedy
+### This occurs when no blocks have negative \phi_i
 ### Fix the random number seed so results are reproducible
 np.random.seed(1)
 
-print("Running 1000 iterations of projective splitting...")
-print("This problem is very difficult.  Increase maxIterations to solve problem")
-projSplit.run(nblocks=10,maxIterations=1000,verbose=True,blockActivation='greedy')
-print(f"Objective value = {projSplit.getObjective()}")
+# Set dual scaling parameter
+projSplit.setDualScaling(1e-2)
+
+# Problem is run to low accuracy since it is very difficult and ill-conditioned
+projSplit.run(nblocks=10,maxIterations=None,verbose=True,
+              primalTol=1e-2,dualTol=1e-2)
+
+# Get results
+objVal = projSplit.getObjective()
+solVector = projSplit.getSolution()
+
+print(f"Objective value = {objVal}")
