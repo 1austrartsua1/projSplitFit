@@ -7,6 +7,8 @@ Created on Wed Jul  1 15:47:47 2020
 from numpy.linalg import norm
 import userInputVal as ui
 from numpy import ones
+from numpy import zeros
+from numpy import array
 
 
 #-----------------------------------------------------------------------------
@@ -36,7 +38,7 @@ class Regularizer(object):
       also supply a function to compute the regularizer value.
     '''
 
-    def __init__(self,prox,value=None,scaling=1.0,step=1.0):
+    def __init__(self,prox,value=None,scaling=1.0,step=1.0,testLength=100):
         r''' It is only necessary to define *value* if you wish to compute
             objective function values, either by calling ``getObjective`` or
             by using the ``keepHistory`` option of the ``ProjSplitFit.run`` method.
@@ -71,14 +73,14 @@ class Regularizer(object):
 
         '''
         try:
-            test = ones(100)
+            test = ones(testLength)
 
             if value is not None:
                 output = value(test)
                 output = float(output)
 
             output = prox(test,1.1)
-            if len(output) != 100:
+            if len(output) != testLength:
                 print("Error: make sure prox outputs an array of same length as first input")
                 raise Exception("Error: prox method passed into Regularizer invalid")
         except:
@@ -230,6 +232,7 @@ def L2sq(scaling=1.0,step=1.0):
     out = Regularizer(prox,val,scaling,step)
     return out
 
+
 def L2(scaling=1.0,step=1.0):
     r'''
     Create an L2-norm regularizer. Not to be confused with the ``L2sq`` regularizer,
@@ -269,3 +272,92 @@ def L2(scaling=1.0,step=1.0):
 
     out = Regularizer(prox,val,scaling,step)
     return out
+
+
+# Group L2 written by JE
+
+def groupL2(dimension, groups, scaling=1.0, step=1.0):
+    r'''
+    Create an group L2-norm regularizer.
+
+    The output is an object of class ``regularizers.Regularizer``,
+    which may be passed to ``ProjSplitFit.addRegularizer``.
+
+    The regularizer takes the form
+
+    .. math::
+        h(z) = \nu_j \sum_{G\in\mathcal{G}} \|z_G\|,
+
+    where :math:`\mathcal{G}` are the groups and :math:`z_G`
+    denotes the subvector of :math:`z` consisting of the
+    elements whose indices are in :math:`G`.  The groups
+    :math:`G` may not overlap.
+
+    *dimension* is the size of vectors that will be passed to
+    the regularizer in future.
+
+    *group* is an iterable consisting of iterables of integers.
+    Each inner iterable represents the indices in one of the groups.
+
+    *scaling* is the coefficient :math:`\nu_j` that will
+    be applied to the function in the objective.
+
+    *step* is the stepsize :math:`\eta` that projective splitting will use in
+    proximal steps with respect to this regularizer.
+
+    Parameters
+    -----------
+
+    dimension : :obj:`int`
+        The size of the vectors to which the regularizer will be applied.
+    groups : iterable of iterables of :obj:`int`
+        An iterable specifying the groups, playing the role of
+        :math:`\mathcal{G}` in the above formula.  Each member of the iterable
+        must itself be an iterable consisting of nonnegative integers whose
+        value is less than ``dimension``.  If objects of any other type are
+        encountered, an exception is raised.  Each of the inner iterables specifies
+        the indices in a single group :math:`G`.  If any index appears in more
+        than one group, an exception is raised.
+    Scaling : :obj:`float`, optional
+        Defaults to 1.0.  Must be positive and finite.
+    Stepsize : :obj:`float`, optional
+        Defaluts to 1.0.  Must be positive and finite.
+
+    Returns
+    --------
+    regObj : :obj:`regularizers.Regularizer` object
+    '''
+
+    appearCount = zeros(dimension)
+    for group in groups:
+        for i in group:
+            if not isinstance(i,int):
+                raise Exception("groupL2: group contains non-integer data '" + str(i) + "'")
+            elif i < 0 or i >= dimension:
+                raise Exception("groupL2: group contains index " + str(i) + " outside expected range")
+            else:
+                appearCount[i] += 1
+    if max(appearCount) > 1:
+        badIndices = [i for i in range(dimension) if appearCount[i] > 1]
+        raise Exception("groupL2: these indices are in multiple groups " + str(badIndices))
+    leftOut = array([i for i in range(dimension) if appearCount[i] == 0],dtype=int)
+
+    def val(x):
+        regVal = 0.0
+        for group in groups:
+            regVal += norm(x[group],2)
+        return regVal
+
+    def prox(x,scale):
+        v = zeros(dimension)
+        v[leftOut] = x[leftOut]
+        for group in groups:
+            groupNorm = norm(x[group],2)
+            if groupNorm > scale:
+                v[group] = (groupNorm - scale)*x[group]/groupNorm
+        return v
+
+    out = Regularizer(prox,val,scaling,step,testLength=dimension)
+    return out
+
+
