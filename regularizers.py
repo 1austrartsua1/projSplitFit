@@ -177,9 +177,9 @@ def L1(scaling=1.0,step=1.0):
     Parameters
     -----------
 
-    Scaling : :obj:`float`, optional
+    scaling : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite
-    Stepsize : :obj:`float`, optional
+    step : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite
 
     Returns
@@ -214,9 +214,9 @@ def L2sq(scaling=1.0,step=1.0):
     Parameters
     -----------
 
-    Scaling : :obj:`float`, optional
+    scaling : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite.
-    Stepsize : :obj:`float`, optional
+    step : :obj:`float`, optional
         Defaluts to 1.0.  Must be positive and finite.
 
     Returns
@@ -251,9 +251,9 @@ def L2(scaling=1.0,step=1.0):
     Parameters
     -----------
 
-    Scaling : :obj:`float`, optional
+    scaling : :obj:`float`, optional
         Defaults to 1.0.  Must be positive and finite.
-    Stepsize : :obj:`float`, optional
+    step : :obj:`float`, optional
         Defaluts to 1.0.  Must be positive and finite.
 
     Returns
