@@ -278,7 +278,7 @@ def L2(scaling=1.0,step=1.0):
 
 def groupL2(dimension, groups, scaling=1.0, step=1.0):
     r'''
-    Create an group L2-norm regularizer.
+    Create a group L2-norm regularizer.
 
     The output is an object of class ``regularizers.Regularizer``,
     which may be passed to ``ProjSplitFit.addRegularizer``.
@@ -318,10 +318,11 @@ def groupL2(dimension, groups, scaling=1.0, step=1.0):
         encountered, an exception is raised.  Each of the inner iterables specifies
         the indices in a single group :math:`G`.  If any index appears in more
         than one group, an exception is raised.
-    Scaling : :obj:`float`, optional
-        Defaults to 1.0.  Must be positive and finite.
-    Stepsize : :obj:`float`, optional
-        Defaluts to 1.0.  Must be positive and finite.
+    scaling : :obj:`float`, optional
+        Defaults to 1.0.  Specifies :math:`\nu_j`. Must be positive and finite.
+    step : :obj:`float`, optional
+        Defaluts to 1.0.  Specifies the proximal stepsize to be applied to the
+        regularizer.  Must be positive and finite.
 
     Returns
     --------
