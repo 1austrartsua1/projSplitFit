@@ -160,7 +160,7 @@ class Forward2Backtrack(LossProcessor):
 
             Delta : :obj:`float`, optional
                 the parameter :math:`\Delta` in backtracking linesearch
-                termination condition of :cite:`for1.` Larger values make the
+                termination condition of :cite:`for1`. Larger values make the
                 condition more difficult to satisfy and result in more
                 backtracking iterations and smaller accepted stepsizes.
                 Defaults to 1.0.

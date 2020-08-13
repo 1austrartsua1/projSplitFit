@@ -11,7 +11,11 @@ Solving a problem with ``projSplitFit`` requires the following fundamental steps
 #.  Retrieve the solution and/or optimal value.
 
 This chapter gives simple examples of each of these operations.  Full
-descriptions of the methods used are in the following chapter.
+descriptions of the methods used are in the following chapter.  Complete
+running programs using the operations to solve problems may be found in the
+``examples`` subdirectory of the package.  Most of these examples solve
+synthetic, randomly generated problems, but one solves the (very difficult)
+problem posed in :cite:`YB18`.
 
 Note that ``projSplitFit`` with a lower-case initial 'p' denotes the name of
 the ``projSplitFit`` Python package, whereas ``ProjSplitFit`` with an
@@ -60,6 +64,7 @@ This classical model has no regularizers, so it is not necessary to add
 regularizers.  The ``run`` method then solves the optimization problem. After
 solving the problem, the ``getObjective`` method returns the optimal solution
 value and the ``getSolution`` value returns the solution vector :math:`z`.
+
 
 Dual Scaling
 =============
@@ -128,9 +133,9 @@ where :math:`\|z\|_1=\sum_i |z_i|`. To solve this model instead, we call the
 The built-in method ``L1`` returns an object derived from the class
 ``regularizers.Regularizer`` The ``regularizers.Regularizer`` class may be
 used to describe any convex function to be used as a regularizer. Other
-built-in regularizers include ``regularizers.L2sq`` which creates the
-regularizer :math:`0.5\|x\|_2^2` and ``regularizers.L2``, which creates the
-regularizer :math:`\|x\|_2`.
+built-in regularizers include ``regularizers.L2sq``, which creates the
+regularizer :math:`0.5\|x\|_2^2`, and ``regularizers.L2``, which creates the
+regularizer :math:`\|x\|_2`.  A group L2 regularizer is also available.
 
 To recap, the entire code to solve :eq:`lasso` with
 :math:`\lambda_1=0.1` and the default dual scaling of :math:`\gamma=1` is ::
@@ -148,6 +153,10 @@ To recap, the entire code to solve :eq:`lasso` with
 
 If an intercept variable is desired, the keyword argument ``intercept`` should
 be set to ``True`` or omitted.
+
+A complete example program solving both the LASSO problem and simple
+least-squares regression problem mentioned above may be found in
+``examples/LeastSquaresAndLASSO.py``.
 
 
 
@@ -205,13 +214,7 @@ The proximal operator :eq:`proxDef` for this function is simply projection onto
 the nonnegative orthant, and is independent of :math:`\sigma`. To include this
 regularizer in ``projSplitFit`` object, one defines the regularizer object for
 :math:`g` and then adds it to the model with ``addRegularizer``.  These
-operations may be accomplished as follows:
-
-.. raw:: latex
-
-   \newpage
-
-::
+operations may be accomplished as follows::
 
   from regularizers import Regularizer
   def prox_g(z,sigma):
@@ -255,6 +258,8 @@ be ::
 
 Here, for numerical reasons, we have slightly modified the ``value_g``
 function to treat very small-magnitude negative numbers as if they were zero.
+A complete example program creating a customized regularizer may be found in
+``examples/UserDefinedRegularizer.py``.
 
 Note that we present the code above mainly for purposes of example.  A
 potentially more efficient approach to solving the nonnegative lasso problem
@@ -345,6 +350,10 @@ Calling ``varop1d(n)`` as defined in the code below will create such an operator
                                                 matvec=applyOperator,
                                                 rmatvec=applyAdjoint)
 
+A compete example program using the L1 regularizer composed with the above
+customized linear operator may be found in
+``examples/LinearOpComposedWithReg.py``.
+
 
 User-Defined Losses
 ====================
@@ -379,9 +388,12 @@ To use this loss, you would proceed as follows::
   loss = ls.LossPlugIn(derivative=deriv, value=val)
   projSplit.addData(A,y,loss=loss)
 
+A complete example program employing this user-defined loss function may be
+found in ``examples/UserDefinedLoss.py``.
 
-Complete Example: Rare Feature Selection
-==========================================
+
+A More Complicated Example: Rare Feature Selection
+====================================================
 
 We now consider a complete example, taken from page 34 of our paper
 :cite:`coco`.  This problem originated with :cite:`YB18` and takes the form
@@ -493,6 +505,15 @@ One can obtain the final objective value and solution via::
 
   optimalVal = projSplit.getObjective()
   vstar = projSplit.getSolution()
+
+A complete program solving an instance of the rare feature selection problem
+may be found in ``examples/RareFeatureSelection.py``. Unlike the other
+examples in the ``examples`` subdirectory, which generate moderate-sized
+synthetic datasets, this example reads its data from files containing the
+actual (very large) dataset used in :cite:`YB18`. Consequently, very long run
+times may be anticipated.  These runtimes could improved by using parallel
+computation to a greater extent than it is automatically present in ``numpy``,
+but such capabilities are not included in this release of ``projSplitFit``.
 
 
 Loss Processor Objects

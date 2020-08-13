@@ -29,6 +29,9 @@ Built-in Regularizers
 
 .. autofunction:: regularizers.L2
 
+.. autofunction:: regularizers.groupL2
+
+
 User-Defined Losses (LossPlugIn Class)
 =========================================
 
