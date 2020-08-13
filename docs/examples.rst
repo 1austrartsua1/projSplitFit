@@ -11,7 +11,11 @@ Solving a problem with ``projSplitFit`` requires the following fundamental steps
 #.  Retrieve the solution and/or optimal value.
 
 This chapter gives simple examples of each of these operations.  Full
-descriptions of the methods used are in the following chapter.
+descriptions of the methods used are in the following chapter.  Complete
+running programs using the operations to solve problems may be found in the
+``examples`` subdirectory of the package.  Most of these examples solve
+synthetic, randomly generated problems, but one solves (the very difficult)
+problem posed in :cite:`YB18`.
 
 Note that ``projSplitFit`` with a lower-case initial 'p' denotes the name of
 the ``projSplitFit`` Python package, whereas ``ProjSplitFit`` with an
