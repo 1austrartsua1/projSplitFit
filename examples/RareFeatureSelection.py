@@ -9,9 +9,9 @@ import lossProcessors
 ### get the trip-advisor reviews data
 print("Getting data...")
 import scipy.sparse as sp
-X = sp.load_npz('data/S_train.npz') # training matrix (scipy.sparse format)
-H = sp.load_npz('data/S_A.npz')     # this matrix also in scipy.sparse format
-r = np.load('data/y_train.npy')     # training labels
+X = sp.load_npz('data/trip_advisor/S_train.npz') # training matrix (scipy.sparse format)
+H = sp.load_npz('data/trip_advisor/S_A.npz')     # this matrix also in scipy.sparse format
+r = np.load('data/trip_advisor/y_train.npy')     # training labels
 
 ### create projective splitting object
 projSplit = ps.ProjSplitFit()
