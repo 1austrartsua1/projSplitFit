@@ -24,6 +24,7 @@ else:
     xcvx = None
     fL2sq = None
     fL2 = None
+    np.random.seed(1)
     with open('results/cache_BuiltInRegs','rb') as file:
         cache = pickle.load(file)
 

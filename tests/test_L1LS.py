@@ -25,6 +25,7 @@ if getNewOptVals:
     import cvxpy as cvx
     cache = {}
 else:
+    np.random.seed(1)
     with open('results/cache_L1LS','rb') as file:
         cache = pickle.load(file)
 

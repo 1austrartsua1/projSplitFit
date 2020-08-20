@@ -22,6 +22,7 @@ if getNewOptVals:
     from utils import getLRdata
     cache = {}
 else:
+    np.random.seed(1)
     with open('results/cache_L1LR','rb') as file:
         cache = pickle.load(file)
 

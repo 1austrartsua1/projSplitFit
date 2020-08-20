@@ -22,6 +22,7 @@ if getNewOptVals:
     import cvxpy as cvx
     cache_otherLosses = {}
 else:
+    np.random.seed(1)
     with open('results/cache_otherLosses','rb') as file:
         cache_otherLosses = pickle.load(file)
 

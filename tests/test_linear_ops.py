@@ -21,6 +21,7 @@ if getNewOptVals:
     from utils import getLSdata
     cache = {}
 else:
+    np.random.seed(1)
     with open('results/cache_linear_ops','rb') as file:
         cache = pickle.load(file)
 

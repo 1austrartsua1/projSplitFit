@@ -20,6 +20,7 @@ if getNewOptVals:
     from utils import getLSdata
     cache = {}
 else:
+    np.random.seed(1)
     with open('results/cache_multiple_norms','rb') as file:
         cache = pickle.load(file)
 

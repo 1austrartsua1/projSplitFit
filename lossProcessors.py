@@ -882,4 +882,41 @@ class BackwardLBFGS(LossProcessor):
     def wolfeLineSearch(self,psObj,x,p,grad,f,t,thisSlice):
 
         direcDeriv = grad.T.dot(p)
-        step = 1
+        step = 1.0
+        stepNotFound = True
+        niter = 0
+        gradNotComputed = True
+        while stepNotFound:
+            xTrial = x + step * p
+            fTrial = self.Fprox(psObj, xTrial, thisSlice, t)
+
+            cond1 = fTrial - f - self.c1 * step * direcDeriv
+            if cond1 <= 0:
+                gradNotComputed = False
+                gradTrial = self.gradprox(psObj, xTrial, thisSlice, t)
+                cond2 = gradTrial.T.dot(p) - self.c2 * direcDeriv
+                if cond2 >= 0:
+                    stepNotFound = False
+                else:
+                    step = self.growFactor * step
+
+            else:
+                step = self.shrinkFactor * step
+
+            niter += 1
+            if (niter >= self.lineSearchIter):
+                stepNotFound = False
+
+        if gradNotComputed:
+            gradTrial = self.gradprox(psObj, xTrial, thisSlice, t)
+        return xTrial, gradTrial, fTrial
+
+    def passesErrCheck(self, psObj, x, t, block, gradfx):
+        w = psObj.wdata[block]
+        e = x + self.step * gradfx - t
+        err1 = e.T.dot(psObj.Hz - x) + self.sigma * norm(psObj.Hz - x) ** 2
+        if err1 >= 0:
+            err2 = e.T.dot(gradfx - w) \
+                   - self.step * norm(gradfx - w)
+            if err2 <= 0:
+                return True
