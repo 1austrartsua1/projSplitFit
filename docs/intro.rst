@@ -46,6 +46,7 @@ regularizers:
 * The :math:`\ell_1` norm, that is, :math:`\|x\|_1=\sum_i |x_i|`
 * The :math:`\ell_2^2` squared norm, that is, :math:`\|x\|_2^2`
 * The :math:`\ell_2` norm that is, :math:`\|x\|_2`
+* The group :math:`\ell_2` norm, that is :math:`\sum_{G\in\mathcal{G}}\|z_G\|_2` where :math:`\mathcal{G}` is a set of non-overlapping groups of indices
 * Any user-defined convex regularizer.
 
 The package does not impose any limits on the number of regularizers present
