@@ -395,14 +395,23 @@ found in ``examples/UserDefinedLoss.py``.
 A More Complicated Example: Rare Feature Selection
 ====================================================
 
-We now consider a complete example, taken from page 34 of our paper
-:cite:`coco`.  This problem originated with :cite:`YB18` and takes the form
-(substituting :math:`v` for :math:`\gamma` as the decision variables)
+We now consider a more complicated, complete example, the rare feature
+selection problem in the paper :cite:`for1`.  The basic form of this problem
+originated with :cite:`YB18`, and involves predicting TripAdvisor ratings of
+hotels from the adjectives present in the corresponding review text.  The
+experiments in :cite:`for1` involve predicting whether or not the rating is a
+"5" (the highest rating), and use the logistic loss function.  With the large
+dataset described in :cite:`YB18`, this problem is very difficult to solve,
+and the experiments in :cite:`for1` suggest that projective splitting is the
+best available method for obtaining solutions of reasonable quality.
+
+The problem takes the form (substituting :math:`v` for :math:`\gamma` as the
+decision variables)
 
 .. math::
   \min_{\substack{v_0\in \mathbb{R} \\ v\in \mathbb{R}^{d}}}
   \left\{
-  \frac{1}{2n}\|v_0 e + X Hv - y\|_2^2
+  \frac{1}{n}\ell(v_0 e + X Hv, r)
   +
   \lambda
   \big(
@@ -410,10 +419,11 @@ We now consider a complete example, taken from page 34 of our paper
   +
   (1-\mu)\|Hv\|_1
   \big)
-  \right\}
+  \right\},
 
-The loss function here is :math:`\ell_2^2`, but with the regression
-coefficients composed with a linear operator :math:`H`. There are two ways to
+where :math:`\ell` is the logistic loss function.  In this formulation, the
+regression coefficients are composed with a linear operator :math:`H`.
+There are two ways to
 deal with such situations:  first, if the size and density of the matrices is
 not of great concern concern, one may pre-compute a new matrix through ``Xnew
 = X*H``, and use ``Xnew`` as the observation matrix passed to
@@ -431,8 +441,11 @@ up the loss term as follows::
   projSplit = ps.ProjSplitFit()
   projSplit.addData(X,y,loss=2,linearOp=H,normalize=False)
 
-Note that, by default, the intercept term :math:`v_0` is
-incorporated into the loss.
+Note that, by default, the intercept term :math:`v_0` is incorporated into the
+loss.  The complete code for the example, including reading input data from
+files, maybe found in ``examples/RareFeatureSelection.py``.  The example is
+configured to solve the instance with :math:`\lambda=10^{-4}` and
+:math:`\mu=0.5`, and the data files are in the directory ``examples/data``.
 
 We now consider the two regularization terms.  In the first regularization term, the
 notation :math:`v_{-r}`, as introduced in
@@ -497,29 +510,22 @@ as follows::
   regObj2 = regularizers.L1(scaling=lam*(1-mu))
   projSplit.addRegularizer(regObj2,linearOp=H)
 
-We set the dual scaling factor :math:`\gamma` to 0.01::
+We set the dual scaling factor :math:`\gamma` to 0.0001::
 
-  projSplit.setDualScaling(1e-2)
+  projSplit.setDualScaling(1e-4)
 
 Finally we are ready to run the method with::
 
-  projSplit.run(nblocks=10,maxIterations=None,verbose=True,
-                primalTol=1e-2,dualTol=1e-2)
+  projSplit.run(nblocks=10, maxIterations=20000, verbose=True, keepHistory=True)
 
-The problem instance provided in the ``examples/data`` directory, taken
-directly from :cite:`YB18`, is quite difficult and ill-conditioned, so we only
-solve it to an accuracy of approximately 0.01, similarly to the experiments in
-:cite:`for1`, in which roughly the same algorithm had the best observed
-performance among six possible first-order methods.
+The limit of 20,000 iterations is sufficient to reproduce the results in
+:cite:`for1`, reaching an objective level of approximately 0.525.  The
+``keepHistory=True`` option records the trajectory of the run.
 
 One can obtain the final objective value and solution via::
 
   objVal = projSplit.getObjective()
   solVector = projSplit.getSolution()
-
-A complete program incorporating the above code elements, as well as reading
-in the dataset of :cite:`YB18` from the files in ``examples/data``, may be
-found in ``examples/RareFeatureSelection.py``.
 
 The ``projSplitFit`` package currently only uses parallelism to the degree that
 ``numpy`` uses parallelism on your computer configuration.  Other applications
@@ -706,8 +712,11 @@ it's prox operator is applied.
 
 The ``embed`` feature cannot be used with the backward loss processors nor with ``Forward2Affine``.
 
-Other Important Features
+Other Features
 ========================================
+
+The ``getObjective()`` method of the ``ProjSplitFit`` class simply returns the
+objective value at the current primal iterate.
 
 The ``keepHistory`` and ``historyFreq`` arguments to ``run()`` allow you to
 record the progress of the algorithm in terms of objective function values,
@@ -718,8 +727,10 @@ information is recorded: for example, setting ``historyFreq=1`` causes the
 information to be recorded every iteration, while setting ``historyFreq=10``
 causes it to be recorded once every ten iterations.
 
-The ``getObjective()`` method of the ``ProjSplitFit`` class simply returns the
-objective value at the current primal iterate.
+The code at the end of ``examples/RareFeatureSelection.py`` shows how to use
+the data structure returned by ``getHistory`` to plot the progress of the
+objective function over the course of the run.  This data structure is
+described in detail in the next section of this document.
 
 If you use either the ``keepHistory`` feature or the ``getObjective`` function
 in conjunction with a user-defined loss function, then that loss function must
