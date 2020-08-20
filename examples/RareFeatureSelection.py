@@ -28,7 +28,7 @@ lam=1e-4
 def applyG(x):
     return x[:-1]
 def applyGtranspose(v):
-    return np.concatenate((v,np.array([0])))
+    return np.append(v,0.0)
 (_,nv) = H.shape
 shape = (nv-1,nv)
 G = LinearOperator(shape,matvec=applyG,rmatvec = applyGtranspose)
