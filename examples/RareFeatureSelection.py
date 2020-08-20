@@ -47,8 +47,7 @@ np.random.seed(1)
 projSplit.setDualScaling(1e-4)
 
 # Problem is for a limited number of iterations since it is very difficult
-projSplit.run(nblocks=10,maxIterations=20000,verbose=True,
-              primalTol=1e-2,dualTol=1e-2,keepHistory=True)
+projSplit.run(nblocks=10, maxIterations=20000, verbose=True, keepHistory=True)
 
 # Get results
 objVal = projSplit.getObjective()
