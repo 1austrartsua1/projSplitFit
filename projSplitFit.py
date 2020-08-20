@@ -641,7 +641,8 @@ class ProjSplitFit(object):
         In the notation of :cite:`for1`, dual violation is
 
         .. math::
-            \max\{ \max_{i=1,..,n_b} \|y_i^k - w_i^k\|_2 , \max_{j=1,..,n_r} \|y_{j+n_b}-w_j^k\|_2\}
+            \max\Big\{ \max_{i=1,..,n_b} \|y_i^k - w_i^k\|_2, 
+            \max_{j=1,..,n_r} \|y_{j+n_b}-w_j^k\|_2\Big\}
 
         where, :math:`n_b` is the number of blocks in the loss (controlled by ``nblocks``
         argument to ``run``).
