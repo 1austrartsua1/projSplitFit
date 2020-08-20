@@ -12,20 +12,22 @@ Please read the [user guide](user_guide.pdf). This is a comprehensive and comple
 
 The most important file here is the [user guide](user_guide.pdf). Your first step should be to consult the user guide which has installation instructions, a tutorial, and the complete documentation of the package.
 
-Here are the key modules related to the package
+Here are the key modules related to the package:
 
-* [projSplitFit.py](projSplitFit.py), the main module including the key class *ProjSplitFit*
-* [losses.py](losses.py) classes for defining the loss
-* [lossProcessors.py](lossProcessors.py) classes for instructing *ProjSplitFit* how to process the loss
-* [regularizers.py](regularizers.py) classes for adding regularizers to the model.
+* [projSplitFit.py](projSplitFit.py): the main module, including the key class *ProjSplitFit*
+* [losses.py](losses.py): classes for defining the loss function in your fitting model
+* [lossProcessors.py](lossProcessors.py): classes for instructing *ProjSplitFit* how to process the loss function
+* [regularizers.py](regularizers.py): classes for adding regularizers to the model.
 
-The following are helper modules used internally in *ProjSplitFit*
+The following are helper modules used internally in *ProjSplitFit* (it should not be necessary to use these directly):
 
-* [userInputVal.py](userInputVal.py) User input validation code
-* [projSplitUtils.py](projSplitUtils.py) Miscellaneous utilities.
+* [userInputVal.py](userInputVal.py): user input validation code
+* [projSplitUtils.py](projSplitUtils.py): miscellaneous utilities.
 
-The following files are used to generate the documentation: *index.rst*, *conf.py*, *make.bat*, *MakeFile*, the *docs* directory and its contents.
+The following files are used to generate the documentation: *index.rst*, *conf.py*, *make.bat*, *MakeFile*, and all files in the *docs* directory.
 
 Test files are in the [tests](tests) directory. You will need `pytest` installed to run the tests.
 
 The [tests/results](tests/results) directory has cached optimal values used in the tests.
+
+The [examples](examples) directory contains complete Python programs incorporating the example code discussed in the user guide.
