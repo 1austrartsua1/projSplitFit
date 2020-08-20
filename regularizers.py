@@ -291,12 +291,13 @@ def groupL2(dimension, groups, scaling=1.0, step=1.0):
     where :math:`\mathcal{G}` are the groups and :math:`z_G`
     denotes the subvector of :math:`z` consisting of the
     elements whose indices are in :math:`G`.  The groups
-    :math:`G` may not overlap.
+    :math:`G` may not overlap.  A simple complete usage example
+    may be found in ``examples/GroupL2.py``.
 
     *dimension* is the size of vectors that will be passed to
     the regularizer in future.
 
-    *group* is an iterable consisting of iterables of integers.
+    *groups* is an iterable consisting of iterables of integers.
     Each inner iterable represents the indices in one of the groups.
 
     *scaling* is the coefficient :math:`\nu_j` that will
