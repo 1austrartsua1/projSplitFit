@@ -31,3 +31,8 @@ Test files are in the [tests](tests) directory. You will need `pytest` installed
 The [tests/results](tests/results) directory has cached optimal values used in the tests.
 
 The [examples](examples) directory contains complete Python programs incorporating the example code discussed in the user guide.
+
+## Acknowledgment
+
+This work was funded by National Science Foundation grant CCF-1617617, in the Computer-Communications Research program of the CISE directorate. 
+
